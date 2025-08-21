@@ -29,6 +29,8 @@
                         @role('Admin')
                             <li class="mb-3"><a href="{{ route('admin.users.index') }}" class="hover:bg-blue-800">User
                                     Management</a></li>
+                            <li class="mb-3"><a href="{{ route('admin.users.archives') }}"
+                                    class="hover:bg-blue-800">Archives</a></li>
                         @endrole
 
                         @role('Staff')

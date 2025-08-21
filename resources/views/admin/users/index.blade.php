@@ -1,61 +1,47 @@
-<!-- resources/views/admin/users/index.blade.php -->
 @extends('layouts.app')
 
 @section('content')
-    <div class="p-6">
-        <h2 class="text-2xl font-bold mb-4">User Management</h2>
-
-        <div class="mt-3 p-6">
-            <a href="{{ route('admin.users.create') }}" class="btn btn-soft">Create</a>
+    <div class="p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h1 class="text-2xl font-bold">User Management</h1>
+            <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add User
+            </a>
         </div>
 
-        <table class="table w-full">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Municipal ID</th>
-                    <th>Department</th>
-                    <th>Last Seen</th>
-                </tr>
-            </thead>
-            <tbody>
+        <x-table-filters />
+
+        <div class="bg-base-100 rounded-lg shadow-md overflow-hidden">
+            <x-responsive-table :headers="['ID', 'Municipal ID', 'Name', 'Email', 'Type', 'Status', 'Last Seen', 'Actions']">
                 @foreach ($users as $user)
-                    <tr id="user-{{ $user->id }}">
-                        <td>{{ $user->name }}</td>
+                    <tr class="hover:bg-base-50">
+                        <td class="font-medium">{{ $user->id }}</td>
                         <td>{{ $user->municipal_id }}</td>
-                        <td>{{ $user->department }}</td>
+                        <td class="font-medium">{{ $user->name }}</td>
+                        <td class="text-sm">{{ $user->email }}</td>
                         <td>
-                            <span class="flex items-center gap-2">
-                                <div class="w-2 h-2 rounded-full {{ $user->isOnline() ? 'bg-green-500' : 'bg-gray-400' }}">
-                                </div>
-                                <span class="{{ $user->isOnline() ? 'text-green-600 font-medium' : 'text-gray-500' }}">
-                                    {{ $user->last_seen }}
-                                </span>
-                            </span>
+                            <div class="badge badge-outline">{{ $user->type }}</div>
+                        </td>
+                        <td>
+                            <div class="badge {{ $user->status ? 'badge-success' : 'badge-error' }}">
+                                {{ $user->status ? 'Active' : 'Inactive' }}
+                            </div>
+                        </td>
+                        <td class="text-sm">{{ $user->last_seen }}</td>
+                        <td>
+                            <x-user-actions :user="$user" :activeAdminCount="$activeAdminCount" />
                         </td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
+            </x-responsive-table>
+        </div>
+
+        <div class="mt-6 flex justify-center">
+            {{ $users->links() }}
+        </div>
     </div>
 @endsection
-<script>
-    // Auto-refresh last seen every 30 seconds
-    setInterval(() => {
-        fetch(window.location.href, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newTableBody = doc.querySelector('tbody');
-                if (newTableBody) {
-                    document.querySelector('tbody').innerHTML = newTableBody.innerHTML;
-                }
-            })
-            .catch(error => console.log('Refresh error:', error));
-    }, 3000); // 30 seconds
-</script>

@@ -2,77 +2,116 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Admin\StoreStaffRequest;
-use App\Http\Requests\Admin\UpdateStaffRequest;
+use App\Http\Requests\Admin\User\UserRequest;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use App\Models\UserArchive;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use AuthorizesRequests;
+
     public function index()
     {
-        $users = User::with('roles')->get();
-        return view('admin.users.index', compact('users'));
+        // Show only active users by default, or add filter option
+        $users = User::latest()->paginate(10);
+        $activeAdminCount = User::role('Admin')->active()->count();
+        return view('admin.users.index', compact('users', 'activeAdminCount'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $roles = Role::whereIn('name', ['Staff', 'Officer'])->pluck('name', 'id');
-        return view('admin.users.create', compact('roles'));
+        return view('admin.users.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreStaffRequest $request)
+    public function store(UserRequest $request)
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'municipal_id' => $request->municipal_id,
-            'department' => $request->department,
-            'password' => bcrypt($request->password),
-        ]);
-        // Assign role using the role ID
-        $role = Role::find($request->role);
-        if ($role) {
-            $user->assignRole($role->name);
+
+        $this->authorize('create', User::class);
+        $data = $request->validated();
+        $data['password'] = Hash::make($data['password']);
+        $user = User::create($data);
+        $user->assignRole($data['type']);
+
+        if ($request->role) {
+            $user->assignRole($request->role);
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully');
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully!');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(User $user)
     {
-        $roles = Role::whereIn('name', ['Staff', 'Officer'])->pluck('name', 'id');
-        return view('staff-edit', compact('user', 'roles'));
+        return view('admin.users.edit', compact('user'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateStaffRequest $request, User $user)
+    public function update(UserRequest $request, User $user)
     {
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-        ]);
-
-        if ($request->filled('password')) {
-            $user->update(['password' => bcrypt($request->password)]);
+        $data = $request->validated();
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
         }
 
-        $user->syncRoles([$request->role]);
+        $user->update($data);
+        $user->syncRoles([$data['type']]);
 
-        return redirect()->route('staff.index')->with('success', 'Staff updated successfully');
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully!');
+    }
+
+    public function destroy(User $user)
+    {
+        // This method now redirects to deactivate
+        return $this->deactivate($user);
+    }
+
+    public function deactivate(User $user, Request $request = null)
+    {
+        $this->authorize('delete', $user);
+
+        // Check if this is the only active admin account
+        if ($user->hasRole('Admin')) {
+            $activeAdminCount = User::role('Admin')->active()->count();
+            if ($activeAdminCount <= 1) {
+                return back()->with('error', 'Cannot deactivate the last active admin account. System must have at least one active administrator.');
+            }
+        }
+
+        $reason = 'Deactivated by admin';
+        $user->deactivate($reason);
+
+        return back()->with('success', 'User account has been deactivated and archived successfully!');
+    }
+    public function reactivate(User $user)
+    {
+        $this->authorize('delete', $user);
+
+        $user->activate();
+
+        return back()->with('success', 'User account has been reactivated successfully!');
+    }
+
+    public function archives()
+    {
+        return view('admin.archives.archives');
+    }
+
+    public function userAccounts()
+    {
+        $archives = UserArchive::with(['user', 'deactivatedBy'])
+            ->latest('deactivated_at')
+            ->paginate(10);
+        $activeAdminCount = User::role('Admin')->active()->count();
+
+        return view('admin.archives.user-accounts', compact('archives', 'activeAdminCount'));
+    }
+    public function showArchive(UserArchive $archive)
+    {
+        $archive->load(['user', 'deactivatedBy']);
+        $activeAdminCount = User::role('Admin')->active()->count();
+        return view('admin.archives.archive-detail', compact('archive', 'activeAdminCount'));
     }
 }

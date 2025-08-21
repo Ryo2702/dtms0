@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckUserStatus;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TrackUserActivity;
 use Illuminate\Auth\Middleware\Authenticate;
@@ -18,11 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => Authenticate::class,
             'role' => RoleMiddleware::class,
-            'permission' => PermissionMiddleware::class
+            'permission' => PermissionMiddleware::class,
+            'user.status' => CheckUserStatus::class
         ]);
 
         $middleware->web(append: [
-            TrackUserActivity::class
+            TrackUserActivity::class,
+            CheckUserStatus::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

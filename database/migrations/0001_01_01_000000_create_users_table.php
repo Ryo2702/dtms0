@@ -19,8 +19,9 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('department')->nullable();
-            $table->enum('type', ['Staff', 'Officer'])->nullable();
+            $table->enum('type', ['Staff', 'Head'])->nullable();
             $table->timestamp('last_activity')->nullable();
+            $table->boolean('status')->default(1);
             $table->rememberToken();
             $table->timestamps();
         });
