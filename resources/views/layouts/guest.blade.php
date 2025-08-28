@@ -14,7 +14,6 @@
     <main class="relative z-10 flex items-center justify-center min-h-screen">
         @yield('content')
     </main>
-
 </body>
 
 </html>

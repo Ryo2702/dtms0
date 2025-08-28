@@ -15,7 +15,7 @@
                         <p><strong>Municipal ID:</strong> {{ $archive->municipal_id }}</p>
                         <p><strong>Name:</strong> {{ $archive->name }}</p>
                         <p><strong>Email:</strong> {{ $archive->email }}</p>
-                        <p><strong>Department:</strong> {{ $archive->department ?? 'Not specified' }}</p>
+                        <p><strong>Department:</strong> {{ $archive->department_id ?? 'Not specified' }}</p>
                         <p><strong>Type:</strong> {{ $archive->type }}</p>
                     </div>
                 </div>

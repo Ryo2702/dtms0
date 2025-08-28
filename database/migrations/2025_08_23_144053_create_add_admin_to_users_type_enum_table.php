@@ -17,7 +17,7 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('type', ['Staff', 'Head', 'Admin'])->nullable()->after('department');
+            $table->enum('type', ['Staff', 'Head', 'Admin'])->nullable()->after('department_id');
         });
     }
 
@@ -31,7 +31,7 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('type', ['Staff', 'Head'])->nullable()->after('department');
+            $table->enum('type', ['Staff', 'Head'])->nullable()->after('department_id');
         });
     }
 };

@@ -18,12 +18,17 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('department')->nullable();
-            $table->enum('type', ['Staff', 'Head'])->nullable();
+            $table->unsignedBigInteger('department_id')->nullable();
+            $table->enum('type', ['Staff', 'Head']);
             $table->timestamp('last_activity')->nullable();
             $table->boolean('status')->default(1);
             $table->rememberToken();
             $table->timestamps();
+
+
+            $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
+            $table->index(['department_id', 'type']);
+            $table->index(['municipal_id', 'status']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

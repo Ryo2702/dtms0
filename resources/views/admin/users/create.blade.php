@@ -1,31 +1,98 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="p-6 max-w-lg mx-auto">
-        <h1 class="text-2xl font-bold mb-4">Create User</h1>
+    <div class="p-4 sm:p-6">
+        <x-page-header title="Create User" :backRoute="route('admin.users.index')" backText="Back to Users" />
 
-        <form method="POST" action="{{ route('admin.users.store') }}" class="space-y-4">
-            @csrf
+        <div class="bg-base-100 rounded-lg shadow-md p-6">
+            <form action="{{ route('admin.users.store') }}" method="POST">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Name</span>
+                        </label>
+                        <input type="text" name="name" value="{{ old('name') }}"
+                            class="input input-bordered @error('name') input-error @enderror" placeholder="Enter user name"
+                            required />
+                        @error('name')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-            <input type="text" name="municipal_id" placeholder="Municipal ID" class="input input-bordered w-full" required>
-            <input type="text" name="name" placeholder="Name" class="input input-bordered w-full" required>
-            <input type="email" name="email" placeholder="Email" class="input input-bordered w-full" required>
-            <input type="password" name="password" placeholder="Password" class="input input-bordered w-full" required>
+                    <!-- Email -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Email</span>
+                        </label>
+                        <input type="email" name="email" value="{{ old('email') }}"
+                            class="input input-bordered @error('email') input-error @enderror"
+                            placeholder="Enter user email" required />
+                        @error('email')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-            <input type="text" name="department" placeholder="Department" class="input input-bordered w-full">
+                    <!-- Password -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Password</span>
+                        </label>
+                        <input type="password" name="password"
+                            class="input input-bordered @error('password') input-error @enderror"
+                            placeholder="Enter password" required />
+                        @error('password')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-            <select name="type" class="select select-bordered w-full" required>
-                <option value="Staff">Staff</option>
-                <option value="Head">Head</option>
-                <option value="Admin">Admin</option>
-            </select>
+                    <!-- Department -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Department</span>
+                        </label>
+                        <select name="department_id" id="department_id"
+                            class="select select-bordered @error('department_id') select-error @enderror" required>
+                            <option value="" disabled {{ old('department_id') ? '' : 'selected' }}>Select a department
+                            </option>
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}"
+                                    {{ old('department_id') == $department->id ? 'selected' : '' }}>{{ $department->name }}
+                                    ({{ $department->code }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('department_id')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-            <label class="flex items-center gap-2">
-                <input type="checkbox" name="status" value="1" checked class="checkbox">
-                <span>Active</span>
-            </label>
+                    <!-- Type -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Type</span>
+                        </label>
+                        <select name="type" id="type"
+                            class="select select-bordered @error('type') select-error @enderror" required>
+                            <option value="" disabled {{ old('type') ? '' : 'selected' }}>Select a type</option>
+                            @foreach ($types as $type)
+                                <option value="{{ $type }}" {{ old('type') == $type ? 'selected' : '' }}>
+                                    {{ $type }}</option>
+                            @endforeach
+                        </select>
+                        @error('type')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-            <button class="btn btn-primary w-full">Save</button>
-        </form>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6 flex justify-end">
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
     </div>
 @endsection

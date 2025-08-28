@@ -2,20 +2,10 @@
 
 @section('content')
     <div class="p-4 sm:p-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 class="text-2xl font-bold">User Accounts</h1>
-            <a href="{{ route('admin.users.archives') }}" class="btn btn-secondary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Archives
-            </a>
-        </div>
+        <x-page-header title="User Accounts Archives" :backRoute="route('admin.users.archives')" backText="Back to Archives" />
 
         <div class="alert alert-info mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none"
-                viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
@@ -23,7 +13,20 @@
                 here.</span>
         </div>
 
-        <x-table-filters />
+        <x-table-filters :route="route('admin.users.user-accounts')" searchPlaceholder="Search archived users..." :filters="[
+            [
+                'name' => 'department_id',
+                'label' => 'Department',
+                'options' => $departments->pluck('name', 'id')->prepend('All Departments', '')->toArray(),
+                'default' => '',
+            ],
+            [
+                'name' => 'type',
+                'label' => 'User Type',
+                'options' => ['' => 'All Types', 'Admin' => 'Admin', 'Head' => 'Head', 'Staff' => 'Staff'],
+                'default' => '',
+            ],
+        ]" />
 
         <div class="bg-base-100 rounded-lg shadow-md overflow-hidden">
             <x-responsive-table :headers="[
@@ -39,12 +42,21 @@
             ]">
                 @forelse ($archives as $archive)
                     <tr class="hover:bg-base-50">
-                        <td class="font-medium">{{ $archive->id }}</td>
-                        <td>{{ $archive->municipal_id }}</td>
+                        <td class="font-medium text-sm">{{ $archive->id }}</td>
+                        <td class="font-mono text-sm">
+                            <span class="municipal-id-badge">{{ $archive->municipal_id }}</span>
+                        </td>
                         <td class="font-medium">{{ $archive->name }}</td>
-                        <td class="text-sm">{{ $archive->email }}</td>
+                        <td class="text-sm text-gray-600">{{ $archive->email }}</td>
                         <td>
-                            <div class="badge badge-outline">{{ $archive->type }}</div>
+                            <div
+                                class="badge 
+                                {{ $archive->type === 'Admin' ? 'badge-error' : '' }}
+                                {{ $archive->type === 'Head' ? 'badge-warning' : '' }}
+                                {{ $archive->type === 'Staff' ? 'badge-info' : '' }}
+                            ">
+                                {{ $archive->type }}
+                            </div>
                         </td>
                         <td class="text-sm">{{ $archive->deactivated_at->format('M d, Y H:i') }}</td>
                         <td class="text-sm">{{ $archive->deactivatedBy->name ?? 'System' }}</td>

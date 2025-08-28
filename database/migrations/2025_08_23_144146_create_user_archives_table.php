@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('municipal_id');
             $table->string('name');
             $table->string('email');
-            $table->string('department')->nullable();
+            $table->unsignedBigInteger('department_id');
             $table->enum('type', ['Staff', 'Head', 'Admin'])->nullable();
             $table->text('reason')->nullable(); // Reason for deactivation
             $table->timestamp('deactivated_at');

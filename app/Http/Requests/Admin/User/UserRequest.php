@@ -17,12 +17,11 @@ class UserRequest extends FormRequest
         $id = $this->route('user')?->id;
 
         return [
-            'municipal_id' => 'required|string|max:50|unique:users,municipal_id,' . $id,
             'name'         => 'required|string|max:255',
             'email'        => 'required|email|unique:users,email,' . $id,
             'password'     => $id ? 'nullable|min:6' : 'required|min:6',
-            'department'   => 'nullable|string|max:255',
-            'type'         => 'required|in:Staff,Head',
+            'department_id' => 'required|exists:departments,id',
+            'type'         => 'required|in:Staff,Head,Admin',
             'status'       => 'boolean',
         ];
     }
@@ -30,10 +29,6 @@ class UserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'municipal_id.required' => 'Municipal ID is required.',
-            'municipal_id.unique'   => 'This Municipal ID is already in use.',
-            'municipal_id.max'      => 'Municipal ID must not exceed 50 characters.',
-
             'name.required' => 'Name is required.',
             'name.max'      => 'Name must not exceed 255 characters.',
 
@@ -44,10 +39,11 @@ class UserRequest extends FormRequest
             'password.required' => 'Password is required.',
             'password.min'      => 'Password must be at least 6 characters long.',
 
-            'department.max' => 'Department must not exceed 255 characters.',
+            'department_id.required' => 'Department is required.',
+            'department_id.exists'   => 'Selected department does not exist.',
 
             'type.required' => 'User type is required.',
-            'type.in'       => 'User type must be either Staff or Head.',
+            'type.in'       => 'User type must be Staff, Head, or Admin.',
 
             'status.boolean' => 'Status must be either active (1) or inactive (0).',
         ];

@@ -25,7 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             TrackUserActivity::class,
-            CheckUserStatus::class
+            CheckUserStatus::class,
+
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

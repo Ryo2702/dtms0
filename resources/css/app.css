@@ -1,11 +1,333 @@
-@import 'tailwindcss';
-@plugin "daisyui";
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+@import "tailwindcss";
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* DTMS Custom Theme Colors */
+:root {
+    --dtms-bg: #F5EEDC;
+    --dtms-primary: #27548A;
+    --dtms-secondary: #183B4E;
+    --dtms-accent: #DDA853;
+    --dtms-text: #1f2937;
+    --dtms-text-light: #6b7280;
+    --dtms-border: #e5e7eb;
+}
+
+/* Base Styles */
+body {
+    background-color: var(--dtms-bg) !important;
+    color: var(--dtms-text) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Layout Components */
+.drawer {
+    display: grid !important;
+    grid-template-columns: auto 1fr !important;
+    grid-template-rows: 1fr !important;
+    min-height: 100vh !important;
+}
+
+.drawer-content {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-height: 100vh !important;
+    background-color: var(--dtms-bg) !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.drawer-side {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    display: grid !important;
+    grid-template-columns: auto 1fr !important;
+    pointer-events: none !important;
+}
+
+.drawer-side aside {
+    background-color: var(--dtms-primary) !important;
+    pointer-events: auto !important;
+    color: white !important;
+    width: 16rem !important;
+    min-height: 100vh !important;
+}
+
+.drawer-side .menu li > a {
+    color: white !important;
+    border-radius: 0.5rem !important;
+    margin: 0.25rem 0 !important;
+    padding: 0.75rem 1rem !important;
+    display: block !important;
+    text-decoration: none !important;
+}
+
+.drawer-side .menu li > a:hover {
+    background-color: var(--dtms-secondary) !important;
+}
+
+main {
+    flex: 1 !important;
+    padding: 1.5rem !important;
+    background-color: var(--dtms-bg) !important;
+    min-height: calc(100vh - 3rem) !important;
+}
+
+/* Cards */
+.card, .dtms-card {
+    background-color: white !important;
+    border: 1px solid var(--dtms-border) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+    padding: 1.5rem !important;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    border: 2px solid transparent !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    text-decoration: none !important;
+}
+
+.btn-primary {
+    background-color: var(--dtms-primary) !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--dtms-secondary) !important;
+    color: white !important;
+}
+
+.btn-secondary {
+    background-color: var(--dtms-secondary) !important;
+    color: white !important;
+}
+
+.btn-secondary:hover {
+    background-color: var(--dtms-primary) !important;
+}
+
+.btn-ghost {
+    background-color: transparent !important;
+    color: var(--dtms-primary) !important;
+    border-color: var(--dtms-primary) !important;
+}
+
+.btn-ghost:hover {
+    background-color: var(--dtms-primary) !important;
+    color: white !important;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.75rem !important;
+}
+/* Outline / danger style for logout */
+.btn-logout {
+    background-color: transparent !important;
+    color: #ef4444 !important; /* red-500 */
+    border-color: #ef4444 !important;
+}
+.btn-logout:hover {
+    background-color: #ef4444 !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+}
+/* Badges */
+.badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    border-radius: 9999px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+.municipal-id-badge, .badge-warning {
+    background-color: var(--dtms-accent) !important;
+    color: white !important;
+}
+
+.badge-success {
+    background-color: #36D399 !important;
+    color: white !important;
+}
+
+.badge-error {
+    background-color: #F87272 !important;
+    color: white !important;
+}
+
+.badge-info {
+    background-color: var(--dtms-primary) !important;
+    color: white !important;
+}
+
+/* Stats */
+.stat {
+    background-color: white !important;
+    border: 1px solid var(--dtms-border) !important;
+    border-radius: 0.75rem !important;
+    padding: 1.5rem !important;
+    text-align: center !important;
+}
+
+.stat-title {
+    color: var(--dtms-text-light) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stat-value {
+    color: var(--dtms-text) !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.stat-figure {
+    color: var(--dtms-primary) !important;
+}
+
+/* Tables */
+.table {
+    width: 100% !important;
+    background-color: white !important;
+    border-radius: 0.75rem !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+.table th {
+    background-color: #f8fafc !important;
+    color: var(--dtms-text) !important;
+    font-weight: 600 !important;
+    padding: 1rem !important;
+    text-align: left !important;
+    border-bottom: 1px solid var(--dtms-border) !important;
+}
+
+.table td {
+    padding: 1rem !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    color: var(--dtms-text) !important;
+}
+
+.table tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+
+/* Forms */
+.input, .select, .textarea {
+    background-color: white !important;
+    border: 1px solid var(--dtms-border) !important;
+    border-radius: 0.5rem !important;
+    padding: 0.75rem !important;
+    width: 100% !important;
+    color: var(--dtms-text) !important;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+    outline: none !important;
+    border-color: var(--dtms-primary) !important;
+    box-shadow: 0 0 0 3px rgba(39, 84, 138, 0.1) !important;
+}
+
+.label {
+    color: var(--dtms-text) !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0.5rem !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.alert-success {
+    background-color: #dcfce7 !important;
+    border: 1px solid #bbf7d0 !important;
+    color: #166534 !important;
+}
+
+.alert-error {
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+}
+
+.alert-warning {
+    background-color: #fffbeb !important;
+    border: 1px solid #fed7aa !important;
+    color: #d97706 !important;
+}
+
+.alert-info {
+    background-color: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    color: var(--dtms-primary) !important;
+}
+
+/* Navigation */
+.navbar {
+    background-color: white !important;
+    border-bottom: 1px solid var(--dtms-border) !important;
+    padding: 1rem !important;
+}
+
+.breadcrumbs {
+    color: var(--dtms-text-light) !important;
+}
+
+.breadcrumbs a {
+    color: var(--dtms-primary) !important;
+    text-decoration: none !important;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline !important;
+}
+
+/* Utility Classes */
+.text-primary {
+    color: var(--dtms-primary) !important;
+}
+
+.text-secondary {
+    color: var(--dtms-secondary) !important;
+}
+
+.text-accent {
+    color: var(--dtms-accent) !important;
+}
+
+.bg-primary {
+    background-color: var(--dtms-primary) !important;
+}
+
+.bg-secondary {
+    background-color: var(--dtms-secondary) !important;
+}
+
+.bg-accent {
+    background-color: var(--dtms-accent) !important;
+}
+
+.bg-base-100 {
+    background-color: var(--dtms-bg) !important;
+}
+
+.text-base-content {
+    color: var(--dtms-text) !important;
 }

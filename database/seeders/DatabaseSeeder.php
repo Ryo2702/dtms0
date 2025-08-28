@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Department;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,24 +16,34 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed roles first
+        // Call the RoleSeeder first
         $this->call(RoleSeeder::class);
 
-        // Admin account
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@example.com'], // unique check
+        // Ensure at least one department exists
+        $department = Department::firstOrCreate(
+            ['code' => 'ADM'],
             [
-                'municipal_id' => 'A-0001',
-                'name' => 'System Admin',
-                'department' => 'Administrator',
-                'type' => 'Admin',
-                'password' => Hash::make('password'),
+                'name' => 'Administration',
+                'description' => 'Default department for Admin users',
+                'logo' => null,
+                'color' => '#000000',
+                'status' => true,
             ]
         );
 
-        // Assign role to admin
-        if (! $admin->hasRole('Admin')) {
-            $admin->assignRole('Admin');
-        }
+        // Create Admin user if not exists
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name'          => 'System Admin',
+                'password'      => Hash::make('password'), // ⚠️ Change after seeding
+                'department_id' => $department->id,
+                'type'          => 'Admin',
+                'status'        => true,
+            ]
+        );
+
+        // ✅ Assign Admin role
+        $admin->assignRole('Admin');
     }
 }

@@ -13,7 +13,15 @@ return new class extends Migration
     {
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->string('code', 10)->unique();
+            $table->text('description')->nullable();
+            $table->string('logo')->nullable();
+            $table->string('color', 7)->default('#3B82F6');
+            $table->boolean('status')->default(1);
             $table->timestamps();
+
+            $table->index(['code', 'status']);
         });
     }
 
