@@ -22,6 +22,7 @@ class DepartmentRequest extends FormRequest
     public function rules(): array
     {
         $id = $this->route('department')?->id;
+        $isCreate = $this->isMethod('post');
 
         return [
             'name' => [
@@ -75,6 +76,18 @@ class DepartmentRequest extends FormRequest
                 'array',
             ],
 
+            // Head creation fields (required on create)
+            'head_name' => $isCreate
+                ? ['required', 'string', 'max:255']
+                : ['nullable', 'string', 'max:255'],
+
+            'head_email' => $isCreate
+                ? ['required', 'email', 'unique:users,email']
+                : ['nullable', 'email', Rule::unique('users', 'email')->ignore($this->route('department')?->head_id)],
+
+            'head_password' => $isCreate
+                ? ['required', 'string', 'min:8', 'confirmed']
+                : ['nullable', 'string', 'min:8', 'confirmed'],
         ];
     }
 
@@ -102,6 +115,17 @@ class DepartmentRequest extends FormRequest
             'color.regex' => 'Color must be a valid hex color code (e.g., #FF0000 or #F00).',
 
             'status.boolean' => 'Status must be either active (1) or inactive (0).',
+
+            'head_name.required' => 'Department head name is required when creating a department.',
+            'head_name.max' => 'Department head name must not exceed 255 characters.',
+
+            'head_email.required' => 'Department head email is required when creating a department.',
+            'head_email.email' => 'Department head email must be a valid email address.',
+            'head_email.unique' => 'The head email is already in use.',
+
+            'head_password.required' => 'Department head password is required when creating a department.',
+            'head_password.min' => 'Department head password must be at least 8 characters.',
+            'head_password.confirmed' => 'Department head password confirmation does not match.',
         ];
     }
 
@@ -119,6 +143,9 @@ class DepartmentRequest extends FormRequest
             'status' => 'status',
             'head_id' => 'department head',
             'staff_ids' => 'department staff',
+            'head_name' => 'head name',
+            'head_email' => 'head email',
+            'head_password' => 'head password',
         ];
     }
 

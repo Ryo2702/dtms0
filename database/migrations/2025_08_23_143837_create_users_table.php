@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('municipal_id')->unique();
+            $table->string('employee_id')->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
@@ -28,7 +28,7 @@ return new class extends Migration
 
             $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
             $table->index(['department_id', 'type']);
-            $table->index(['municipal_id', 'status']);
+            $table->index(['employee_id', 'status']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

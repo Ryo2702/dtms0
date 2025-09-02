@@ -12,8 +12,7 @@
                 <li><strong>Type:</strong> {{ $user->type }}</li>
                 <li><strong>Status:</strong> {{ $user->is_active ? 'Active' : 'Inactive' }}</li>
                 <li><strong>Department:</strong> {{ $user->department->name ?? 'N/A' }}</li>
-                <li><strong>Municipal ID:</strong> {{ $user->municipal_id }}</li>
-                <!-- Add more fields as needed -->
+                <li><strong>Municipal ID:</strong> {{ $user->employee_id }}</li>
             </ul>
             <a href="{{ route('admin.users.index') }}" class="btn btn-secondary mt-3">Back to Users</a>
         </div>

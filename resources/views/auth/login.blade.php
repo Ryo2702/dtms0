@@ -20,8 +20,8 @@
                 <form method="POST" action="{{ route('login.store') }}">
                     @csrf
                     <label class="form-control">
-                        <div class="label"><span class="label-text">Municipal ID</span></div>
-                        <input type="text" name="municipal_id" class="input input-bordered" required>
+                        <div class="label"><span class="label-text">Employee ID</span></div>
+                        <input type="text" name="employee_id" class="input input-bordered" required>
                     </label>
 
                     <label class="form-control mt-4">

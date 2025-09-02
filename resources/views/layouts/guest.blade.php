@@ -11,9 +11,9 @@
 
 <body class="min-h-screen bg-cover bg-center relative" style="background-image: url('{{ asset('images/bg.jpg') }}');">
 
-    <main class="relative z-10 flex items-center justify-center min-h-screen">
+    <section class="relative z-10 flex items-center justify-center min-h-screen">
         @yield('content')
-    </main>
+    </section>
 </body>
 
 </html>

@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class DepartmentController extends Controller
 {
@@ -78,28 +81,49 @@ class DepartmentController extends Controller
 
             $data = $request->validated();
 
-            // Handle logo upload
-            if ($request->hasFile('logo')) {
-                $logo = $request->file('logo');
-                $filename = time() . '_' . $logo->getClientOriginalName();
-                $data['logo'] = $logo->storeAs('departments', $filename, 'public');
-            }
+            // head validation moved to DepartmentRequest
 
-            // Ensure status is set
-            $data['status'] = $data['status'] ?? 1;
+            DB::transaction(function () use ($request, $data) {
+                // Handle logo upload
+                if ($request->hasFile('logo')) {
+                    $logo = $request->file('logo');
+                    $filename = time() . '_' . $logo->getClientOriginalName();
+                    $data['logo'] = $logo->storeAs('departments', $filename, 'public');
+                }
 
-            // Create department
-            $department = Department::create($data);
+                $data['status'] = $data['status'] ?? 1;
+
+                // Create department
+                $department = Department::create($data);
+
+                // Create department head (only if head fields provided)
+                if ($request->filled('head_email')) {
+                    $head = User::create([
+                        'name'          => $request->input('head_name'),
+                        'email'         => $request->input('head_email'),
+                        'password'      => Hash::make($request->input('head_password')),
+                        'department_id' => $department->id,
+                        'type'          => 'Head',
+                        'status'        => 1,
+                    ]);
+
+                    // Ensure role exists and assign
+                    \Spatie\Permission\Models\Role::firstOrCreate(
+                        ['name' => 'Head', 'guard_name' => 'web']
+                    );
+                    $head->assignRole($head->type);
+                }
+            });
 
             return redirect()->route('admin.departments.index')
-                ->with('success', "Department '{$department->name}' created successfully!");
+                ->with('success', "Department and Head created successfully!");
         } catch (\Exception $e) {
-            Log::error('Department creation failed:', [
+            Log::error('Department creation with head failed:', [
                 'error' => $e->getMessage(),
                 'data' => $request->all()
             ]);
 
-            return back()->with('error', 'Failed to create department. Please try again.')
+            return back()->with('error', 'Failed to create department and head. Please try again.')
                 ->withInput();
         }
     }
@@ -109,6 +133,7 @@ class DepartmentController extends Controller
      */
     public function show(Department $department)
     {
+
         $department->load(['head', 'staff', 'admin']);
 
         // Get department statistics
@@ -134,14 +159,6 @@ class DepartmentController extends Controller
         return view('admin.departments.edit', compact('department'));
     }
 
-    /**
-     * Remove the specified resource from storage (soft delete or hard delete).
-     */
-    public function destroy(Department $department)
-    {
-        // Redirect to archive method instead of hard delete
-        return $this->archive($department);
-    }
 
     /**
      * Update the specified resource in storage.
@@ -165,10 +182,8 @@ class DepartmentController extends Controller
                 $data['logo'] = $logo->storeAs('departments', $filename, 'public');
             }
 
-            // Store original code for comparison
             $originalCode = $department->code;
 
-            // Update department
             $department->update($data);
 
             // If code changed, regenerate municipal IDs for all users in this department
@@ -190,45 +205,7 @@ class DepartmentController extends Controller
         }
     }
 
-    public function archive(Department $department)
-    {
-        try {
-            $this->authorize('delete', $department);
 
-            $activeUserCount = $department->getActiveUsersCount();
-            if ($activeUserCount > 0) {
-                return back()->with(
-                    'error',
-                    "Cannot archive department '{$department->name}'. It has {$activeUserCount} active users"
-                );
-            }
-
-            $department->update(['status' => 0]);
-
-            return back()->with('success', "Depart");
-        } catch (\Exception $e) {
-        }
-    }
-    /**
-     * Unarchive the specified resource.
-     */
-    public function unarchive(Department $department)
-    {
-        try {
-            $this->authorize('delete', $department);
-
-            $department->update(['status' => 1]);
-
-            return back()->with('success', "Department '{$department->name}' has been unarchived successfully!");
-        } catch (\Exception $e) {
-            Log::error('Department unarchiving failed:', [
-                'error' => $e->getMessage(),
-                'department_id' => $department->id
-            ]);
-
-            return back()->with('error', 'Failed to unarchive department. Please try again.');
-        }
-    }
     /**
      * Regenerate municipal IDs for all users in department
      */

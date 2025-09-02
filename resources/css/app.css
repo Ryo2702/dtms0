@@ -67,7 +67,7 @@ body {
 main {
     flex: 1 !important;
     padding: 1.5rem !important;
-    background-color: var(--dtms-bg) !important;
+    background-color: var(--dtms-bg);
     min-height: calc(100vh - 3rem) !important;
 }
 
@@ -248,7 +248,6 @@ main {
     display: block !important;
 }
 
-/* Alerts */
 .alert {
     border-radius: 0.5rem !important;
     padding: 1rem !important;

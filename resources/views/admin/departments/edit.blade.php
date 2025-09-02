@@ -68,12 +68,71 @@
                             <p class="text-error text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+                </div>
 
+                <hr class="my-8">
+
+                <h2 class="text-xl font-semibold mb-4">Department Head Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Head Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Head Name</span>
+                        </label>
+                        <input type="text" name="head_name"
+                            value="{{ old('head_name', optional($department->head)->name) }}"
+                            class="input input-bordered @error('head_name') input-error @enderror"
+                            placeholder="Enter head's name" required />
+                        @error('head_name')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Head Email -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Head Email</span>
+                        </label>
+                        <input type="email" name="head_email"
+                            value="{{ old('head_email', optional($department->head)->email) }}"
+                            class="input input-bordered @error('head_email') input-error @enderror"
+                            placeholder="Enter head's email" required />
+                        @error('head_email')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Head Password -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Head Password <span class="text-xs text-gray-500">(Leave blank to keep
+                                    current)</span></span>
+                        </label>
+                        <input type="password" name="head_password"
+                            class="input input-bordered @error('head_password') input-error @enderror"
+                            placeholder="Enter new password" />
+                        @error('head_password')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Head Password Confirmation -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Confirm Head Password</span>
+                        </label>
+                        <input type="password" name="head_password_confirmation"
+                            class="input input-bordered @error('head_password_confirmation') input-error @enderror"
+                            placeholder="Confirm new password" />
+                        @error('head_password_confirmation')
+                            <p class="text-error text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <!-- Submit Button -->
                 <div class="mt-6 flex justify-end">
-                    <button type="submit" class="btn btn-primary">Update Department</button>
+                    <button type="submit" class="btn btn-primary">Update Department &amp; Head</button>
                 </div>
             </form>
         </div>

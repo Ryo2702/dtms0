@@ -17,7 +17,7 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'municipal_id' => 'required',
+            'employee_id' => 'required',
             'password' => 'required',
         ]);
 

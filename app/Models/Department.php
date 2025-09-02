@@ -17,7 +17,6 @@ class Department extends Model
         'code',
         'description',
         'logo',
-        'color',
         'status'
     ];
 
@@ -86,14 +85,15 @@ class Department extends Model
         $lastUser = DB::table('users')
             ->where('department_id', $this->id)
             ->where('type', $type)
-            ->where('municipal_id', 'like', $prefix . '%')
-            ->orderBy('municipal_id', 'desc')
+            ->where('employee_id', 'like', $prefix . '%')
+            ->orderBy('employee_id', 'desc')
             ->first();
 
         if (!$lastUser) {
             $nextNumber = 1;
         } else {
-            $lastCode = $lastUser->municipal_id;
+            // use employee_id (the actual column) not municipal_id
+            $lastCode = $lastUser->employee_id;
             $lastDashPos = strrpos($lastCode, '-');
             if ($lastDashPos !== false) {
                 $number = (int) substr($lastCode, $lastDashPos + 1);

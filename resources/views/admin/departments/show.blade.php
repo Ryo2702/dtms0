@@ -35,7 +35,6 @@
                         <p><strong>Staff Count:</strong> {{ $stats['staff_count'] }}</p>
                         <p><strong>Active Staff:</strong> {{ $stats['active_staff'] }}</p>
                         <p><strong>Has Head:</strong> {{ $stats['has_head'] ? 'Yes' : 'No' }}</p>
-                        <p><strong>Has Admin:</strong> {{ $stats['has_admin'] ? 'Yes' : 'No' }}</p>
                     </div>
                 </div>
             </div>

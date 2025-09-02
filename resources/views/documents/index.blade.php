@@ -1,17 +1,37 @@
 @extends('layouts.app')
-
 @section('content')
-    <div class="p-6">
-        <h1 class="text-2xl font-bold mb-6">Available Documents</h1>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach ($documents as $doc)
-                <a href="{{ route('documents.download', $doc['file']) }}"
-                    class="block bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition">
-                    <h2 class="text-lg font-semibold mb-2">{{ $doc['title'] }}</h2>
-                    <p class="text-gray-600">Click to download</p>
-                </a>
-            @endforeach
+    <div class="container max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-semibold">Available Documents</h1>
         </div>
+
+        @if (count($documents))
+            <div class="space-y-3">
+                @foreach ($documents as $doc)
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="card-title">{{ $doc['title'] }}</h2>
+                                    <p class="text-base-content/70">{{ $doc['file'] }}</p>
+                                </div>
+                                <a href="{{ route('documents.form', ['file' => $doc['file']]) }}" class="btn btn-primary">
+                                    Fill & Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="alert alert-info">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    class="stroke-current shrink-0 w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>No documents available.</span>
+            </div>
+        @endif
     </div>
 @endsection

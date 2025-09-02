@@ -23,7 +23,7 @@ class User extends Authenticatable
      */
 
     protected $fillable = [
-        'municipal_id',
+        'employee_id',
         'name',
         'email',
         'password',
@@ -60,16 +60,16 @@ class User extends Authenticatable
                 $user->status = 1;
             }
             // Only generate municipal_id if it's not already set and we have the required fields
-            if (empty($user->municipal_id) && $user->department_id && $user->type) {
+            if (empty($user->employee_id) && $user->department_id && $user->type) {
                 $department = Department::find($user->department_id);
                 if ($department) {
-                    $user->municipal_id = $department->generateMunicipalId($user->type);
+                    $user->employee_id = $department->generateMunicipalId($user->type);
                 }
             }
         });
 
         static::updating(function ($user) {
-            // Regenerate municipal_id if department_id or type has changed
+            // Regenerate employee_id if department_id or type has changed
             $original = $user->getOriginal();
             $departmentChanged = $user->department_id !== $original['department_id'];
             $typeChanged = $user->type !== $original['type'];
@@ -77,7 +77,7 @@ class User extends Authenticatable
             if (($departmentChanged || $typeChanged) && $user->department_id && $user->type) {
                 $department = Department::find($user->department_id);
                 if ($department) {
-                    $user->municipal_id = $department->generateMunicipalId($user->type);
+                    $user->employee_id = $department->generateMunicipalId($user->type);
                 }
             }
         });
@@ -132,28 +132,6 @@ class User extends Authenticatable
         return $this->last_activity->diffForHumans();
     }
 
-    public function archive(): HasOne
-    {
-        return $this->hasOne(UserArchive::class);
-    }
-
-    public function deactivate($reason = null, $deactivatedBy = null)
-    {
-        $this->update(['status' => 0]);
-
-        // Create archive record
-        UserArchive::create([
-            'user_id' => $this->id,
-            'municipal_id' => $this->municipal_id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'department_id' => $this->department_id,
-            'type' => $this->type,
-            'reason' => $reason,
-            'deactivated_at' => now(),
-            'deactivated_by' => $deactivatedBy ?? Auth::id(),
-        ]);
-    }
 
     public function activate()
     {
@@ -238,17 +216,14 @@ class User extends Authenticatable
      */
     public function hasValidMunicipalId(): bool
     {
-        if (!$this->municipal_id) {
+        if (!$this->employee_id) {
             return false;
         }
 
         // Check if it matches the pattern: CODE+TYPE-YEAR-NUMBER
-        return preg_match('/^[A-Z]{2,5}[A-Z]-\d{4}-\d{3}$/', $this->municipal_id);
+        return (bool) preg_match('/^[A-Z]{2,5}[A-Z]-\d{4}-\d{3}$/', $this->employee_id);
     }
 
-    /**
-     * Regenerate municipal_id based on current department and type
-     */
     public function regenerateMunicipalId(): bool
     {
         if (!$this->department_id || !$this->type) {
@@ -260,7 +235,7 @@ class User extends Authenticatable
             return false;
         }
 
-        $this->municipal_id = $department->generateMunicipalId($this->type);
+        $this->employee_id = $department->generateMunicipalId($this->type);
         return $this->save();
     }
 }

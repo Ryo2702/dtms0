@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('code', 10)->unique();
             $table->text('description')->nullable();
             $table->string('logo')->nullable();
-            $table->string('color', 7)->default('#3B82F6');
             $table->boolean('status')->default(1);
             $table->timestamps();
 
