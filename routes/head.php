@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Document\DocumentController;
 use App\Http\Controllers\Head\Staff\StaffController;
 use Illuminate\Support\Facades\Route;
 

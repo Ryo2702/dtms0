@@ -35,18 +35,6 @@
                     </div>
                 </div>
             </div>
-
-            @php
-                $user = Auth::user();
-                // DEBUG - remove after testing
-                dump([
-                    'id' => $user->id ?? null,
-                    'email' => $user->email ?? null,
-                    'type' => $user->type ?? null,
-                    'roles' => $user->getRoleNames()->all(),
-                    'roles_relation' => $user->roles->toArray(),
-                ]);
-            @endphp
         </div>
     </div>
 @endsection

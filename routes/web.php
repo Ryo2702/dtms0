@@ -2,15 +2,21 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Document\DocumentController;
+use App\Http\Controllers\Verification\VerificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+
 
 Route::get('/', function () {
     return view('welcome');
 });
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.store');
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+Route::get('/verify/{code}', [VerificationController::class, 'verify'])->name('documents.verify');
+Route::get('/qr/{code}', [VerificationController::class, 'qrcode'])->name('documents.qrcode');
+Route::get('/lookup', [VerificationController::class, 'lookup'])->name('documents.lookup');
 
 Route::middleware(['auth'])->group(function () {
     // Single dashboard route that handles all roles
@@ -21,11 +27,26 @@ Route::middleware(['auth'])->group(function () {
 
         return view('dashboard', compact('user'));
     })->name('dashboard');
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+    // Document routes
     Route::prefix('documents')->name('documents.')->group(function () {
         Route::get('/', [DocumentController::class, 'index'])->name('index');
         Route::get('/{file}/fill', [DocumentController::class, 'form'])->name('form');
         Route::post('/{file}/download', [DocumentController::class, 'download'])->name('download');
+
+        // Review routes nested under documents
+        Route::prefix('reviews')->name('reviews.')->group(function () {
+            Route::get('/', [DocumentController::class, 'reviewIndex'])->name('index');
+            Route::get('/received', [DocumentController::class, 'receivedIndex'])->name('received');
+            Route::get('/sent', [DocumentController::class, 'sentIndex'])->name('sent');
+            Route::get('/completed', [DocumentController::class, 'completedIndex'])->name('completed');
+            Route::get('/admin-track', [DocumentController::class, 'adminTrackIndex'])->name('admin.track');
+            Route::get('/{id}', [DocumentController::class, 'reviewShow'])->name('show');
+            Route::put('/{id}', [DocumentController::class, 'reviewUpdate'])->name('update');
+            Route::get('/{id}/download', [DocumentController::class, 'reviewDownload'])->name('download');
+            Route::get('/{id}/return', [DocumentController::class, 'returnToOriginal'])->name('return');
+        });
     });
 
     Route::middleware(['role:Staff'])->group(function () {
