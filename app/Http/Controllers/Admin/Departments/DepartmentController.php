@@ -24,10 +24,10 @@ class DepartmentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Department::with(['head', 'staff'])->latest();
+        $query = Department::with(['head']);
 
-        // Filter by status
-        $status = $request->get('status', 'active');
+        // Status filtering
+        $status = $request->get('status');
         if ($status === 'active') {
             $query->active();
         } elseif ($status === 'inactive') {
@@ -44,13 +44,21 @@ class DepartmentController extends Controller
             });
         }
 
-        $departments = $query->paginate(10)->withQueryString();
+        // Sorting
+        $sort = $request->get('sort', 'id');
+        $direction = $request->get('direction', 'asc');
+
+        if (in_array($sort, ['id', 'name', 'created_at'])) {
+            $query->orderBy($sort, $direction);
+        }
 
         // Get counts for dashboard
         $totalDepartments = Department::count();
         $activeDepartments = Department::active()->count();
         $inactiveDepartments = Department::where('status', 0)->count();
         $departmentsWithHeads = Department::active()->whereHas('head')->count();
+
+        $departments = $query->paginate(10)->withQueryString();
 
         return view('admin.departments.index', compact(
             'departments',

@@ -11,7 +11,6 @@
                         <p class="text-base-content/70">Send document to another department for review and processing
                         </p>
                     </div>
-                    <div class="badge badge-info">Review Required</div>
                 </div>
 
                 @if ($errors->any())
@@ -114,37 +113,29 @@
                     <!-- Document Processing Section - REQUIRED -->
                     <div class="card bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
                         <div class="card-body">
-                            <h3 class="card-title text-lg text-green-800 mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                </svg>
-                                Send Document for Department Review
-                            </h3>
-
-                            <div class="alert alert-info mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6"
-                                    fill="none" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div>
-                                    <h4 class="font-bold">Review Process Required</h4>
-                                    <p class="text-sm">All documents must go through department review before download.
-                                        Document will be processed through multiple departments as needed.</p>
+                            <div class="flex justify-between relative">
+                                <h3 class="card-title text-lg text-green-800 mb-4 flex">
+                                    <i data-lucide="send" class="h-4 w-4 mr-2" stroke='currentColor'></i>
+                                    Send Document for Department Review
+                                </h3>
+                                <button class="ml-2 p-1 rounded-full transition" onclick="toggleInstruction(this)">
+                                    <i data-lucide="circle-alert" class="w-5 h-5"></i>
+                                </button>
+                                <div
+                                    class="instruction-box absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg hidden">
+                                    All documents must go through department review or need payment before download.
+                                    Document will be processed through multiple departments as needed.
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div class="form-control">
                                     <label class="label">
-                                        <span class="label-text font-semibold">Send to Department *</span>
+                                        <span class="label-text font-semibold">Send to Department </span>
                                         <span class="label-text-alt">Choose the first department to review</span>
                                     </label>
                                     <select name="reviewer_id" class="select select-bordered" required>
                                         <option value="">Select department for initial review</option>
-                                        {{-- Fix: use 'type' instead of 'role' --}}
                                         @foreach (\App\Models\User::with('department')->where('type', 'Head')->where('id', '!=', auth()->id())->get()->groupBy('department.name') as $deptName => $users)
                                             <optgroup label="{{ $deptName ?? 'No Department' }}">
                                                 @foreach ($users as $user)
@@ -164,9 +155,9 @@
 
                                 <div class="form-control">
                                     <label class="label">
-                                        <span class="label-text font-semibold">Review Time Limit *</span>
+                                        <span class="label-text font-semibold">Review Time Limit</span>
                                     </label>
-                                    <select name="process_time" class="select select-bordered" required>
+                                    <select name="process_time" class="select select-bordered mt-6" required>
                                         <option value="">Set time limit for review</option>
                                         @for ($i = 1; $i <= 10; $i++)
                                             <option value="{{ $i }}" {{ $i == 5 ? 'selected' : '' }}>
@@ -195,44 +186,17 @@
                                     </label>
                                 @enderror
                             </div>
-
-                            <!-- Workflow Guide -->
-                            <div class="alert alert-success">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6"
-                                    fill="none" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div>
-                                    <h4 class="font-bold">Example Workflow:</h4>
-                                    <div class="text-sm space-y-1">
-                                        <p><strong>1.</strong> Staff → Human Resources Office (for verification)</p>
-                                        <p><strong>2.</strong> HR Head → Treasurer Office (for payment processing)</p>
-                                        <p><strong>3.</strong> Treasurer Head → Back to Staff (with OR number, marked as
-                                            "PAID")</p>
-                                        <p><strong>4.</strong> Staff can download document for signature</p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="card-actions justify-end mt-6">
                         <a href="{{ route('documents.index') }}" class="btn btn-outline">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
+                            <i data-lucide="move-left" class="h-5 w-5 mr-2"></i>
                             Back to Documents
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
+                            <i data-lucide="send" class="h-4 w-4 mr-2" stroke='currentColor'></i>
                             Send for Department Review
                         </button>
                     </div>
@@ -270,6 +234,19 @@
                 e.preventDefault();
                 return false;
             }
+        });
+
+        function toggleInstruction(button) {
+            const box = button.parentElement.querySelector('.instruction-box');
+            box.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.instruction-box').forEach((box) => {
+                if (!box.contains(e.target) && !box.previousElementSibling.contains(e.target)) {
+                    box.classList.add('hidden');
+                }
+            });
         });
     </script>
 @endsection

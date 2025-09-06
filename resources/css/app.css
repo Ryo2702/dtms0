@@ -330,3 +330,23 @@ main {
 .text-base-content {
     color: var(--dtms-text) !important;
 }
+/* Custom Stat Card Backgrounds */
+.bg-stat-primary {
+    background-color: #27548A !important;
+    color: white !important;
+}
+
+.bg-stat-danger {
+    background-color: #FF3F33 !important;
+    color: white !important;
+}
+
+.bg-stat-secondary {
+    background-color: #67C090 !important;
+    color: white !important;
+}
+
+.bg-stat-accent {
+    background-color: #DDA853 !important;
+    color: white !important;
+}

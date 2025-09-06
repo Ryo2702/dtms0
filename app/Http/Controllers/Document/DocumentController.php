@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use PhpOffice\PhpWord\TemplateProcessor;
-use Illuminate\Support\Facades\Schema;
 
 class DocumentController extends Controller
 {
@@ -20,7 +19,7 @@ class DocumentController extends Controller
             'file' => 'Mayors_Clearance.docx',
         ],
         [
-            'title' => 'MPOC Sample',
+            'title' => 'Municipal Peace and Order Council',
             'file' => 'MPOC_Sample.docx',
         ],
     ];
@@ -438,21 +437,18 @@ class DocumentController extends Controller
     {
         $user = Auth::user();
 
-        // Fix: Allow both Staff and Head to send for review
         if (!in_array($user->type, ['Staff', 'Head'])) {
             return back()->with('error', 'You do not have permission to send documents for review.');
         }
 
         $reviewer = User::findOrFail($data['reviewer_id']);
 
-        // Ensure reviewer is a Head
         if ($reviewer->type !== 'Head') {
             return back()->with('error', 'Documents can only be sent to Department Heads for review.');
         }
 
         $clientName = $data['name'] ?? $data['resident_name'] ?? 'Unknown';
 
-        // Fix: Ensure process_time is an integer
         $processTime = (int) $data['process_time'];
 
         $review = DocumentReview::create([
@@ -519,9 +515,6 @@ class DocumentController extends Controller
         if ($user->type !== 'Head' || $review->assigned_to !== $user->id) {
             abort(403, 'Only department heads can review documents.');
         }
-
-        // Documents can still be processed even if due time has passed
-        // No need to check if due_at has passed
 
         // Base validation rules
         $rules = [

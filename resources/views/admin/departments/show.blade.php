@@ -13,6 +13,11 @@
                 <div>
                     <h2 class="text-lg font-semibold">Department Details</h2>
                     <div class="mt-4 space-y-2">
+                        @if ($department->logo)
+                            <p><strong>Logo:</strong></p>
+                            <img src="{{ Storage::url($department->logo) }}" alt="{{ $department->name }} Logo"
+                                class="w-30 h-30 object-cover rounded" />
+                        @endif
                         <p><strong>Code:</strong> {{ $department->code }}</p>
                         <p><strong>Description:</strong> {{ $department->description ?? '—' }}</p>
                         <p><strong>Status:</strong>
@@ -20,13 +25,10 @@
                                 {{ $department->status ? 'Active' : 'Inactive' }}
                             </span>
                         </p>
-                        @if ($department->logo)
-                            <p><strong>Logo:</strong></p>
-                            <img src="{{ Storage::url($department->logo) }}" alt="{{ $department->name }} Logo"
-                                class="w-32 h-32 object-cover rounded" />
-                        @endif
+
                     </div>
                 </div>
+
                 <div>
                     <h2 class="text-lg font-semibold">Statistics</h2>
                     <div class="mt-4 space-y-2">
