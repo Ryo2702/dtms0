@@ -50,10 +50,10 @@
                                         {{ ucfirst($review->status) }}
                                     </span>
                                 </p>
-                                @if ($review->status === 'pending' && !$review->isExpired())
+                                @if ($review->status === 'pending' && !$review->is_overdue)
                                     <p><strong>Time Remaining:</strong> {{ $review->remaining_time }} minutes</p>
-                                @elseif($review->isExpired())
-                                    <p class="text-error"><strong>Status:</strong> Expired</p>
+                                @elseif($review->is_overdue)
+                                    <p class="text-error"><strong>Status:</strong> Overdue</p>
                                 @endif
                                 @if ($review->reviewed_at)
                                     <p><strong>Reviewed At:</strong> {{ $review->reviewed_at->format('M d, Y H:i') }}</p>
@@ -90,10 +90,7 @@
                         </div>
 
                         <!-- Review Actions for Heads Only -->
-                        @if (auth()->user()->type === 'Head' &&
-                                $review->assigned_to === auth()->id() &&
-                                $review->status === 'pending' &&
-                                !$review->isExpired())
+                        @if (auth()->user()->type === 'Head' && $review->assigned_to === auth()->id() && $review->status === 'pending')
                             <div class="divider">Review Actions (Department Head Only)</div>
 
                             <form action="{{ route('documents.reviews.update', $review->id) }}" method="POST">

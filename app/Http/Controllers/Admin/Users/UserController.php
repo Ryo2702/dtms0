@@ -47,7 +47,7 @@ class UserController extends Controller
 
         $departments = Department::active()->orderBy('name')->get();
 
-        // Get counts for dashboard
+        // Get counts
         $activeAdminCount = User::where('type', 'Admin')->active()->count();
         $activeHeadCount = User::where('type', 'Head')->active()->count();
         $activeStaffCount = User::where('type', 'Staff')->active()->count();

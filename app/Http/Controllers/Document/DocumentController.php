@@ -173,7 +173,7 @@ class DocumentController extends Controller
 
         // Add due status to each review
         $reviews->getCollection()->transform(function ($review) {
-            $review->is_due = $review->due_at && now()->greaterThan($review->due_at);
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
             return $review;
         });
@@ -199,7 +199,7 @@ class DocumentController extends Controller
         }
 
         // Add due status
-        $review->is_due = $review->due_at && now()->greaterThan($review->due_at);
+        $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
         $review->due_status = $this->getDueStatus($review);
 
         return view('documents.reviews.show', compact('review'));
@@ -251,7 +251,30 @@ class DocumentController extends Controller
 
         $completedReviews = $query->orderBy('downloaded_at', 'desc')->paginate(10);
 
-        return view('documents.reviews.completed', compact('completedReviews', 'user'));
+        // Calculate overdue statistics
+        $totalCompleted = $completedReviews->total();
+        $overdueCompleted = DocumentReview::with(['creator', 'reviewer', 'currentDepartment', 'originalDepartment'])
+            ->where('status', 'approved')
+            ->whereNotNull('downloaded_at')
+            ->whereNotNull('due_at')
+            ->whereColumn('downloaded_at', '>', 'due_at');
+
+        if ($user->type === 'Head') {
+            $overdueCompleted->where(function ($q) use ($user) {
+                $q->where('assigned_to', $user->id)
+                    ->orWhere('created_by', $user->id)
+                    ->orWhere('current_department_id', $user->department_id);
+            });
+        } else {
+            $overdueCompleted->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhere('assigned_to', $user->id);
+            });
+        }
+
+        $overdueCompletedCount = $overdueCompleted->count();
+
+        return view('documents.reviews.completed', compact('completedReviews', 'user', 'totalCompleted', 'overdueCompletedCount'));
     }
 
     // New method to get received documents (documents from other departments)
@@ -279,7 +302,7 @@ class DocumentController extends Controller
 
         // Add due status to each review
         $receivedReviews->getCollection()->transform(function ($review) {
-            $review->is_due = $review->due_at && now()->greaterThan($review->due_at);
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
             return $review;
         });
@@ -312,7 +335,7 @@ class DocumentController extends Controller
 
         // Add due status to each review
         $sentReviews->getCollection()->transform(function ($review) {
-            $review->is_due = $review->due_at && now()->greaterThan($review->due_at);
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
             return $review;
         });

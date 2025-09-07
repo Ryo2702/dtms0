@@ -104,7 +104,6 @@ class DepartmentController extends Controller
                 // Create department
                 $department = Department::create($data);
 
-                // Create department head (only if head fields provided)
                 if ($request->filled('head_email')) {
                     $head = User::create([
                         'name'          => $request->input('head_name'),
@@ -116,7 +115,7 @@ class DepartmentController extends Controller
                     ]);
 
                     // Ensure role exists and assign
-                    \Spatie\Permission\Models\Role::firstOrCreate(
+                    Role::firstOrCreate(
                         ['name' => 'Head', 'guard_name' => 'web']
                     );
                     $head->assignRole($head->type);

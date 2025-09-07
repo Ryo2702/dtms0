@@ -9,7 +9,12 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Completed Documents</h1>
-                        <p class="text-gray-600 mt-1">Documents that have been fully processed and downloaded</p>
+                        <p class="text-gray-600 mt-1">Documents that have been fully processed and downloaded
+                            @if ($overdueCompletedCount > 0)
+                                <span class="text-red-600 font-medium">({{ $overdueCompletedCount }} completed
+                                    overdue)</span>
+                            @endif
+                        </p>
                     </div>
                     <div class="flex items-center space-x-2">
                         <span
@@ -20,6 +25,17 @@
                             </svg>
                             {{ $completedReviews->total() }} Total
                         </span>
+                        @if ($overdueCompletedCount > 0)
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                {{ $overdueCompletedCount }} Overdue
+                            </span>
+                        @endif
                     </div>
                 </div>
             </div>

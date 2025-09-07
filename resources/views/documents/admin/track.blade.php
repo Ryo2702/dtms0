@@ -20,7 +20,7 @@
         </div>
 
         {{-- Enhanced Filters --}}
-        <div class="bg-white shadow-sm rounded-lg mb-6">
+        <div class="bg-white-secondary shadow-sm rounded-lg mb-6">
             <div class="p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Search & Filter Documents</h2>
                 <form method="GET" action="{{ route('documents.reviews.admin.track') }}" class="space-y-4">

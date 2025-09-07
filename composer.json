@@ -14,6 +14,7 @@
         "khanamiryan/qrcode-detector-decoder": "^2.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "mallardduck/blade-lucide-icons": "^1.23",
         "phpoffice/phpword": "^1.4",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-permission": "^6.21"

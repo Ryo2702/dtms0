@@ -107,8 +107,10 @@
                                             @else badge-info @endif">
                                                 {{ ucfirst($review->status) }}
                                             </span>
-                                            @if ($review->status === 'pending' && $review->isExpired())
-                                                <span class="badge badge-error badge-sm ml-1">Expired</span>
+                                            @if ($review->status === 'pending' && $review->is_overdue)
+                                                <span class="badge badge-error badge-sm ml-1">Overdue</span>
+                                            @elseif($review->status === 'pending' && $review->due_status === 'due_soon')
+                                                <span class="badge badge-warning badge-sm ml-1">Due Soon</span>
                                             @endif
                                         </td>
                                         <td>

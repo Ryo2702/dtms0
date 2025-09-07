@@ -69,7 +69,7 @@ class Department extends Model
     }
 
     //get the next user code
-    public function generateMunicipalId(string $type): string
+    public function generateEmployeeId(string $type): string
     {
         $year = now()->year;
         $typeCode = match ($type) {
@@ -81,7 +81,6 @@ class Department extends Model
 
         $prefix = "{$this->code}{$typeCode}-{$year}-";
 
-        // Get the last user with this pattern using raw query to avoid circular dependency
         $lastUser = DB::table('users')
             ->where('department_id', $this->id)
             ->where('type', $type)
@@ -92,14 +91,14 @@ class Department extends Model
         if (!$lastUser) {
             $nextNumber = 1;
         } else {
-            // use employee_id (the actual column) not municipal_id
+            // use employee_id (the actual column) 
             $lastCode = $lastUser->employee_id;
             $lastDashPos = strrpos($lastCode, '-');
             if ($lastDashPos !== false) {
                 $number = (int) substr($lastCode, $lastDashPos + 1);
                 $nextNumber = $number + 1;
             } else {
-                $nextNumber = 1;
+                $nextNumber =  1;
             }
         }
 

@@ -26,9 +26,10 @@ class DocumentReview extends Model
         'submitted_at',
         'reviewed_at',
         'downloaded_at',
-        'expires_at',
+        'due_at',
         'forwarding_chain',
-        'is_final_review'
+        'is_final_review',
+        'completed_on_time'
     ];
 
     protected $casts = [
@@ -37,8 +38,9 @@ class DocumentReview extends Model
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
         'downloaded_at' => 'datetime',
-        'expires_at' => 'datetime',
+        'due_at' => 'datetime',
         'is_final_review' => 'boolean',
+        'completed_on_time' => 'boolean',
         'process_time_minutes' => 'integer'
     ];
 
@@ -66,16 +68,41 @@ class DocumentReview extends Model
     // Helper methods
     public function isExpired()
     {
-        return $this->expires_at && now()->gt($this->expires_at);
+        return $this->due_at && now()->gt($this->due_at);
     }
 
     public function getRemainingTimeAttribute()
     {
-        if (!$this->expires_at || $this->isExpired()) {
+        if (!$this->due_at || $this->isExpired()) {
             return 0;
         }
 
-        return now()->diffInMinutes($this->expires_at, false);
+        return now()->diffInMinutes($this->due_at, false);
+    }
+
+    public function getDueStatusAttribute()
+    {
+        if (!$this->due_at) {
+            return 'no_deadline';
+        }
+
+        $now = now();
+        $dueAt = $this->due_at;
+
+        if ($now->lessThan($dueAt)) {
+            $minutesLeft = $now->diffInMinutes($dueAt);
+            if ($minutesLeft <= 30) {
+                return 'due_soon'; // Within 30 minutes
+            }
+            return 'on_time';
+        } else {
+            return 'overdue';
+        }
+    }
+
+    public function getIsOverdueAttribute()
+    {
+        return $this->due_at && now()->greaterThan($this->due_at) && !$this->downloaded_at;
     }
 
     public function addToForwardingChain($action, $fromUser, $toUser = null, $notes = null, $processTime = null)

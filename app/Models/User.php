@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -30,7 +31,8 @@ class User extends Authenticatable
         'department_id',
         'type',
         'status',
-        'last_activity'
+        'last_activity',
+        'avatar'
     ];
 
     protected $hidden = [
@@ -209,6 +211,19 @@ class User extends Authenticatable
         return $this->status
             ? '<span class="badge badge-success">Active</span>'
             : '<span class="badge badge-error">Inactive</span>';
+    }
+
+    /**
+     * Get the user's avatar URL or default avatar.
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar && Storage::exists('public/' . $this->avatar)) {
+            return Storage::url($this->avatar);
+        }
+
+        // Return default avatar (you can use a service like Gravatar or a default image)
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
     }
 
     /**
