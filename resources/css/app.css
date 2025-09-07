@@ -9,6 +9,8 @@
     --dtms-text: #1f2937;
     --dtms-text-light: #6b7280;
     --dtms-border: #e5e7eb;
+    --dtms-bg-secondary: #F6F4EB;
+    
 }
 
 /* Base Styles */
@@ -227,7 +229,7 @@ main {
 
 /* Forms */
 .input, .select, .textarea {
-    background-color: white !important;
+    background-color: var(--dtms-bg-secondary) !important;
     border: 1px solid var(--dtms-border) !important;
     border-radius: 0.5rem !important;
     padding: 0.75rem !important;
@@ -349,4 +351,64 @@ main {
 .bg-stat-accent {
     background-color: #DDA853 !important;
     color: white !important;
+}
+
+.bg-stat-info{
+    background-color: #8B5DFF !important;
+    color: white;
+}
+.bg-white-secondary{
+    background-color: var(--dtms-bg-secondary);
+}
+
+.join {
+    display: inline-flex !important;
+    align-items: stretch !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden !important;
+}
+
+.join-item {
+    border-radius: 0 !important;
+    margin: 0 !important;
+}
+
+.join-item:first-child {
+    border-top-left-radius: 0.5rem !important;
+    border-bottom-left-radius: 0.5rem !important;
+}
+
+.join-item:last-child {
+    border-top-right-radius: 0.5rem !important;
+    border-bottom-right-radius: 0.5rem !important;
+}
+
+.join-item:not(:first-child) {
+    margin-left: -1px !important;
+}
+
+/* Pagination Specific Styles */
+.btn-active {
+    background-color: var(--dtms-primary) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+.btn-disabled {
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.btn-disabled:hover {
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+    transform: none !important;
+}
+
+/* Pagination Button Overrides */
+.join .btn {
+    min-width: 2.5rem !important;
+    padding: 0.5rem !important;
 }

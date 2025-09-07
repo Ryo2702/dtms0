@@ -11,10 +11,10 @@
 <form action="{{ $action }}" method="GET" class="mb-6 space-y-4">
     <div class="flex flex-wrap gap-4 items-end">
         <!-- Search Input -->
-        <div class="flex-1 min-w-64">
+        <div class="flex-1 min-w-64 ">
             <label for="search" class="block text-sm font-medium mb-1">Search</label>
             <input type="text" name="search" id="search" value="{{ request('search') }}"
-                class="input input-bordered w-full" placeholder="{{ $searchPlaceholder }}">
+                class="input input-bordered w-full " placeholder="{{ $searchPlaceholder }}">
         </div>
 
         <!-- Status Filter -->

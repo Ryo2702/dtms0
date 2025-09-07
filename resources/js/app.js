@@ -12,6 +12,11 @@ import {
     MoveDown,
     Eye,
     Edit,
+    ChevronLeft,
+    ChevronRight,
+    Search,
+    RefreshCcw,
+    FileCheck,
 } from "lucide";
 
 createIcons({
@@ -25,6 +30,11 @@ createIcons({
         Plus,
         Eye,
         Edit,
+        ChevronLeft,
+        ChevronRight,
+        Search,
+        RefreshCcw,
+        FileCheck,
     },
 });
 

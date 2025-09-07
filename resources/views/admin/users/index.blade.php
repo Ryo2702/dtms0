@@ -50,7 +50,7 @@
             <h2 class="text-xl font-semibold mb-4">Heads and Their Staff</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 @foreach ($heads as $head)
-                    <div class="bg-base-100 rounded-lg shadow p-4">
+                    <div class="rounded-lg shadow p-4 bg-white-secondary">
                         <div class="font-bold mb-2">{{ $head->name }}
                             <span class="badge badge-info">{{ $head->department->name ?? 'No Department' }}</span>
                         </div>

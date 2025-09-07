@@ -43,9 +43,8 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(15)->withQueryString();
+        $users = $query->paginate(10)->withQueryString();
 
-        // Get departments for filter dropdown
         $departments = Department::active()->orderBy('name')->get();
 
         // Get counts for dashboard
@@ -54,7 +53,6 @@ class UserController extends Controller
         $activeStaffCount = User::where('type', 'Staff')->active()->count();
         $inactiveUsersCount = User::inactive()->count();
 
-        // For system admin: show staff grouped under each head
         $heads = User::where('type', 'Head')->with(['department.staff'])->get();
 
         return view('admin.users.index', compact(
