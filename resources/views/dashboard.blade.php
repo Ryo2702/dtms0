@@ -2,6 +2,23 @@
 
 @section('content')
     <div class="container mx-auto px-4 py-6">
+        <div class="p-3 lg:p-4 text-lg lg:text-xl font-bold">
+            @php
+                $user = Auth::user();
+                $isAdmin = $user->type === 'Admin';
+            @endphp
+            <h1 class="ml-2 lg:ml-4 text-xxl lg:text-base">
+                @if ($isAdmin)
+                    <span class="hidden sm:inline">System Administrator</span>
+                    <span class="sm:hidden">Admin</span>
+                @else
+                    <span class="hidden md:inline">{{ $user->department->name ?? 'Municipal System' }}</span>
+                    <span class="md:hidden">{{ Str::limit($user->department->name ?? 'Municipal', 10) }}</span>
+                @endif
+            </h1>
+        </div>
+
+
         {{-- Page Header --}}
         <x-page-header title="Dashboard" subtitle="Welcome to DTMS - Document Tracking Management System" :breadcrumbs="[['label' => 'Home', 'url' => route('dashboard')], ['label' => 'Dashboard', 'url' => null]]" />
 

@@ -110,14 +110,13 @@ class DocumentReview extends Model
         $chain = $this->forwarding_chain ?? [];
         $currentStep = count($chain) + 1;
 
-        // Fix: Ensure processTime is an integer if provided
         if ($processTime !== null) {
             $processTime = (int) $processTime;
         }
 
         $chainEntry = [
             'step' => $currentStep,
-            'action' => $action, // created, submitted_for_review, forwarded, completed, rejected, downloaded
+            'action' => $action,
             'from_user_id' => $fromUser->id,
             'from_user_name' => $fromUser->name,
             'from_user_type' => $fromUser->type,
@@ -134,7 +133,6 @@ class DocumentReview extends Model
 
         $chain[] = $chainEntry;
 
-        // Update previous step status to completed if this is a new pending step
         if (count($chain) > 1 && $chainEntry['status'] === 'pending') {
             $chain[count($chain) - 2]['status'] = 'completed';
         }
@@ -158,7 +156,6 @@ class DocumentReview extends Model
         }
     }
 
-    // Get current step in the process
     public function getCurrentStepAttribute()
     {
         if (!$this->forwarding_chain) return null;
@@ -167,7 +164,6 @@ class DocumentReview extends Model
         return $pendingStep ?? collect($this->forwarding_chain)->last();
     }
 
-    // Get progress percentage
     public function getProgressPercentageAttribute()
     {
         if (!$this->forwarding_chain) return 0;
@@ -182,7 +178,6 @@ class DocumentReview extends Model
         return $totalSteps > 0 ? round(($completedSteps / $totalSteps) * 100) : 0;
     }
 
-    // Scope for filtering
     public function scopePending($query)
     {
         return $query->where('status', 'pending');

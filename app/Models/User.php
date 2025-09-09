@@ -61,11 +61,11 @@ class User extends Authenticatable
             if (is_null($user->status)) {
                 $user->status = 1;
             }
-            // Only generate municipal_id if it's not already set and we have the required fields
+            // Only generate employee_id if it's not already set and we have the required fields
             if (empty($user->employee_id) && $user->department_id && $user->type) {
                 $department = Department::find($user->department_id);
                 if ($department) {
-                    $user->employee_id = $department->generateMunicipalId($user->type);
+                    $user->employee_id = $department->generateEmployeeId($user->type);
                 }
             }
         });
@@ -79,7 +79,7 @@ class User extends Authenticatable
             if (($departmentChanged || $typeChanged) && $user->department_id && $user->type) {
                 $department = Department::find($user->department_id);
                 if ($department) {
-                    $user->employee_id = $department->generateMunicipalId($user->type);
+                    $user->employee_id = $department->generateEmployeeId($user->type);
                 }
             }
         });

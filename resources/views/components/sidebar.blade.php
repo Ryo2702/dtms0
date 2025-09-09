@@ -14,19 +14,13 @@
                     $currentRoute = request()->route()->getName();
                 @endphp
 
-                @if ($logo)
-                    <img src="{{ $logo }}" alt="Logo" class="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover">
-                @endif
-
-                <span class="ml-2 lg:ml-4 text-sm lg:text-base">
-                    @if ($isAdmin)
-                        <span class="hidden sm:inline">System Administrator</span>
-                        <span class="sm:hidden">Admin</span>
-                    @else
-                        <span class="hidden md:inline">{{ $user->department->name ?? 'Municipal System' }}</span>
-                        <span class="md:hidden">{{ Str::limit($user->department->name ?? 'Municipal', 10) }}</span>
+                <div class="flex justify-center">
+                    @if ($logo)
+                        <img src="{{ $logo }}" alt="Logo"
+                            class="w-15 h-15 lg:w-16 lg:h-16 rounded-full object-cover">
                     @endif
-                </span>
+                </div>
+
             </div>
             @php
                 $user = Auth::user();
@@ -111,11 +105,6 @@
                     Dashboard
                 </x-sidebar-item>
 
-                <!-- Profile -->
-                <x-sidebar-item :route="route('profile.show')" :active="Str::startsWith($currentRoute, 'profile')" icon="user">
-                    My Profile
-                </x-sidebar-item>
-
                 @if ($user->type === 'Admin')
                     <x-sidebar-item :route="route('admin.users.index')" :active="Str::startsWith($currentRoute, 'admin.users')" icon="users">
                         Admins
@@ -161,9 +150,24 @@
                         Staff Accounts
                     </x-sidebar-item>
                 @endif
+
+                <!-- Profile -->
+                <x-sidebar-item :route="route('profile.show')" :active="Str::startsWith($currentRoute, 'profile')" icon="user">
+                    Profile
+                </x-sidebar-item>
+
+                <div class="p-2 lg:p-4 mt-auto">
+                    <form method="POST" action="{{ route('logout') }}" class="pt-10">
+                        @csrf
+                        <button
+                            class="btn btn-logout w-full flex items-center justify-center text-sm lg:text-base p-2 lg:p-3">
+                            <i data-lucide="log-out" class="h-4 w-4 lg:h-5 lg:w-5 mr-1 lg:mr-2"></i>
+                            <span class="hidden sm:inline">Logout</span>
+                            <span class="sm:hidden">Out</span>
+                        </button>
+                    </form>
+                </div>
             </ul>
-
-
         </aside>
     @endauth
 </div>

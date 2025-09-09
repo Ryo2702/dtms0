@@ -45,6 +45,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{file}/fill', [DocumentController::class, 'form'])->name('form');
         Route::post('/{file}/download', [DocumentController::class, 'download'])->name('download');
 
+        // Scanner routes
+        Route::get('/scanner', [DocumentController::class, 'showScanner'])->name('scanner.show');
+        Route::post('/scanner', [DocumentController::class, 'scanner'])->name('scanner');
+
         // Review routes nested under documents
         Route::prefix('reviews')->name('reviews.')->group(function () {
             Route::get('/', [DocumentController::class, 'reviewIndex'])->name('index');

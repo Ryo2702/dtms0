@@ -3,13 +3,23 @@
 namespace App\Http\Controllers\Document;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MayorClearanceRequest;
+use App\Http\Requests\MpocRequest;
+use App\Http\Requests\ReviewUpdateRequest;
 use App\Models\DocumentReview;
 use App\Models\DocumentVerification;
 use App\Models\User;
+use App\Services\DocumentReviewService;
+use App\Services\DocumentWorkflowService;
+use App\Services\DocumentDownloadService;
+use App\Services\DocumentRequestService;
+use App\ViewModels\DocumentReviewViewModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PhpOffice\PhpWord\TemplateProcessor;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DocumentController extends Controller
 {
@@ -343,7 +353,7 @@ class DocumentController extends Controller
         return view('documents.reviews.sent', compact('sentReviews', 'user'));
     }
 
-    // New method for Admin document tracking - shows all documents with journey details
+
     public function adminTrackIndex(Request $request)
     {
         $user = Auth::user();
@@ -768,8 +778,21 @@ class DocumentController extends Controller
         $templateProcessor->setValue('issued_at', now()->format('M d, Y')); // Sep 04, 2025
 
         $templateProcessor->setValue('verification_code', $verification->verification_code);
-        $templateProcessor->setValue('qr_verification_url', $verification->verification_url);
+        // Generate QR code and save as temporary file
+        $qrCodePath = $this->generateQrCodeFile($verification);
 
+        if ($qrCodePath && file_exists($qrCodePath)) {
+            // Use setImageValue instead of setValue to embed actual image
+            $templateProcessor->setImageValue('qr_verification_url', [
+                'path' => $qrCodePath,
+                'width' => 55,
+                'height' => 55,
+                'ratio' => false
+            ]);
+        } else {
+            // Fallback - remove the placeholder if QR generation fails
+            $templateProcessor->setValue('qr_verification_url', '');
+        }
         // Process template based on document type
         if ($review->document_type === "Mayor's Clearance") {
             $templateProcessor->setValue('name', $data['name'] ?? '');
@@ -801,5 +824,38 @@ class DocumentController extends Controller
         return response()->download($outputPath, $fileName, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ])->deleteFileAfterSend(true);
+    }
+
+    private function generateQrCodeFile($verification)
+    {
+        try {
+            // Create QR code data with document information
+            $qrData = "Document ID: {$verification->document_id}\n";
+            $qrData .= "Title: {$verification->document_type}\n";
+            $qrData .= "Name: {$verification->client_name}\n";
+            $qrData .= "Employee ID: {$verification->employee_id}\n";
+            $qrData .= "Department: {$verification->department}\n";
+            $qrData .= "Verification URL: " . route('documents.verify', $verification->verification_code);
+
+            // Generate temporary file path
+            $tempPath = storage_path('app/temp/qr_' . $verification->verification_code . '.png');
+
+            // Ensure directory exists
+            $tempDir = dirname($tempPath);
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            // Generate QR code and save to file
+            QrCode::format('png')
+                ->size(200)
+                ->margin(1)
+                ->generate($qrData, $tempPath);
+
+            return $tempPath;
+        } catch (\Exception $e) {
+            Log::error('Failed to generate QR code file: ' . $e->getMessage());
+            return null;
+        }
     }
 }

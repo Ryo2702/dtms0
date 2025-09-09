@@ -2,7 +2,7 @@
 
 <li class="mb-2">
     <a href="{{ $route }}"
-        class="flex items-center justify-between p-2 lg:p-3 rounded-lg transition-colors duration-200 
+        class="flex items-center justify-between p-2 lg:p-1 rounded-lg transition-colors duration-200 
         {{ $active ? 'bg-black/30 text-white border-l-4 border-white font-semibold' : 'hover:bg-dtms-secondary/50' }}">
 
         <div class="flex items-center">
