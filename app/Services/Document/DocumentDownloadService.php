@@ -1,0 +1,161 @@
+<?php
+
+namespace App\Services\Document;
+
+use App\Models\DocumentReview;
+use App\Models\DocumentVerification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpWord\TemplateProcessor;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
+class DocumentDownloadService
+{
+    public function generateDocument(DocumentReview $review)
+    {
+        $user = Auth::user();
+
+        // Add download step to chain
+        $review->addToForwardingChain(
+            'downloaded',
+            $user,
+            null,
+            'Document downloaded by original creator for client signature',
+            null
+        );
+
+        $verification = $this->createVerification($review, $user);
+        $review->update(['downloaded_at' => now()]);
+
+        $templatePath = $this->getTemplatePath($review->document_type);
+        $templateProcessor = new TemplateProcessor($templatePath);
+
+        $this->populateTemplate($templateProcessor, $review, $verification, $user);
+
+        $fileName = $review->document_id . '_' . str_replace(' ', '_', $review->document_type) . '.docx';
+        $outputPath = storage_path("app/temp/{$fileName}");
+
+        $this->ensureDirectoryExists(dirname($outputPath));
+        $templateProcessor->saveAs($outputPath);
+
+        return response()->download($outputPath, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
+    }
+
+    private function createVerification(DocumentReview $review, $user): DocumentVerification
+    {
+        return DocumentVerification::create([
+            'verification_code' => DocumentVerification::generateVerificationCode(),
+            'document_id' => $review->document_id,
+            'document_type' => $review->document_type,
+            'client_name' => $review->client_name,
+            'issued_by' => $user->name,
+            'issued_by_id' => $user->employee_id ?? $user->id,
+            'issued_at' => now(),
+            'document_data' => $review->document_data,
+            'official_receipt_number' => $review->official_receipt_number
+        ]);
+    }
+
+    private function getTemplatePath(string $documentType): string
+    {
+        $file = match ($documentType) {
+            "Mayor's Clearance" => 'Mayors_Clearance.docx',
+            'MPOC Sample' => 'MPOC_Sample.docx',
+            default => throw new \InvalidArgumentException('Document template not found.')
+        };
+
+        $templatePath = storage_path("app/public/templates/{$file}");
+
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException('Document template file not found.');
+        }
+
+        return $templatePath;
+    }
+
+    private function populateTemplate(TemplateProcessor $processor, DocumentReview $review, DocumentVerification $verification, $user): void
+    {
+        // Common fields
+        $processor->setValue('employee_id', $user->employee_id ?? 'N/A');
+        $processor->setValue('document_id', $review->document_id ?? 'N/A');
+        $processor->setValue('issued_at', now()->format('M d, Y'));
+        $processor->setValue('verification_code', $verification->verification_code);
+
+        // QR Code
+        $qrCodePath = $this->generateQrCodeFile($verification);
+        if ($qrCodePath && file_exists($qrCodePath)) {
+            $processor->setImageValue('qr_verification_url', [
+                'path' => $qrCodePath,
+                'width' => 55,
+                'height' => 55,
+                'ratio' => false
+            ]);
+        } else {
+            $processor->setValue('qr_verification_url', '');
+        }
+
+        // Document-specific fields
+        $data = $review->document_data;
+
+        if ($review->document_type === "Mayor's Clearance") {
+            $this->populateMayorsClearance($processor, $data, $review);
+        } elseif ($review->document_type === 'MPOC Sample') {
+            $this->populateMpoc($processor, $data);
+        }
+    }
+
+    private function populateMayorsClearance(TemplateProcessor $processor, array $data, DocumentReview $review): void
+    {
+        $processor->setValue('name', $data['name'] ?? '');
+        $processor->setValue('address', $data['address'] ?? '');
+        $processor->setValue('purpose', $data['purpose'] ?? '');
+        $processor->setValue('fee', $data['fee'] ?? '');
+        $processor->setValue('or_number', $review->official_receipt_number ?? 'N/A');
+        $processor->setValue('date', $data['date'] ?? now()->format('Y-m-d'));
+    }
+
+    private function populateMpoc(TemplateProcessor $processor, array $data): void
+    {
+        $processor->setValue('barangay_chairman', $data['barangay_chairman'] ?? '');
+        $processor->setValue('barangay_name', $data['barangay_name'] ?? '');
+        $processor->setValue('barangay_clearance_date', $data['barangay_clearance_date'] ?? '');
+        $processor->setValue('resident_name', $data['resident_name'] ?? '');
+        $processor->setValue('resident_barangay', $data['resident_barangay'] ?? '');
+        $processor->setValue('certification_date', $data['certification_date'] ?? now()->format('Y-m-d'));
+        $processor->setValue('requesting_party', $data['requesting_party'] ?? '');
+    }
+
+    private function generateQrCodeFile(DocumentVerification $verification): ?string
+    {
+        try {
+            $qrData = "Document ID: {$verification->document_id}\n";
+            $qrData .= "Title: {$verification->document_type}\n";
+            $qrData .= "Name: {$verification->client_name}\n";
+            $qrData .= "Employee ID: {$verification->employee_id}\n";
+            $qrData .= "Department: {$verification->department}\n";
+            $qrData .= "Verification URL: " . route('documents.verify', $verification->verification_code);
+
+            $tempPath = storage_path('app/temp/qr_' . $verification->verification_code . '.png');
+            $this->ensureDirectoryExists(dirname($tempPath));
+
+            QrCode::format('png')
+                ->size(200)
+                ->margin(1)
+                ->generate($qrData, $tempPath);
+
+            return $tempPath;
+        } catch (\Exception $e) {
+            Log::error('Failed to generate QR code file: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function ensureDirectoryExists(string $directory): void
+    {
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+    }
+}

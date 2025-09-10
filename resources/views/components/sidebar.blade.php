@@ -114,7 +114,7 @@
                         Departments
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.reviews.admin.track')" :active="$currentRoute === 'documents.reviews.admin.track'" icon="file-search">
+                    <x-sidebar-item :route="route('admin.documents.track')" :active="$currentRoute === 'documents.reviews.admin.track'" icon="file-search">
                         Document Track
                     </x-sidebar-item>
                 @endif
