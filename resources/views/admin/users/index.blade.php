@@ -6,8 +6,7 @@
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <x-stat-card bgColor="bg-stat-primary" title="Active Admins" :value="$activeAdminCount" />
-            <x-stat-card bgColor="bg-stat-secondary" title="Active Heads" :value="$activeHeadCount" />
+            <x-stat-card bgColor="bg-stat-secondary" title="Active Admins" :value="$activeHeadCount" />
             <x-stat-card bgColor="bg-stat-accent" title="Active Staff" :value="$activeStaffCount" />
             <x-stat-card bgColor="bg-stat-danger" title="Inactive Users" :value="$inactiveUsersCount" />
         </div>
@@ -17,7 +16,7 @@
             :statuses="['active' => 'Active', 'inactive' => 'Inactive']" containerId="filter-results" />
 
         <div id="filter-results">
-            <x-data-table :headers="['ID', 'Employee ID', 'Name', 'Email', 'Type', 'Department', 'Status', 'Online', 'Actions']" :paginator="$users" emptyMessage="No users found.">
+            <x-data-table :headers="['ID', 'Employee ID', 'Name', 'Email', 'Type', 'Department', 'Status', 'Online', 'Actions']" :paginator="$users" :sortableFields="['id', 'employee_id', 'name', 'email', 'type']" emptyMessage="No users found.">
 
                 @foreach ($users as $user)
                     <tr>
