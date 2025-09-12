@@ -46,6 +46,7 @@
                                     @if ($review->status === 'pending') badge-warning
                                     @elseif($review->status === 'approved') badge-success
                                     @elseif($review->status === 'rejected') badge-error
+                                    @elseif($review->status === 'canceled') badge-neutral
                                     @else badge-info @endif">
                                         {{ ucfirst($review->status) }}
                                     </span>
@@ -117,6 +118,7 @@
                                         <option value="forward">Forward to Another Department</option>
                                         <option value="complete">Complete Review & Return to Staff</option>
                                         <option value="reject">Reject Document</option>
+                                        <option value="cancel">Cancel Document</option>
                                     </select>
                                 </div>
 
@@ -238,6 +240,39 @@
                                                 </label>
                                                 <textarea name="rejection_reason" class="textarea textarea-bordered" rows="3"
                                                     placeholder="e.g., Missing required documents, Invalid client information, Fee calculation error, etc."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Cancel Options -->
+                                <div id="cancel_options" style="display: none;">
+                                    <div class="card bg-gray-50 border border-gray-200 mb-4">
+                                        <div class="card-body">
+                                            <h4 class="card-title text-gray-800">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                Cancel Document
+                                            </h4>
+                                            <div class="alert alert-warning">
+                                                <div>
+                                                    <h4 class="font-bold">Document Will Be Canceled</h4>
+                                                    <p class="text-sm">This action will permanently cancel the document
+                                                        review process.</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-control mt-4">
+                                                <label class="label">
+                                                    <span class="label-text font-semibold">Cancellation Reason *</span>
+                                                    <span class="label-text-alt">Please explain why this document is being
+                                                        canceled</span>
+                                                </label>
+                                                <textarea name="cancellation_reason" class="textarea textarea-bordered" rows="3"
+                                                    placeholder="e.g., Client request cancellation, Duplicate submission, Process no longer needed, etc."></textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -435,11 +470,13 @@
             const forwardOptions = document.getElementById('forward_options');
             const completeOptions = document.getElementById('complete_options');
             const rejectOptions = document.getElementById('reject_options');
+            const cancelOptions = document.getElementById('cancel_options');
 
             // Hide all options first
             forwardOptions.style.display = 'none';
             completeOptions.style.display = 'none';
             rejectOptions.style.display = 'none';
+            cancelOptions.style.display = 'none';
 
             // Clear all field values and requirements
             document.querySelectorAll('#forward_options select, #forward_options textarea').forEach(field => {
@@ -449,6 +486,11 @@
             });
 
             document.querySelectorAll('#reject_options textarea').forEach(field => {
+                field.removeAttribute('required');
+                field.value = '';
+            });
+
+            document.querySelectorAll('#cancel_options textarea').forEach(field => {
                 field.removeAttribute('required');
                 field.value = '';
             });
@@ -465,6 +507,9 @@
             } else if (action === 'reject') {
                 rejectOptions.style.display = 'block';
                 document.querySelector('textarea[name="rejection_reason"]').setAttribute('required', 'required');
+            } else if (action === 'cancel') {
+                cancelOptions.style.display = 'block';
+                document.querySelector('textarea[name="cancellation_reason"]').setAttribute('required', 'required');
             }
         }
 

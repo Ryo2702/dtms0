@@ -110,6 +110,13 @@ class DocumentReviewController extends Controller
                     $originalCreator = User::find($review->created_by);
                     $message = "Document rejected and returned to {$originalCreator->name} for corrections.";
                     break;
+
+                case 'cancel':
+                    $notes = $this->buildCancellationNotes($request);
+                    $this->workflowService->cancelReview($review, $user, $notes);
+                    $originalCreator = User::find($review->created_by);
+                    $message = "Document canceled and returned to {$originalCreator->name}.";
+                    break;
             }
 
             return redirect()->route('documents.reviews.index')->with('success', $message);
@@ -207,7 +214,7 @@ class DocumentReviewController extends Controller
     private function validateReviewUpdate(Request $request): void
     {
         $rules = [
-            'action' => 'required|in:complete,reject,forward',
+            'action' => 'required|in:complete,reject,forward,cancel',
             'review_notes' => 'nullable|string|max:1000',
             'or_number_update' => 'nullable|string|max:100',
             'completion_summary' => 'nullable|string|max:1000',
@@ -221,6 +228,10 @@ class DocumentReviewController extends Controller
 
         if ($request->action === 'reject') {
             $rules['rejection_reason'] = 'required|string|max:1000';
+        }
+
+        if ($request->action === 'cancel') {
+            $rules['cancellation_reason'] = 'required|string|max:1000';
         }
 
         $request->validate($rules);
@@ -244,6 +255,15 @@ class DocumentReviewController extends Controller
         return $notes;
     }
 
+    private function buildCancellationNotes(Request $request): string
+    {
+        $notes = $request->review_notes ?? '';
+        if ($request->cancellation_reason) {
+            $notes .= ($notes ? "\n\n" : '') . "Cancellation Reason: " . $request->cancellation_reason;
+        }
+        return $notes;
+    }
+
     private function applyStatusFilter($query, string $status, $user): void
     {
         switch ($status) {
@@ -252,6 +272,9 @@ class DocumentReviewController extends Controller
                 break;
             case 'rejected':
                 $query->where('status', 'rejected');
+                break;
+            case 'canceled':
+                $query->where('status', 'canceled');
                 break;
             case 'approved':
             case 'completed':
@@ -277,6 +300,7 @@ class DocumentReviewController extends Controller
         $query->where(function ($q) {
             $q->where('status', 'pending')
                 ->orWhere('status', 'rejected')
+                ->orWhere('status', 'canceled')
                 ->orWhere(function ($subQ) {
                     $subQ->where('status', 'approved')->whereNull('downloaded_at');
                 });

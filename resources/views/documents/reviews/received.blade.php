@@ -100,6 +100,12 @@
                                                 <span class="w-1.5 h-1.5 mr-1.5 bg-red-400 rounded-full"></span>
                                                 Rejected
                                             </span>
+                                        @elseif ($review->status === 'canceled')
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                <span class="w-1.5 h-1.5 mr-1.5 bg-gray-400 rounded-full"></span>
+                                                Canceled
+                                            </span>
                                         @endif
 
                                         @if ($review->due_status === 'overdue')

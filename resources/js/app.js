@@ -18,6 +18,7 @@ import {
     RefreshCcw,
     FileCheck,
     LogOut,
+    ArrowLeft,
 } from "lucide";
 
 createIcons({
@@ -37,6 +38,7 @@ createIcons({
         RefreshCcw,
         FileCheck,
         LogOut,
+        ArrowLeft,
     },
 });
 

@@ -104,6 +104,7 @@
                                             @if ($review->status === 'pending') badge-warning
                                             @elseif($review->status === 'approved') badge-success
                                             @elseif($review->status === 'rejected') badge-error
+                                            @elseif($review->status === 'canceled') badge-neutral
                                             @else badge-info @endif">
                                                 {{ ucfirst($review->status) }}
                                             </span>

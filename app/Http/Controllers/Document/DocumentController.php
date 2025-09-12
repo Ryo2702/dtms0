@@ -50,8 +50,12 @@ class DocumentController extends Controller
             abort(404, "Document not found.");
         }
 
-        $viewName = 'documents.' . strtolower(str_replace([' ', "'", '_', '.docx'], ['-', '', '-', ''], $docInfo['title']));
-
+        // Map specific files to their view names
+        $viewName = match ($file) {
+            'Mayors_Clearance.docx' => 'documents.mayors-clearance',
+            'MPOC_Sample.docx' => 'documents.mpoc-sample',
+            default => 'documents.' . strtolower(str_replace([' ', "'", '_', '.docx'], ['-', '', '-', ''], $docInfo['title']))
+        };
         return view($viewName, compact('docInfo'));
     }
 

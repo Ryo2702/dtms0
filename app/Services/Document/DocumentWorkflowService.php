@@ -163,4 +163,29 @@ class DocumentWorkflowService
             'current_department_id' => $originalCreator->department_id
         ]);
     }
+
+    public function cancelReview(DocumentReview $review, User $currentUser, string $notes): void
+    {
+        $originalCreator = User::find($review->created_by);
+
+        if (!$originalCreator) {
+            throw new \Exception('Original document creator not found.');
+        }
+
+        $review->addToForwardingChain(
+            'canceled',
+            $currentUser,
+            $originalCreator,
+            $notes,
+            null
+        );
+
+        $review->update([
+            'status' => 'canceled',
+            'review_notes' => $notes,
+            'reviewed_at' => now(),
+            'assigned_to' => $originalCreator->id,
+            'current_department_id' => $originalCreator->department_id
+        ]);
+    }
 }

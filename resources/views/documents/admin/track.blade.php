@@ -91,6 +91,8 @@
                                 </option>
                                 <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected
                                 </option>
+                                <option value="canceled" {{ request('status') == 'canceled' ? 'selected' : '' }}>Canceled
+                                </option>
                                 <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>
                                     Completed</option>
                             </select>
@@ -203,6 +205,8 @@
                             @endif
                         @elseif ($document->status === 'rejected')
                             <x-status-badge status="rejected" />
+                        @elseif ($document->status === 'canceled')
+                            <x-status-badge status="canceled" />
                         @endif
 
                         @if ($document->is_overdue)

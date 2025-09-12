@@ -5,31 +5,12 @@
         <h2>Add Staff</h2>
         <form action="{{ route('head.staff.store') }}" method="POST">
             @csrf
-            <div class="mb-3">
-                <label>Name</label>
-                <input type="text" name="name" class="form-control" required value="{{ old('name') }}">
-                @error('name')
-                    <div class="text-danger">{{ $message }}</div>
-                @enderror
-            </div>
-            <div class="mb-3">
-                <label>Email</label>
-                <input type="email" name="email" class="form-control" required value="{{ old('email') }}">
-                @error('email')
-                    <div class="text-danger">{{ $message }}</div>
-                @enderror
-            </div>
-            <div class="mb-3">
-                <label>Password</label>
-                <input type="password" name="password" class="form-control" required>
-                @error('password')
-                    <div class="text-danger">{{ $message }}</div>
-                @enderror
-            </div>
-            <div class="mb-3">
-                <label>Confirm Password</label>
-                <input type="password" name="password_confirmation" class="form-control" required>
-            </div>
+
+            <x-form.input name="name" label="Name" required value="{{ old('name') }}" />
+            <x-form.input name="email" label="Email" type="email" required value="{{ old('email') }}" />
+            <x-form.input name="password" label="Password" type="password" required />
+            <x-form.input name="password_confirmation" label="Confirm Password" type="password" required />
+
             <button type="submit" class="btn btn-success">Create</button>
             <a href="{{ route('head.staff.index') }}" class="btn btn-secondary">Back</a>
         </form>

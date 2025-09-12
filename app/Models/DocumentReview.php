@@ -147,6 +147,7 @@ class DocumentReview extends Model
             case 'downloaded':
             case 'completed':
             case 'rejected':
+            case 'canceled':
                 return 'completed';
             case 'submitted_for_review':
             case 'forwarded':
@@ -174,6 +175,7 @@ class DocumentReview extends Model
         if ($this->status === 'downloaded') return 100;
         if ($this->status === 'approved') return 90;
         if ($this->status === 'rejected') return 100;
+        if ($this->status === 'canceled') return 100;
 
         return $totalSteps > 0 ? round(($completedSteps / $totalSteps) * 100) : 0;
     }
@@ -191,6 +193,11 @@ class DocumentReview extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
+    }
+
+    public function scopeCanceled($query)
+    {
+        return $query->where('status', 'canceled');
     }
 
     public function scopeDownloaded($query)

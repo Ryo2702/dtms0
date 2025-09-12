@@ -19,13 +19,24 @@
                         <img src="{{ $logo }}" alt="Logo"
                             class="w-15 h-15 lg:w-16 lg:h-16 rounded-full object-cover">
                     @endif
+
+                    <h1 class="ml-2 lg:ml-4 text-xxl lg:text-base">
+                        @if ($isAdmin)
+                            <span class="hidden sm:inline">System Administrator</span>
+                            <span class="sm:hidden">Admin</span>
+                        @else
+                            <span class="hidden md:inline">{{ $user->department->name ?? 'Municipal System' }}</span>
+                            <span class="md:hidden">{{ Str::limit($user->department->name ?? 'Municipal', 10) }}</span>
+                        @endif
+                    </h1>
+
                 </div>
 
             </div>
             @php
                 $user = Auth::user();
 
-                $pendingReviews = $receivedCount = $sentCount = $completedCount = 0;
+                $pendingReviews = $receivedCount = $sentCount = $completedCount = $rejectedCount = $canceledCount = 0;
 
                 if ($user && in_array($user->type, ['Staff', 'Head'])) {
                     // Pending reviews assigned to current user
@@ -96,6 +107,38 @@
                         ->whereNotNull('due_at')
                         ->whereColumn('downloaded_at', '>', 'due_at')
                         ->count();
+
+                    // Rejected documents
+                    $rejectedQuery = \App\Models\DocumentReview::where('status', 'rejected');
+                    if ($user->type === 'Head') {
+                        $rejectedQuery->where(function ($q) use ($user) {
+                            $q->where('created_by', $user->id)
+                                ->orWhere('assigned_to', $user->id)
+                                ->orWhere('current_department_id', $user->department_id)
+                                ->orWhere('original_department_id', $user->department_id);
+                        });
+                    } else {
+                        $rejectedQuery->where(function ($q) use ($user) {
+                            $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
+                        });
+                    }
+                    $rejectedCount = $rejectedQuery->count();
+
+                    // Canceled documents
+                    $canceledQuery = \App\Models\DocumentReview::where('status', 'canceled');
+                    if ($user->type === 'Head') {
+                        $canceledQuery->where(function ($q) use ($user) {
+                            $q->where('created_by', $user->id)
+                                ->orWhere('assigned_to', $user->id)
+                                ->orWhere('current_department_id', $user->department_id)
+                                ->orWhere('original_department_id', $user->department_id);
+                        });
+                    } else {
+                        $canceledQuery->where(function ($q) use ($user) {
+                            $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
+                        });
+                    }
+                    $canceledCount = $canceledQuery->count();
                 }
             @endphp
 
@@ -124,9 +167,7 @@
                         Documents
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.reviews.index')" :active="$currentRoute === 'documents.reviews.index'" icon="clipboard-list" :badge="['class' => 'badge-error', 'count' => $pendingReviews]">
-                        Reviews
-                    </x-sidebar-item>
+
 
                     <x-sidebar-item :route="route('documents.reviews.received')" :active="$currentRoute === 'documents.reviews.received'" icon="inbox" :badge="['class' => 'badge-info', 'count' => $receivedCount]">
                         Received
@@ -141,11 +182,22 @@
                         'count' => $completedCount,
                         'overdue_count' => $overdueCompletedCount,
                     ]">
-                        Completed
+                        Closed
+                    </x-sidebar-item>
+
+                    <x-sidebar-item :route="route('documents.reviews.index', ['status' => 'rejected'])" :active="$currentRoute === 'documents.reviews.index' && request('status') === 'rejected'" icon="x-circle" :badge="['class' => 'badge-error', 'count' => $rejectedCount]">
+                        Rejected
+                    </x-sidebar-item>
+
+                    <x-sidebar-item :route="route('documents.reviews.index', ['status' => 'canceled'])" :active="$currentRoute === 'documents.reviews.index' && request('status') === 'canceled'" icon="ban" :badge="['class' => 'badge-neutral', 'count' => $canceledCount]">
+                        Canceled
                     </x-sidebar-item>
                 @endif
 
                 @if ($user->type === 'Head')
+                    <x-sidebar-item :route="route('documents.reviews.index')" :active="$currentRoute === 'documents.reviews.index'" icon="clipboard-list" :badge="['class' => 'badge-error', 'count' => $pendingReviews]">
+                        Reviews
+                    </x-sidebar-item>
                     <x-sidebar-item :route="route('head.staff.index')" :active="Str::startsWith($currentRoute, 'head.staff')" icon="user-cog">
                         Staff Accounts
                     </x-sidebar-item>
