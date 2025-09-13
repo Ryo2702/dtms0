@@ -11,8 +11,7 @@
             <div class="card-body">
                 <h2 class="card-title mb-4">Fill Document Details</h2>
 
-                <form method="POST" action="{{ route('documents.download', ['file' => 'MPOC_Sample.docx']) }}"
-                    class="space-y-4">
+                <form method="POST" action="{{ route('documents.download', ['file' => 'MPOC.docx']) }}" class="space-y-4">
                     @csrf
                     <input type="hidden" name="action" value="send_for_review">
                     <!-- Barangay Information -->

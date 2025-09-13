@@ -20,7 +20,7 @@ class DocumentController extends Controller
             'file' => 'Mayors_Clearance.docx',
         ],
         [
-            'title' => 'Municipal Peace and Order Council',
+            'title' => 'MPOC Sample',
             'file' => 'MPOC_Sample.docx',
         ],
     ];

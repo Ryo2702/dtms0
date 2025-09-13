@@ -62,14 +62,15 @@ class DocumentDownloadService
     {
         $file = match ($documentType) {
             "Mayor's Clearance" => 'Mayors_Clearance.docx',
-            'MPOC Sample' => 'MPOC_Sample.docx',
-            default => throw new \InvalidArgumentException('Document template not found.')
+            'MPOC Sample' => 'MPOC.docx',
+            'Municipal Peace and Order Council' => 'MPOC.docx',
+            default => throw new \InvalidArgumentException("Document template {$documentType} not found.")
         };
 
         $templatePath = storage_path("app/public/templates/{$file}");
 
         if (!file_exists($templatePath)) {
-            throw new \RuntimeException('Document template file not found.');
+            throw new \RuntimeException("Document template file '{$file}' not found.");
         }
 
         return $templatePath;
@@ -101,7 +102,7 @@ class DocumentDownloadService
 
         if ($review->document_type === "Mayor's Clearance") {
             $this->populateMayorsClearance($processor, $data, $review);
-        } elseif ($review->document_type === 'MPOC Sample') {
+        } elseif ($review->document_type === 'MPOC Sample' || $review->document_type === 'Municipal Peace and Order Council') {
             $this->populateMpoc($processor, $data);
         }
     }
