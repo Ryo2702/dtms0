@@ -3,34 +3,14 @@
     <label for="sidebar" class="drawer-overlay"></label>
     @auth
         <aside class="bg-dtms-primary text-white w-64 lg:w-64 md:w-56 sm:w-48 min-h-screen">
-            <div class="p-3 lg:p-4 text-lg lg:text-xl font-bold border-b border-dtms-secondary flex items-center space-x-2">
+            <div class="p-3 lg:p-4 text-lg lg:text-xl font-bold flex items-center space-x-2">
                 @php
-                    $user = Auth::user();
-                    $isAdmin = $user->type === 'Admin';
-                    $logo =
-                        !$isAdmin && $user->department && $user->department->logo
-                            ? Storage::url($user->department->logo)
-                            : null;
                     $currentRoute = request()->route()->getName();
                 @endphp
-
-                <div class="flex justify-center">
-                    @if ($logo)
-                        <img src="{{ $logo }}" alt="Logo"
-                            class="w-15 h-15 lg:w-16 lg:h-16 rounded-full object-cover">
-                    @endif
-
-                    <h1 class="ml-2 lg:ml-4 text-xxl lg:text-base">
-                        @if ($isAdmin)
-                            <span class="hidden sm:inline">System Administrator</span>
-                            <span class="sm:hidden">Admin</span>
-                        @else
-                            <span class="hidden md:inline">{{ $user->department->name ?? 'Municipal System' }}</span>
-                            <span class="md:hidden">{{ Str::limit($user->department->name ?? 'Municipal', 10) }}</span>
-                        @endif
-                    </h1>
-
+                <div class="flex items-center">
+                    <h1>Sidebar</h1>
                 </div>
+
 
             </div>
             @php

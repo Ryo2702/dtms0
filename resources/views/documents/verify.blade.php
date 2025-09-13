@@ -1,4 +1,3 @@
-{{-- filepath: resources/views/documents/verify.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
