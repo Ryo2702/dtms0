@@ -20,7 +20,7 @@ class DocumentController extends Controller
             'file' => 'Mayors_Clearance.docx',
         ],
         [
-            'title' => 'MPOC Sample',
+            'title' => 'Municipality Peace Order Council',
             'file' => 'MPOC_Sample.docx',
         ],
     ];
@@ -50,7 +50,7 @@ class DocumentController extends Controller
             abort(404, "Document not found.");
         }
 
-        // Map specific files to their view names
+        //file location
         $viewName = match ($file) {
             'Mayors_Clearance.docx' => 'documents.mayors-clearance',
             'MPOC_Sample.docx' => 'documents.mpoc-sample',

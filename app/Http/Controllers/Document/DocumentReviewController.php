@@ -73,7 +73,7 @@ class DocumentReviewController extends Controller
         $review = DocumentReview::findOrFail($id);
         $user = Auth::user();
 
-        if ($user->type !== 'Head' || $user->type !== 'Staff' || $review->assigned_to !== $user->id) {
+        if ($user->type !== 'Head' || $review->assigned_to !== $user->id) {
             abort(403, 'Only department heads and staff can review their documents.');
         }
 

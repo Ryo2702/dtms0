@@ -62,8 +62,7 @@ class DocumentDownloadService
     {
         $file = match ($documentType) {
             "Mayor's Clearance" => 'Mayors_Clearance.docx',
-            'MPOC Sample' => 'MPOC.docx',
-            'Municipal Peace and Order Council' => 'MPOC.docx',
+            'Municipality Peace Order Council' => 'MPOC_Sample.docx',
             default => throw new \InvalidArgumentException("Document template {$documentType} not found.")
         };
 
