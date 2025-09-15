@@ -19,6 +19,8 @@ import {
     FileCheck,
     LogOut,
     ArrowLeft,
+    Menu,
+    X,
 } from "lucide";
 
 createIcons({
@@ -39,6 +41,8 @@ createIcons({
         FileCheck,
         LogOut,
         ArrowLeft,
+        Menu,
+        X,
     },
 });
 

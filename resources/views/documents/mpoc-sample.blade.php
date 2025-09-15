@@ -18,10 +18,10 @@
                     <x-form.input name="barangay_chairman" label="Barangay Chairman Name *"
                         placeholder="Enter barangay chairman's full name" required />
 
-                    <x-form.input name="barangay_name" label="Barangay Name *" placeholder="Enter barangay name" required />
+                    <x-form.input name="barangay_name" label="Barangay Name" placeholder="Enter barangay name" required />
                 </div>
 
-                <x-form.input name="barangay_clearance_date" type="date" label="Barangay Clearance Date *"
+                <x-form.input name="barangay_clearance_date" type="date" label="Barangay Clearance Date "
                     :value="now()->format('Y-m-d')" required />
             </x-card>
 

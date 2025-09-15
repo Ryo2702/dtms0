@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DocumentReview;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -119,14 +120,14 @@ class ProfileController extends Controller
         // Only calculate stats for Staff and Head users
         if (in_array($user->type, ['Staff', 'Head'])) {
             $stats = [
-                'total_documents_created' => \App\Models\DocumentReview::where('created_by', $user->id)->count(),
-                'total_documents_reviewed' => \App\Models\DocumentReview::where('assigned_to', $user->id)
+                'total_documents_created' => DocumentReview::where('created_by', $user->id)->count(),
+                'total_documents_reviewed' => DocumentReview::where('assigned_to', $user->id)
                     ->whereIn('status', ['approved', 'rejected'])
                     ->count(),
-                'pending_reviews' => \App\Models\DocumentReview::where('assigned_to', $user->id)
+                'pending_reviews' => DocumentReview::where('assigned_to', $user->id)
                     ->where('status', 'pending')
                     ->count(),
-                'completed_reviews' => \App\Models\DocumentReview::where('assigned_to', $user->id)
+                'completed_reviews' => DocumentReview::where('assigned_to', $user->id)
                     ->where('status', 'approved')
                     ->whereNotNull('downloaded_at')
                     ->count(),
@@ -147,7 +148,7 @@ class ProfileController extends Controller
 
         if (in_array($user->type, ['Staff', 'Head'])) {
             // Recent document reviews assigned to user
-            $recentReviews = \App\Models\DocumentReview::where('assigned_to', $user->id)
+            $recentReviews = DocumentReview::where('assigned_to', $user->id)
                 ->with(['creator'])
                 ->latest()
                 ->take(5)

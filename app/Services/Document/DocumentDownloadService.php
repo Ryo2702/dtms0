@@ -101,8 +101,8 @@ class DocumentDownloadService
 
         if ($review->document_type === "Mayor's Clearance") {
             $this->populateMayorsClearance($processor, $data, $review);
-        } elseif ($review->document_type === 'MPOC Sample' || $review->document_type === 'Municipal Peace and Order Council') {
-            $this->populateMpoc($processor, $data);
+        } elseif ($review->document_type === 'Municipal Peace and Order Council') {
+            $this->populateMpoc($processor, $data, $review);
         }
     }
 
@@ -116,7 +116,7 @@ class DocumentDownloadService
         $processor->setValue('date', $data['date'] ?? now()->format('Y-m-d'));
     }
 
-    private function populateMpoc(TemplateProcessor $processor, array $data): void
+    private function populateMpoc(TemplateProcessor $processor, array $data, DocumentReview $review): void
     {
         $processor->setValue('barangay_chairman', $data['barangay_chairman'] ?? '');
         $processor->setValue('barangay_name', $data['barangay_name'] ?? '');
@@ -130,12 +130,7 @@ class DocumentDownloadService
     private function generateQrCodeFile(DocumentVerification $verification): ?string
     {
         try {
-            $qrData = "Document ID: {$verification->document_id}\n";
-            $qrData .= "Title: {$verification->document_type}\n";
-            $qrData .= "Name: {$verification->client_name}\n";
-            $qrData .= "Employee ID: {$verification->employee_id}\n";
-            $qrData .= "Department: {$verification->department}\n";
-            $qrData .= "Verification URL: " . route('documents.verify', $verification->verification_code);
+            $qrData = route('documents.verify', $verification->verification_code);
 
             $tempPath = storage_path('app/temp/qr_' . $verification->verification_code . '.png');
             $this->ensureDirectoryExists(dirname($tempPath));

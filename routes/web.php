@@ -17,9 +17,11 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.store');
 
-Route::get('/verify/{code}', [VerificationController::class, 'verify'])->name('documents.verify');
-Route::get('/qr/{code}', [VerificationController::class, 'qrcode'])->name('documents.qrcode');
-Route::get('/lookup', [VerificationController::class, 'lookup'])->name('documents.lookup');
+Route::middleware('guest')->group(function () {
+    Route::get('/verify/{code}', [VerificationController::class, 'verify'])->name('documents.verify');
+    Route::get('/qr/{code}', [VerificationController::class, 'qrcode'])->name('documents.qrcode');
+    Route::get('/lookup', [VerificationController::class, 'lookup'])->name('documents.lookup');
+});
 
 Route::middleware(['auth'])->group(function () {
     // Single dashboard route that handles all roles
