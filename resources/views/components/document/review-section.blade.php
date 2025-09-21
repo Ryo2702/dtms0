@@ -3,27 +3,27 @@
 ])
 
 {{-- Document Processing Section --}}
-<div class="card bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
+<div class="border border-green-200 card bg-gradient-to-r from-green-50 to-blue-50">
     <div class="card-body">
-        <div class="flex justify-between relative">
-            <h3 class="card-title text-lg text-green-800 mb-4 flex">
-                <i data-lucide="send" class="h-4 w-4 mr-2" stroke='currentColor'></i>
+        <div class="relative flex justify-between">
+            <h3 class="flex mb-4 text-lg text-green-800 card-title">
+                <i data-lucide="send" class="w-4 h-4 mr-2" stroke='currentColor'></i>
                 Send Document for Department Review
             </h3>
-            <button class="ml-2 p-1 rounded-full transition" onclick="toggleInstruction(this)">
+            <button class="p-1 ml-2 transition rounded-full" onclick="toggleInstruction(this)">
                 <i data-lucide="circle-alert" class="w-5 h-5"></i>
             </button>
             <div
-                class="instruction-box absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg hidden">
+                class="absolute left-0 hidden w-64 p-2 mt-2 text-sm text-white bg-gray-800 rounded-lg shadow-lg instruction-box top-full">
                 All documents must go through department review{{ $hasFee ? ' or need payment' : '' }} before download.
                 Document will be processed through multiple departments as needed.
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text font-semibold">Send to Department </span>
+                    <span class="font-semibold label-text">Send to Department </span>
                     <span class="label-text-alt">Choose the first department to review</span>
                 </label>
                 <select name="reviewer_id" class="select select-bordered" required>
@@ -47,9 +47,9 @@
 
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text font-semibold">Review Time Limit</span>
+                    <span class="font-semibold label-text">Review Time Limit</span>
                 </label>
-                <select name="process_time" class="select select-bordered mt-6" required>
+                <select name="process_time" class="select select-bordered" required>
                     <option value="">Set time limit for review</option>
                     @for ($i = 1; $i <= 10; $i++)
                         <option value="{{ $i }}" {{ $i == 5 ? 'selected' : '' }}>
@@ -65,9 +65,9 @@
             </div>
         </div>
 
-        <div class="form-control mb-4">
+        <div class="mb-4 form-control">
             <label class="label">
-                <span class="label-text font-semibold">Initial Instructions for Reviewer</span>
+                <span class="font-semibold label-text">Initial Instructions for Reviewer</span>
                 <span class="label-text-alt">Provide specific instructions or notes</span>
             </label>
             <textarea name="initial_notes" class="textarea textarea-bordered" rows="3" required
@@ -82,13 +82,13 @@
 </div>
 
 <!-- Action Buttons -->
-<div class="card-actions justify-end mt-6">
+<div class="justify-end mt-6 card-actions">
     <a href="{{ route('documents.index') }}" class="btn btn-ghost">
-        <i data-lucide="move-left" class="h-5 w-5 mr-2"></i>
+        <i data-lucide="move-left" class="w-5 h-5 mr-2"></i>
         Back to Documents
     </a>
     <button type="submit" class="btn btn-primary">
-        <i data-lucide="send" class="h-4 w-4 mr-2" stroke='currentColor'></i>
+        <i data-lucide="send" class="w-4 h-4 mr-2" stroke='currentColor'></i>
         Send for Department Review
     </button>
 </div>

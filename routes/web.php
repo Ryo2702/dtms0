@@ -24,6 +24,13 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
+    // Notification routes
+    Route::get('/notifications/counts', [App\Http\Controllers\Notification\NotificationController::class, 'getCounts'])
+        ->name('notifications.counts');
+    
+    Route::post('/notifications/mark-read', [App\Http\Controllers\Notification\NotificationController::class, 'markAsRead'])
+        ->name('notifications.mark-read');
+        
     // Single dashboard route that handles all roles
     Route::get('/dashboard', function () {
         /** @var User $authUser */
