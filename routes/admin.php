@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Document\DocumentAdminController;
@@ -21,6 +22,15 @@ Route::middleware(['auth'])->group(function () {
         //document-tract
         Route::prefix('documents')->name('documents.')->group(function () {
             Route::get('/track', [DocumentAdminController::class, 'track'])->name('track');
+        });
+
+        // Audit Log Routes
+        Route::prefix('audit-logs')->name('audit-logs.')->group(function () {
+            Route::get('/', [AuditLogController::class, 'index'])->name('index');
+            Route::get('/export', [AuditLogController::class, 'export'])->name('export');
+            Route::get('/test', [AuditLogController::class, 'test'])->name('test');
+            Route::match(['POST', 'PUT', 'DELETE'], '/test/action', [AuditLogController::class, 'testAction'])->name('test.action');
+            Route::get('/{auditLog}', [AuditLogController::class, 'show'])->name('show');
         });
     });
 });

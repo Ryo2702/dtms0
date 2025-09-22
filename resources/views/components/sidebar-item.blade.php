@@ -7,7 +7,7 @@
 
         <div class="flex items-center">
             @if ($icon)
-                <x-dynamic-component :component="'lucide-' . $icon" class="h-4 w-4 lg:h-5 lg:w-5" />
+                <x-dynamic-component :component="'lucide-' . $icon" class="w-4 h-4 lg:h-5 lg:w-5" />
             @endif
 
             <span class="ml-2 lg:ml-3">{{ $slot }}</span>

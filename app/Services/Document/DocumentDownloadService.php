@@ -7,7 +7,8 @@ use App\Models\DocumentVerification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpWord\TemplateProcessor;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 class DocumentDownloadService
 {
@@ -85,6 +86,7 @@ class DocumentDownloadService
 
         // QR Code
         $qrCodePath = $this->generateQrCodeFile($verification);
+
         if ($qrCodePath && file_exists($qrCodePath)) {
             $processor->setImageValue('qr_verification_url', [
                 'path' => $qrCodePath,
@@ -93,7 +95,7 @@ class DocumentDownloadService
                 'ratio' => false
             ]);
         } else {
-            $processor->setValue('qr_verification_url', '');
+            $processor->setValue('qr_verification_url', 'none');
         }
 
         // Document-specific fields
@@ -101,7 +103,7 @@ class DocumentDownloadService
 
         if ($review->document_type === "Mayor's Clearance") {
             $this->populateMayorsClearance($processor, $data, $review);
-        } elseif ($review->document_type === 'Municipal Peace and Order Council') {
+        } elseif ($review->document_type === 'Municipality Peace Order Council') {
             $this->populateMpoc($processor, $data, $review);
         }
     }
@@ -131,20 +133,47 @@ class DocumentDownloadService
     {
         try {
             $qrData = route('documents.verify', $verification->verification_code);
-
-            $tempPath = storage_path('app/temp/qr_' . $verification->verification_code . '.png');
-            $this->ensureDirectoryExists(dirname($tempPath));
-
-            QrCode::format('png')
-                ->size(200)
-                ->margin(1)
-                ->generate($qrData, $tempPath);
-
-            return $tempPath;
+            
+            $tempDir = storage_path('app/public/temp');
+            $this->ensureDirectoryExists($tempDir);
+            
+            $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'qr_' . $verification->verification_code . '.png';
+            
+            $qrCode = new QrCode($qrData);
+            $qrCode->setSize(200);
+            $qrCode->setMargin(10);
+            
+            $writer = new PngWriter();
+            $result = $writer->write($qrCode);
+            
+            file_put_contents($tempPath, $result->getString());
+            
+            return file_exists($tempPath) && filesize($tempPath) > 0 ? $tempPath : null;
+            
         } catch (\Exception $e) {
-            Log::error('Failed to generate QR code file: ' . $e->getMessage());
+            Log::error('QR generation failed: ' . $e->getMessage());
             return null;
         }
+    }
+
+    private function convertSvgToPng(string $svgContent, string $outputPath): void
+    {
+        // Create a simple black and white QR code image using GD
+        $size = 200;
+        $image = imagecreatetruecolor($size, $size);
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $black = imagecolorallocate($image, 0, 0, 0);
+        
+        imagefill($image, 0, 0, $white);
+        
+        // Parse SVG and create PNG (simplified approach)
+        // For now, create a placeholder image
+        $font = 5;
+        $text = "QR Code";
+        imagestring($image, $font, 80, 95, $text, $black);
+        
+        imagepng($image, $outputPath);
+        imagedestroy($image);
     }
 
     private function ensureDirectoryExists(string $directory): void

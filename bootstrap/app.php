@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuditLogMiddleware;
 use App\Http\Middleware\CheckUserStatus;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\TrackUserActivity;
@@ -26,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             TrackUserActivity::class,
             CheckUserStatus::class,
-
+            AuditLogMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

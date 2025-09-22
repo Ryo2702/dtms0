@@ -3,39 +3,14 @@
 @section('title', 'Completed Documents')
 
 @section('content')
-    <div class="max-w-7xl mx-auto">
-        <div class="bg-white shadow-sm rounded-lg">
+    <div class="mx-auto max-w-7xl">
+        <div class="bg-white rounded-lg shadow-sm">
             <div class="p-6 border-b border-gray-200">
-                <div class="flex justify-between items-center">
+                <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Completed Documents</h1>
-                        <p class="text-gray-600 mt-1">Documents that have been fully processed and downloaded
-                            @if ($overdueCompletedCount > 0)
-                                <span class="text-red-600 font-medium">({{ $overdueCompletedCount }} completed
-                                    overdue)</span>
-                            @endif
+                        <p class="mt-1 text-gray-600">Documents that have been fully processed and downloaded
                         </p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span
-                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            {{ $completedReviews->total() }} Total
-                        </span>
-                        @if ($overdueCompletedCount > 0)
-                            <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                {{ $overdueCompletedCount }} Overdue
-                            </span>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -45,19 +20,19 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                     Document Info
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                     Processing Details
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                     Completion Info
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                     Performance
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                     Actions
                                 </th>
                             </tr>
@@ -69,8 +44,8 @@
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0">
                                                 <div
-                                                    class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                                                    <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24"
+                                                    class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
+                                                    <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24"
                                                         stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             stroke-width="2"
@@ -149,7 +124,7 @@
                                         @endif
 
                                         @if ($processingTime)
-                                            <div class="text-xs text-gray-500 mt-1">
+                                            <div class="mt-1 text-xs text-gray-500">
                                                 {{ $processingTime }} min total
                                             </div>
                                         @endif
@@ -157,7 +132,7 @@
                                     <td class="px-6 py-4 text-sm font-medium">
                                         <div class="flex space-x-2">
                                             <a href="{{ route('documents.reviews.show', $review->id) }}"
-                                                class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                                                class="inline-flex items-center px-3 py-1 text-sm font-medium leading-4 text-white transition-colors bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -171,7 +146,7 @@
 
                                             @if ($review->created_by === $user->id && $review->status === 'approved')
                                                 <a href="{{ route('documents.reviews.download', $review->id) }}"
-                                                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                                                    class="inline-flex items-center px-3 py-1 text-sm font-medium leading-4 text-white transition-colors bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -196,7 +171,7 @@
                 </div>
             @else
                 <div class="px-6 py-12 text-center">
-                    <div class="mx-auto h-12 w-12 text-gray-400">
+                    <div class="w-12 h-12 mx-auto text-gray-400">
                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

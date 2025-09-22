@@ -10,8 +10,8 @@
                 <h1 class="truncate">DTMS</h1>
             </div>
 
-            <!-- Mobile Close Button -->
-            <button id="close-btn" class="p-1 btn btn-ghost btn-sm lg:hidden hover:bg-white/10">
+            <!-- Mobile Close Button - Only show on mobile/tablet -->
+            <button id="close-btn" class="p-1 btn btn-ghost btn-sm hover:bg-white/10 lg:!hidden">
                 <i data-lucide="arrow-left" class="w-4 h-4 text-white sm:h-5 sm:w-5"></i>
             </button>
         </div>
@@ -144,6 +144,10 @@
                     <x-sidebar-item :route="route('admin.documents.track')" :active="$currentRoute === 'documents.reviews.admin.track'" icon="file-search">
                         <span class="truncate">Document Track</span>
                     </x-sidebar-item>
+
+                    <x-sidebar-item :route="route('admin.audit-logs.index')" :active="Str::startsWith($currentRoute, 'admin.audit-logs')" icon="shield-check">
+                        <span class="truncate">Audit Logs</span>
+                    </x-sidebar-item>
                 @endif
 
                 <!-- Document Management -->
@@ -157,10 +161,6 @@
                     <!-- Document Workflow -->
                     <x-sidebar-label text="Document Workflow" />
 
-                    <x-sidebar-item :route="route('documents.reviews.index')" :active="$currentRoute === 'documents.reviews.index'" icon="clipboard-list" :badge="['class' => 'badge-error', 'count' => $pendingReviews]" data-notification-type="pending">
-                        <span class="truncate">Reviews</span>
-                    </x-sidebar-item>
-
                     <x-sidebar-item :route="route('documents.reviews.received')" :active="$currentRoute === 'documents.reviews.received'" icon="inbox" :badge="['class' => 'badge-info', 'count' => $receivedCount]" data-notification-type="received">
                         <span class="truncate">Received</span>
                     </x-sidebar-item>
@@ -171,11 +171,13 @@
 
                     <!-- Document Status -->
                     <x-sidebar-label text="Document Status" />
+                    <x-sidebar-item :route="route('documents.reviews.index')" :active="$currentRoute === 'documents.reviews.index'" icon="file-clock" :badge="['class' => 'badge-error', 'count' => $pendingReviews]" data-notification-type="pending">
+                        <span class="truncate">Pending</span>
+                    </x-sidebar-item>
 
                     <x-sidebar-item :route="route('documents.reviews.completed')" :active="$currentRoute === 'documents.reviews.completed'" icon="check-circle" :badge="[
                         'class' => 'badge-success',
                         'count' => $completedCount,
-                        'overdue_count' => $overdueCompletedCount,
                     ]" data-notification-type="completed">
                         <span class="truncate">Closed</span>
                     </x-sidebar-item>

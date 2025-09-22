@@ -161,9 +161,6 @@ class NotificationController extends Controller
             $type = $request->input('type');
             $updated = false;
 
-            // This is a placeholder for future notification read status functionality
-            // You can implement this when you add a notifications table
-            
             return response()->json([
                 'success' => true,
                 'message' => 'Notifications marked as read',

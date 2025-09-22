@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Document\DocumentController;
 use App\Http\Controllers\Document\DocumentReviewController;
 use App\Http\Controllers\Document\DocumentAdminController;
+use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Verification\VerificationController;
 use Illuminate\Support\Facades\Auth;
@@ -16,21 +17,18 @@ Route::get('/', function () {
 });
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.store');
-
-Route::middleware('guest')->group(function () {
-    Route::get('/verify/{code}', [VerificationController::class, 'verify'])->name('documents.verify');
-    Route::get('/qr/{code}', [VerificationController::class, 'qrcode'])->name('documents.qrcode');
-    Route::get('/lookup', [VerificationController::class, 'lookup'])->name('documents.lookup');
-});
+Route::get('/verify/{code}', [VerificationController::class, 'verify'])->name('documents.verify');
+Route::get('/qr/{code}', [VerificationController::class, 'qrcode'])->name('documents.qrcode');
+Route::get('/lookup', [VerificationController::class, 'lookup'])->name('documents.lookup');
 
 Route::middleware(['auth'])->group(function () {
     // Notification routes
-    Route::get('/notifications/counts', [App\Http\Controllers\Notification\NotificationController::class, 'getCounts'])
+    Route::get('/notifications/counts', [NotificationController::class, 'getCounts'])
         ->name('notifications.counts');
     
-    Route::post('/notifications/mark-read', [App\Http\Controllers\Notification\NotificationController::class, 'markAsRead'])
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])
         ->name('notifications.mark-read');
-        
+
     // Single dashboard route that handles all roles
     Route::get('/dashboard', function () {
         /** @var User $authUser */

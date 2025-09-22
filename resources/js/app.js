@@ -21,6 +21,9 @@ import {
     ArrowLeft,
     Menu,
     X,
+    ClipboardClock,
+    FileClock,
+    
 } from "lucide";
 
 createIcons({
@@ -43,6 +46,7 @@ createIcons({
         ArrowLeft,
         Menu,
         X,
+        FileClock
     },
 });
 

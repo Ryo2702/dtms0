@@ -11,18 +11,18 @@
 
 <body class="min-h-screen bg-dtms-bg text-dtms-text">
     <!-- Mobile Sidebar Overlay -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-opacity-50 z-40 lg:hidden hidden"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 z-40 bg-opacity-50 lg:hidden"></div>
 
     <!-- Main Layout Container -->
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside id="mobile-sidebar"
-            class="fixed left-0 top-0 h-screen bg-primary text-white w-64 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex-shrink-0">
+            class="fixed top-0 left-0 z-50 w-64 h-screen text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary lg:translate-x-0 lg:static lg:flex-shrink-0">
             <x-sidebar />
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex flex-col flex-1 overflow-hidden">
             @php
                 $user = Auth::user();
                 $isAdmin = $user->type === 'Admin';
@@ -34,21 +34,19 @@
             @endphp
 
             <!-- Top Navigation Bar -->
-            <nav class="bg-primary text-white navbar flex-shrink-0 z-30">
-                <div class="navbar-start flex items-center">
-                    <!-- Mobile Hamburger Menu Button -->
-                    <button id="hamburger-btn" class="btn btn-ghost btn-square lg:hidden mr-2" aria-label="Open menu">
-                        <i data-lucide="menu" class="h-6 w-6 text-white"></i>
+            <nav class="z-30 flex-shrink-0 text-white bg-primary navbar">
+                <div class="flex items-center navbar-start">
+                    <!-- Mobile Hamburger Menu Button - Hidden on desktop -->
+                    <button id="hamburger-btn" class="mr-2 btn btn-ghost btn-square lg:!hidden" aria-label="Open menu">
+                        <i data-lucide="menu" class="w-6 h-6 text-white"></i>
                     </button>
 
-                    <!-- Department Logo -->
                     @if ($logo)
                         <img src="{{ $logo }}" alt="Department Logo"
-                            class="w-12 h-12 lg:w-13 lg:h-13 rounded-full object-cover">
+                            class="object-cover w-12 h-12 rounded-full lg:w-13 lg:h-13">
                     @endif
 
-                    <!-- Page Title -->
-                    <h1 class="ml-2 lg:ml-4 text-xl lg:text-2xl font-semibold">
+                    <h1 class="ml-2 text-xl font-semibold lg:ml-4 lg:text-2xl">
                         @if ($isAdmin)
                             <span class="hidden sm:inline">System Administrator</span>
                             <span class="sm:hidden">Admin</span>
@@ -67,7 +65,7 @@
                 position="top-right" />
 
             <!-- Main Content Area -->
-            <main class="flex-1 overflow-y-auto p-6 bg-dtms-bg">
+            <main class="flex-1 p-6 overflow-y-auto bg-dtms-bg">
                 @yield('content')
             </main>
         </div>
@@ -76,7 +74,6 @@
     <!-- Mobile Sidebar JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get DOM elements
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeBtn = document.getElementById('close-btn');
             const overlay = document.getElementById('sidebar-overlay');
@@ -92,7 +89,6 @@
                 linksCount: sidebarLinks.length
             });
 
-            // Sidebar control functions
             function openSidebar() {
                 if (sidebar && overlay) {
                     sidebar.classList.remove('-translate-x-full');
@@ -109,7 +105,6 @@
                 }
             }
 
-            // Event listeners
             hamburgerBtn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 openSidebar();

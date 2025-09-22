@@ -53,6 +53,24 @@ class Department extends Model
         return $this->hasOne(User::class)->where('type', 'Admin');
     }
 
+    // Get document reviews where this department is the current department
+    public function currentDocumentReviews(): HasMany
+    {
+        return $this->hasMany(DocumentReview::class, 'current_department_id');
+    }
+
+    // Get document reviews where this department is the original department
+    public function originalDocumentReviews(): HasMany
+    {
+        return $this->hasMany(DocumentReview::class, 'original_department_id');
+    }
+
+    // Get all document reviews related to this department (current or original)
+    public function documentReviews(): HasMany
+    {
+        return $this->hasMany(DocumentReview::class, 'current_department_id');
+    }
+
     public function activeUsers(): HasMany
     {
         return $this->users()->where('status', 1);
