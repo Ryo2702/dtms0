@@ -8,7 +8,7 @@
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Completed Documents</h1>
+                        <h1 class="text-2xl font-bold text-gray-900">Closed Documents</h1>
                         <p class="mt-1 text-gray-600">Documents that have been fully processed and downloaded
                         </p>
                     </div>
@@ -100,28 +100,19 @@
                                             </div>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4">
+                                                                       <td class="px-6 py-4">
                                         @php
-                                            $wasOnTime = !$review->due_at || $review->downloaded_at <= $review->due_at;
                                             $processingTime =
                                                 $review->submitted_at && $review->downloaded_at
                                                     ? $review->submitted_at->diffInMinutes($review->downloaded_at)
                                                     : null;
                                         @endphp
 
-                                        @if ($wasOnTime)
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <span class="w-1.5 h-1.5 mr-1.5 bg-green-400 rounded-full"></span>
-                                                On Time
-                                            </span>
-                                        @else
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                <span class="w-1.5 h-1.5 mr-1.5 bg-red-400 rounded-full"></span>
-                                                Overdue
-                                            </span>
-                                        @endif
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <span class="w-1.5 h-1.5 mr-1.5 bg-gray-400 rounded-full"></span>
+                                            Closed
+                                        </span>
 
                                         @if ($processingTime)
                                             <div class="mt-1 text-xs text-gray-500">

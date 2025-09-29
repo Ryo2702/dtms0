@@ -324,7 +324,7 @@
                     :activities="$recentActivities"
                     :maxItems="10"
                     :showViewAll="true"
-                    viewAllUrl="{{ route('documents.reviews.index') }}"
+                    viewAllUrl="{{ route('documents.status.pending') }}"
                 />
             </div>
         @endif

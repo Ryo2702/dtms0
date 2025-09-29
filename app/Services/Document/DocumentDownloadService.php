@@ -103,8 +103,6 @@ class DocumentDownloadService
 
         if ($review->document_type === "Mayor's Clearance") {
             $this->populateMayorsClearance($processor, $data, $review);
-        } elseif ($review->document_type === 'Municipality Peace Order Council') {
-            $this->populateMpoc($processor, $data, $review);
         }
     }
 
@@ -118,16 +116,6 @@ class DocumentDownloadService
         $processor->setValue('date', $data['date'] ?? now()->format('Y-m-d'));
     }
 
-    private function populateMpoc(TemplateProcessor $processor, array $data, DocumentReview $review): void
-    {
-        $processor->setValue('barangay_chairman', $data['barangay_chairman'] ?? '');
-        $processor->setValue('barangay_name', $data['barangay_name'] ?? '');
-        $processor->setValue('barangay_clearance_date', $data['barangay_clearance_date'] ?? '');
-        $processor->setValue('resident_name', $data['resident_name'] ?? '');
-        $processor->setValue('resident_barangay', $data['resident_barangay'] ?? '');
-        $processor->setValue('certification_date', $data['certification_date'] ?? now()->format('Y-m-d'));
-        $processor->setValue('requesting_party', $data['requesting_party'] ?? '');
-    }
 
     private function generateQrCodeFile(DocumentVerification $verification): ?string
     {
@@ -156,25 +144,23 @@ class DocumentDownloadService
         }
     }
 
-    private function convertSvgToPng(string $svgContent, string $outputPath): void
-    {
-        // Create a simple black and white QR code image using GD
-        $size = 200;
-        $image = imagecreatetruecolor($size, $size);
-        $white = imagecolorallocate($image, 255, 255, 255);
-        $black = imagecolorallocate($image, 0, 0, 0);
+    // private function convertSvgToPng(string $svgContent, string $outputPath): void
+    // {
+    //     // Create a simple black and white QR code image using GD
+    //     $size = 200;
+    //     $image = imagecreatetruecolor($size, $size);
+    //     $white = imagecolorallocate($image, 255, 255, 255);
+    //     $black = imagecolorallocate($image, 0, 0, 0);
         
-        imagefill($image, 0, 0, $white);
+    //     imagefill($image, 0, 0, $white);
         
-        // Parse SVG and create PNG (simplified approach)
-        // For now, create a placeholder image
-        $font = 5;
-        $text = "QR Code";
-        imagestring($image, $font, 80, 95, $text, $black);
+    //     $font = 5;
+    //     $text = "QR Code";
+    //     imagestring($image, $font, 80, 95, $text, $black);
         
-        imagepng($image, $outputPath);
-        imagedestroy($image);
-    }
+    //     imagepng($image, $outputPath);
+    //     imagedestroy($image);
+    // }
 
     private function ensureDirectoryExists(string $directory): void
     {

@@ -4,13 +4,13 @@
 
         <div class="mb-6">
             <h1 class="text-3xl font-bold">Document Management System</h1>
-            <div class="step step-primary flex items-center gap-2 relative">
+            <div class="relative flex items-center gap-2 step step-primary">
                 Create Document
-                <button class="ml-2 p-1 rounded-full transition" onclick="toggleInstruction(this)">
+                <button class="p-1 ml-2 transition rounded-full" onclick="toggleInstruction(this)">
                     <i data-lucide="circle-alert" class="w-5 h-5"></i>
                 </button>
                 <div
-                    class="instruction-box absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg hidden">
+                    class="absolute left-0 hidden w-64 p-2 mt-2 text-sm text-white bg-gray-800 rounded-lg shadow-lg instruction-box top-full">
                     Fill document form and choose to send for which department.
                 </div>
             </div>
@@ -19,14 +19,14 @@
 
         @if (count($documents))
             <!-- Documents Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2">
                 @foreach ($documents as $doc)
-                    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                    <div class="transition-shadow duration-300 shadow-xl bg-white-secondary card hover:shadow-2xl">
                         <div class="card-body">
-                            <div class="flex items-start justify-between">
+                            <div class="flex items-start justify-between ">
                                 <div class="flex-1">
-                                    <h2 class="card-title text-lg mb-2">{{ $doc['title'] }}</h2>
-                                    <p class="text-base-content/70 text-sm mb-3">{{ $doc['file'] }}</p>
+                                    <h2 class="mb-2 text-lg card-title">{{ $doc['title'] }}</h2>
+                                    <p class="mb-3 text-sm text-base-content/70">{{ $doc['file'] }}</p>
 
                                     <div class="flex flex-wrap gap-2 mb-4">
                                         @if ($doc['title'] === "Mayor's Clearance")
@@ -38,11 +38,9 @@
                                     </div>
 
                                     <!-- Document Description -->
-                                    <div class="text-xs text-base-content/60 mb-4">
+                                    <div class="mb-4 text-xs text-base-content/60 ">
                                         @if ($doc['title'] === "Mayor's Clearance")
                                             Official clearance document issued by the Mayor's office for various purposes.
-                                        @elseif($doc['title'] === 'Municipal Peace and Order Council')
-                                            Municipal Peace and Order Council certification document.
                                         @else
                                             Standard municipal document template.
                                         @endif
@@ -63,7 +61,7 @@
             </div>
         @else
             <div class="alert alert-info">
-                <i data-lucide="circle-alert" class="stroke-current shrink w-6 h-6"></i>
+                <i data-lucide="circle-alert" class="w-6 h-6 stroke-current shrink"></i>
                 <span>No documents available. Please contact your administrator to add document templates.</span>
             </div>
         @endif

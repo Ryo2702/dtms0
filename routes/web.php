@@ -54,7 +54,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{file}/fill', [DocumentController::class, 'form'])->name('form');
         Route::post('/{file}/download', [DocumentController::class, 'download'])->name('download');
 
-        // Review routes nested under documents
         Route::prefix('reviews')->name('reviews.')->group(function () {
             Route::get('/', [DocumentReviewController::class, 'index'])->name('index');
             Route::get('/received', [DocumentReviewController::class, 'received'])->name('received');
@@ -64,6 +63,14 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/{id}', [DocumentReviewController::class, 'update'])->name('update');
             Route::get('/{id}/download', [DocumentReviewController::class, 'download'])->name('download');
         });
+
+        Route::prefix('status')->name('status.')->group(function () {
+             Route::get('/pending', [DocumentReviewController::class, 'index'])->name('pending');
+             Route::get('/closed', [DocumentReviewController::class, 'closed'])->name('closed');
+             Route::get('/rejected', [DocumentReviewController::class, 'rejected'])->name('rejected');
+             Route::get('/canceled', [DocumentReviewController::class, 'canceled'])->name('canceled');
+        });
+
     });
 
     Route::middleware(['role:Staff'])->group(function () {

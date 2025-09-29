@@ -355,8 +355,11 @@ main {
 
 .bg-stat-info{
     background-color: #8B5DFF !important;
-    color: white;
+    color: white !important;
 }
+
+
+
 .bg-white-secondary{
     background-color: var(--dtms-bg-secondary);
 }

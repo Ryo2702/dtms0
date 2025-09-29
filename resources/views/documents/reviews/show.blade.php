@@ -2,18 +2,18 @@
 
 @section('content')
     <div class="container max-w-6xl mx-auto">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
             <!-- Main Review Panel -->
             <div class="lg:col-span-2">
-                <div class="card bg-base-100 shadow-xl">
+                <div class="shadow-xl card bg-white-secondary">
                     <div class="card-body">
-                        <h2 class="card-title mb-6">Document Review: {{ $review->document_id }}</h2>
+                        <h2 class="mb-6 card-title">Document Review: {{ $review->document_id }}</h2>
 
                         <!-- Status Alert -->
                         @if ($review->status === 'approved' && $review->created_by === auth()->id())
-                            <div class="alert alert-success mb-6">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none"
+                            <div class="mb-6 alert alert-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 stroke-current shrink-0" fill="none"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -26,9 +26,9 @@
                             </div>
                         @endif
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
                             <div>
-                                <h3 class="text-lg font-semibold mb-2">Document Information</h3>
+                                <h3 class="mb-2 text-lg font-semibold">Document Information</h3>
                                 <p><strong>Type:</strong> {{ $review->document_type }}</p>
                                 <p><strong>Client:</strong> {{ $review->client_name }}</p>
                                 <p><strong>Created By:</strong> {{ $review->creator->name }}
@@ -39,7 +39,7 @@
                             </div>
 
                             <div>
-                                <h3 class="text-lg font-semibold mb-2">Review Status</h3>
+                                <h3 class="mb-2 text-lg font-semibold">Review Status</h3>
                                 <p><strong>Status:</strong>
                                     <span
                                         class="badge 
@@ -64,12 +64,12 @@
 
                         <!-- OR Number Section -->
                         <div class="mb-6">
-                            <h3 class="text-lg font-semibold mb-2">Payment Information</h3>
-                            <div class="bg-base-200 p-4 rounded">
+                            <h3 class="mb-2 text-lg font-semibold">Payment Information</h3>
+                            <div class="p-4 rounded bg-base-200">
                                 @if ($review->official_receipt_number)
                                     <p><strong>OR Number:</strong> <span
                                             class="badge badge-success">{{ $review->official_receipt_number }}</span></p>
-                                    <p class="text-success text-sm">✓ Payment processed</p>
+                                    <p class="text-sm text-success">✓ Payment processed</p>
                                 @else
                                     <p class="text-warning"><strong>OR Number:</strong> Pending payment processing</p>
                                     <p class="text-sm">Will be updated when processed by Treasurer's office</p>
@@ -78,9 +78,10 @@
                         </div>
 
                         <!-- Document Data -->
+                        <div class="divider">Document Details</div>
+                        
                         <div class="mb-6">
-                            <h3 class="text-lg font-semibold mb-2">Document Details</h3>
-                            <div class="bg-base-200 p-4 rounded space-y-2">
+                            <div class="p-4 space-y-2 rounded bg-base-200">
                                 @foreach ($review->document_data as $key => $value)
                                     @if (!in_array($key, ['action', 'reviewer_id', 'process_time', '_token', 'initial_notes']))
                                         <p><strong>{{ ucfirst(str_replace('_', ' ', $key)) }}:</strong>
@@ -99,18 +100,18 @@
                                 @method('PUT')
 
                                 <!-- OR Number Update -->
-                                <div class="form-control mb-4">
+                                <div class="mb-4 form-control">
                                     <label class="label">
-                                        <span class="label-text font-semibold">Update OR Number</span>
+                                        <span class="font-semibold label-text">Update OR Number</span>
                                         <span class="label-text-alt">Add/update official receipt number</span>
                                     </label>
                                     <input type="text" name="or_number_update" class="input input-bordered"
                                         value="{{ $review->official_receipt_number }}" placeholder="Enter OR number">
                                 </div>
 
-                                <div class="form-control mb-4">
+                                <div class="mb-4 form-control">
                                     <label class="label">
-                                        <span class="label-text font-semibold">Review Action *</span>
+                                        <span class="font-semibold label-text">Review Action *</span>
                                     </label>
                                     <select name="action" class="select select-bordered" required
                                         onchange="toggleActionOptions(this.value)">
@@ -122,9 +123,9 @@
                                     </select>
                                 </div>
 
-                                <div class="form-control mb-4">
+                                <div class="mb-4 form-control">
                                     <label class="label">
-                                        <span class="label-text font-semibold">Review Notes *</span>
+                                        <span class="font-semibold label-text">Review Notes *</span>
                                     </label>
                                     <textarea name="review_notes" class="textarea textarea-bordered" required
                                         placeholder="Add your review comments and instructions..."></textarea>
@@ -132,13 +133,13 @@
 
                                 <!-- Forward Options -->
                                 <div id="forward_options" style="display: none;">
-                                    <div class="card bg-blue-50 border border-blue-200 mb-4">
+                                    <div class="mb-4 border border-blue-200 card bg-blue-50">
                                         <div class="card-body">
-                                            <h4 class="card-title text-blue-800">Forward to Another Department</h4>
+                                            <h4 class="text-blue-800 card-title">Forward to Another Department</h4>
 
-                                            <div class="form-control mb-4">
+                                            <div class="mb-4 form-control">
                                                 <label class="label">
-                                                    <span class="label-text font-semibold">Forward To Department Head
+                                                    <span class="font-semibold label-text">Forward To Department Head
                                                         *</span>
                                                 </label>
                                                 <select name="forward_to" class="select select-bordered">
@@ -154,17 +155,17 @@
                                                 </select>
                                             </div>
 
-                                            <div class="form-control mb-4">
+                                            <div class="mb-4 form-control">
                                                 <label class="label">
-                                                    <span class="label-text font-semibold">Forward Instructions *</span>
+                                                    <span class="font-semibold label-text">Forward Instructions *</span>
                                                 </label>
                                                 <textarea name="forward_notes" class="textarea textarea-bordered"
                                                     placeholder="e.g., Please process payment and add OR number, Verify client eligibility, etc."></textarea>
                                             </div>
 
-                                            <div class="form-control mb-4">
+                                            <div class="mb-4 form-control">
                                                 <label class="label">
-                                                    <span class="label-text font-semibold">Time Limit *</span>
+                                                    <span class="font-semibold label-text">Time Limit *</span>
                                                 </label>
                                                 <select name="forward_process_time" class="select select-bordered">
                                                     @for ($i = 1; $i <= 10; $i++)
@@ -179,10 +180,10 @@
 
                                 <!-- Complete Review Options -->
                                 <div id="complete_options" style="display: none;">
-                                    <div class="card bg-green-50 border border-green-200 mb-4">
+                                    <div class="mb-4 border border-green-200 card bg-green-50">
                                         <div class="card-body">
-                                            <h4 class="card-title text-green-800">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                            <h4 class="text-green-800 card-title">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -198,9 +199,9 @@
                                                 </div>
                                             </div>
 
-                                            <div class="form-control mt-4">
+                                            <div class="mt-4 form-control">
                                                 <label class="label">
-                                                    <span class="label-text font-semibold">Additional Completion Notes
+                                                    <span class="font-semibold label-text">Additional Completion Notes
                                                         (Optional)</span>
                                                     <span class="label-text-alt">Any extra details about the completed
                                                         review</span>
@@ -214,10 +215,10 @@
 
                                 <!-- Reject Options -->
                                 <div id="reject_options" style="display: none;">
-                                    <div class="card bg-red-50 border border-red-200 mb-4">
+                                    <div class="mb-4 border border-red-200 card bg-red-50">
                                         <div class="card-body">
-                                            <h4 class="card-title text-red-800">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2"
+                                            <h4 class="text-red-800 card-title">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M6 18L18 6M6 6l12 12" />
@@ -232,9 +233,9 @@
                                                 </div>
                                             </div>
 
-                                            <div class="form-control mt-4">
+                                            <div class="mt-4 form-control">
                                                 <label class="label">
-                                                    <span class="label-text font-semibold">Rejection Reason *</span>
+                                                    <span class="font-semibold label-text">Rejection Reason *</span>
                                                     <span class="label-text-alt">Be specific about what needs to be
                                                         fixed</span>
                                                 </label>
@@ -247,10 +248,10 @@
 
                                 <!-- Cancel Options -->
                                 <div id="cancel_options" style="display: none;">
-                                    <div class="card bg-gray-50 border border-gray-200 mb-4">
+                                    <div class="mb-4 border border-gray-200 card bg-gray-50">
                                         <div class="card-body">
-                                            <h4 class="card-title text-gray-800">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2"
+                                            <h4 class="text-gray-800 card-title">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -265,9 +266,9 @@
                                                 </div>
                                             </div>
 
-                                            <div class="form-control mt-4">
+                                            <div class="mt-4 form-control">
                                                 <label class="label">
-                                                    <span class="label-text font-semibold">Cancellation Reason *</span>
+                                                    <span class="font-semibold label-text">Cancellation Reason *</span>
                                                     <span class="label-text-alt">Please explain why this document is being
                                                         canceled</span>
                                                 </label>
@@ -280,7 +281,7 @@
 
                                 <div class="form-control">
                                     <button type="submit" class="btn btn-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -296,7 +297,7 @@
                             <div class="mt-6">
                                 <a href="{{ route('documents.reviews.download', $review->id) }}"
                                     class="btn btn-success btn-lg">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -311,9 +312,9 @@
 
             <!-- Forwarding Chain Panel -->
             <div class="lg:col-span-1">
-                <div class="card bg-base-100 shadow-xl">
+                <div class="shadow-xl card bg-base-100">
                     <div class="card-body">
-                        <h3 class="card-title mb-4">
+                        <h3 class="mb-4 card-title">
                             Document Journey
                             @if (method_exists($review, 'getProgressPercentageAttribute'))
                                 <div class="badge badge-primary">{{ $review->progress_percentage ?? 0 }}% Complete</div>
@@ -360,14 +361,14 @@
                                             </span>
 
                                             @if ($stepStatus === 'completed')
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success"
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-success"
                                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M5 13l4 4L19 7" />
                                                 </svg>
                                             @elseif($stepStatus === 'pending')
                                                 <svg xmlns="http://www.w3.org/2000/svg"
-                                                    class="h-4 w-4 text-warning animate-spin" fill="none"
+                                                    class="w-4 h-4 text-warning animate-spin" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -375,7 +376,7 @@
                                             @endif
                                         </div>
 
-                                        <div class="text-sm space-y-1">
+                                        <div class="space-y-1 text-sm">
                                             <p><strong>Action:</strong>
                                                 <span class="badge badge-outline badge-xs">
                                                     {{ ucwords(str_replace('_', ' ', $stepAction)) }}
@@ -405,7 +406,7 @@
                                             @endif
 
                                             @if ($notes)
-                                                <div class="mt-2 p-2 bg-base-200 rounded text-xs">
+                                                <div class="p-2 mt-2 text-xs rounded bg-base-200">
                                                     <strong>Notes:</strong> {{ $notes }}
                                                 </div>
                                             @endif
@@ -415,7 +416,7 @@
                             </div>
 
                             <!-- Current Status Summary -->
-                            <div class="mt-4 p-3 bg-base-200 rounded">
+                            <div class="p-3 mt-4 rounded bg-base-200">
                                 <div class="text-sm">
                                     <strong>Current Status:</strong>
                                     <span
@@ -430,29 +431,29 @@
                                 </div>
 
                                 @if ($review->current_step ?? false)
-                                    <div class="text-xs mt-1 text-base-content/70">
+                                    <div class="mt-1 text-xs text-base-content/70">
                                         Step {{ $review->current_step['step'] ?? 'N/A' }}:
                                         {{ ucwords(str_replace('_', ' ', $review->current_step['action'] ?? 'unknown')) }}
                                     </div>
                                 @endif
                             </div>
                         @else
-                            <div class="text-center py-4">
-                                <div class="text-base-content/70 mb-2">Review process tracking</div>
+                            <div class="py-4 text-center">
+                                <div class="mb-2 text-base-content/70">Review process tracking</div>
                                 <div class="text-sm">
-                                    <div class="flex items-center justify-between p-2 bg-base-200 rounded mb-2">
+                                    <div class="flex items-center justify-between p-2 mb-2 rounded bg-base-200">
                                         <span>📝 Document Created</span>
                                         <span class="badge badge-success badge-sm">✓</span>
                                     </div>
-                                    <div class="flex items-center justify-between p-2 bg-base-200 rounded mb-2">
+                                    <div class="flex items-center justify-between p-2 mb-2 rounded bg-base-200">
                                         <span>📤 Sent for Review</span>
                                         <span class="badge badge-warning badge-sm">⏳</span>
                                     </div>
-                                    <div class="flex items-center justify-between p-2 bg-base-200 rounded opacity-50">
+                                    <div class="flex items-center justify-between p-2 rounded opacity-50 bg-base-200">
                                         <span>✅ Review Complete</span>
                                         <span class="badge badge-ghost badge-sm">-</span>
                                     </div>
-                                    <div class="flex items-center justify-between p-2 bg-base-200 rounded opacity-50">
+                                    <div class="flex items-center justify-between p-2 rounded opacity-50 bg-base-200">
                                         <span>📥 Ready for Download</span>
                                         <span class="badge badge-ghost badge-sm">-</span>
                                     </div>

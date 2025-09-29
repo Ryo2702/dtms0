@@ -3,8 +3,8 @@
 @section('content')
     <div class="container mx-auto max-w-7xl">
         <div class="mb-6">
-            <h1 class="text-3xl font-bold">Pending Document</h1>
-            <p class="text-base-content/70">Manage and track document review process</p>
+            <h1 class="text-3xl font-bold">Canceled Documents</h1>
+            <p class="text-base-content/70">View and manage documents that have been canceled</p>
         </div>
 
         @if (session('success'))
@@ -18,13 +18,12 @@
             </div>
         @endif
 
-
         <!-- Reviews Table -->
         <div class="shadow-xl card bg-base-100">
             <div class="card-body">
-                <h2 class="mb-4 card-title">Document Reviews</h2>
+                <h2 class="mb-4 card-title">Canceled Document Reviews</h2>
 
-                @if ($reviews->count() > 0)
+                @if ($canceledReviews->count() > 0)
                     <div class="overflow-x-auto">
                         <table class="table w-full table-zebra">
                             <thead>
@@ -34,13 +33,13 @@
                                     <th>Client</th>
                                     <th>Status</th>
                                     <th>Created By</th>
-                                    <th>Assigned To</th>
-                                    <th>Submitted</th>
+                                    <th>Canceled By</th>
+                                    <th>Canceled At</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($reviews as $review)
+                                @foreach ($canceledReviews as $review)
                                     <tr>
                                         <td>
                                             <div class="font-mono text-sm">{{ $review->document_id }}</div>
@@ -50,20 +49,9 @@
                                         </td>
                                         <td>{{ $review->client_name }}</td>
                                         <td>
-                                            <span
-                                                class="badge 
-                                            @if ($review->status === 'pending') badge-warning
-                                            @elseif($review->status === 'approved') badge-success
-                                            @elseif($review->status === 'rejected') badge-error
-                                            @elseif($review->status === 'canceled') badge-neutral
-                                            @else badge-info @endif">
+                                            <span class="badge badge-neutral">
                                                 {{ ucfirst($review->status) }}
                                             </span>
-                                            @if ($review->status === 'pending' && $review->is_overdue)
-                                                <span class="ml-1 badge badge-error badge-sm">Overdue</span>
-                                            @elseif($review->status === 'pending' && $review->due_status === 'due_soon')
-                                                <span class="ml-1 badge badge-warning badge-sm">Due Soon</span>
-                                            @endif
                                         </td>
                                         <td>
                                             <div>{{ $review->creator->name }}</div>
@@ -71,14 +59,14 @@
                                                 {{ $review->creator->department?->name }}</div>
                                         </td>
                                         <td>
-                                            <div>{{ $review->reviewer?->name }}</div>
+                                            <div>{{ $review->reviewer?->name ?? 'N/A' }}</div>
                                             <div class="text-xs text-base-content/70">
-                                                {{ $review->reviewer?->department?->name }}</div>
+                                                {{ $review->reviewer?->department?->name ?? '' }}</div>
                                         </td>
                                         <td>
-                                            <div>{{ $review->submitted_at->format('M d, Y') }}</div>
+                                            <div>{{ $review->updated_at->format('M d, Y') }}</div>
                                             <div class="text-xs text-base-content/70">
-                                                {{ $review->submitted_at->format('H:i') }}</div>
+                                                {{ $review->updated_at->format('H:i') }}</div>
                                         </td>
                                         <td>
                                             <div class="flex gap-2">
@@ -86,13 +74,6 @@
                                                     class="btn btn-sm btn-primary">
                                                     View
                                                 </a>
-
-                                                @if ($review->status === 'approved' && $review->created_by === auth()->id())
-                                                    <a href="{{ route('documents.reviews.download', $review->id) }}"
-                                                        class="btn btn-sm btn-success">
-                                                        Download
-                                                    </a>
-                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -103,16 +84,17 @@
 
                     <!-- Pagination -->
                     <div class="mt-6">
-                        {{ $reviews->links() }}
+                        {{ $canceledReviews->links() }}
                     </div>
                 @else
                     <div class="py-8 text-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto text-base-content/40"
                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
                         </svg>
-                        <p class="mt-2 text-base-content/70">No document reviews found.</p>
+                        <p class="mt-2 text-base-content/70">No canceled document reviews found.</p>
+                        <p class="text-sm text-base-content/50">All documents are still active in the workflow!</p>
                     </div>
                 @endif
             </div>

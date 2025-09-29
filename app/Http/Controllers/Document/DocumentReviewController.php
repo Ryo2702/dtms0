@@ -31,13 +31,28 @@ class DocumentReviewController extends Controller
                     ->orWhere('current_department_id', $user->department_id);
             });
         } else {
-            $query->where('created_by', $user->id);
+            // For regular users, show documents assigned to them OR documents they created that are approved and ready for download
+            $query->where(function ($q) use ($user) {
+                $q->where('assigned_to', $user->id)
+                    ->orWhere(function ($subQ) use ($user) {
+                        $subQ->where('created_by', $user->id)
+                             ->where('status', 'approved')
+                             ->whereNull('downloaded_at');
+                    });
+            });
         }
 
         if ($status) {
             $this->applyStatusFilter($query, $status, $user);
         } else {
-            $this->applyDefaultFilter($query);
+            // Show pending documents OR approved documents waiting for download
+            $query->where(function ($q) {
+                $q->where('status', 'pending')
+                  ->orWhere(function ($subQ) {
+                      $subQ->where('status', 'approved')
+                           ->whereNull('downloaded_at');
+                  });
+            });
         }
 
         $reviews = $query->orderBy('created_at', 'desc')->paginate(10);
@@ -48,7 +63,16 @@ class DocumentReviewController extends Controller
             return $review;
         });
 
-        return view('documents.reviews.index', compact('reviews', 'user', 'status'));
+        // Debug information for troubleshooting
+        $debugInfo = [
+            'total_reviews' => $reviews->total(),
+            'pending_count' => DocumentReview::where('status', 'pending')->count(),
+            'approved_not_downloaded' => DocumentReview::where('status', 'approved')->whereNull('downloaded_at')->count(),
+            'user_type' => $user->type,
+            'user_id' => $user->id,
+        ];
+
+        return view('documents.status.pending', compact('reviews', 'user', 'status', 'debugInfo'));
     }
 
     public function show($id)
@@ -119,13 +143,13 @@ class DocumentReviewController extends Controller
                     break;
             }
 
-            return redirect()->route('documents.reviews.index')->with('success', $message);
+            return redirect()->route('documents.status.pending')->with('success', $message);
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
     }
 
-    public function completed(Request $request)
+    public function closed(Request $request)
     {
         $user = Auth::user();
 
@@ -152,7 +176,7 @@ class DocumentReviewController extends Controller
         $totalCompleted = $completedReviews->total();
         $overdueCompletedCount = $this->getOverdueCompletedCount($user);
 
-        return view('documents.reviews.completed', compact('completedReviews', 'user', 'totalCompleted', 'overdueCompletedCount'));
+        return view('documents.status.closed', compact('completedReviews', 'user', 'totalCompleted', 'overdueCompletedCount'));
     }
 
     public function received(Request $request)
@@ -209,6 +233,70 @@ class DocumentReviewController extends Controller
         });
 
         return view('documents.reviews.sent', compact('sentReviews', 'user'));
+    }
+
+    public function rejected(Request $request)
+    {
+        $user = Auth::user();
+
+        $query = DocumentReview::with(['creator', 'reviewer', 'currentDepartment', 'originalDepartment'])
+            ->where('status', 'rejected');
+
+        if ($user->type === 'Head') {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhere('assigned_to', $user->id)
+                    ->orWhere('current_department_id', $user->department_id)
+                    ->orWhere('original_department_id', $user->department_id);
+            });
+        } else {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhere('assigned_to', $user->id);
+            });
+        }
+
+        $rejectedReviews = $query->orderBy('updated_at', 'desc')->paginate(10);
+
+        $rejectedReviews->getCollection()->transform(function ($review) {
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
+            $review->due_status = $this->getDueStatus($review);
+            return $review;
+        });
+
+        return view('documents.status.rejected', compact('rejectedReviews', 'user'));
+    }
+
+    public function canceled(Request $request)
+    {
+        $user = Auth::user();
+
+        $query = DocumentReview::with(['creator', 'reviewer', 'currentDepartment', 'originalDepartment'])
+            ->where('status', 'canceled');
+
+        if ($user->type === 'Head') {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhere('assigned_to', $user->id)
+                    ->orWhere('current_department_id', $user->department_id)
+                    ->orWhere('original_department_id', $user->department_id);
+            });
+        } else {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhere('assigned_to', $user->id);
+            });
+        }
+
+        $canceledReviews = $query->orderBy('updated_at', 'desc')->paginate(10);
+
+        $canceledReviews->getCollection()->transform(function ($review) {
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
+            $review->due_status = $this->getDueStatus($review);
+            return $review;
+        });
+
+        return view('documents.status.canceled', compact('canceledReviews', 'user'));
     }
 
     private function validateReviewUpdate(Request $request): void
@@ -293,18 +381,6 @@ class DocumentReviewController extends Controller
                 }
                 break;
         }
-    }
-
-    private function applyDefaultFilter($query): void
-    {
-        $query->where(function ($q) {
-            $q->where('status', 'pending')
-                ->orWhere('status', 'rejected')
-                ->orWhere('status', 'canceled')
-                ->orWhere(function ($subQ) {
-                    $subQ->where('status', 'approved')->whereNull('downloaded_at');
-                });
-        });
     }
 
     private function canViewReview(DocumentReview $review, $user): bool

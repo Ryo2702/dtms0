@@ -4,15 +4,15 @@
     'type' => 'bar', // chart type: bar, line, pie, doughnut
     'height' => '300px',
     'id' => 'chart-' . uniqid(),
-    'colors' => ['#27548A', '#183B4E', '#DDA853', '#67C090', '#FF3F33', '#8B5DFF'], // DTMS colors
+    'colors' => ['#27548A', '#183B4E', '#DDA853', '#67C090', '#FF3F33', '#8B5DFF'], 
     'subtitle' => null,
 ])
 
-<div class="card shadow-lg bg-white-secondary">
-    <div class="card-body p-6">
+<div class="shadow-lg card bg-white-secondary">
+    <div class="p-6 card-body">
         <div class="flex items-center justify-between mb-4">
             <div>
-                <h3 class="card-title text-lg text-primary">{{ $title }}</h3>
+                <h3 class="text-lg card-title text-primary">{{ $title }}</h3>
                 @if ($subtitle)
                     <p class="text-sm text-base-content/70">{{ $subtitle }}</p>
                 @endif
@@ -21,10 +21,6 @@
                 <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
                     <x-dynamic-component component="lucide-more-horizontal" class="w-4 h-4" />
                 </div>
-                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-white-secondary rounded-box w-32">
-                    <li><a onclick="exportChart('{{ $id }}', 'png')" class="text-primary hover:bg-primary hover:text-white">Export PNG</a></li>
-                    <li><a onclick="exportChart('{{ $id }}', 'pdf')" class="text-primary hover:bg-primary hover:text-white">Export PDF</a></li>
-                </ul>
             </div>
         </div>
 
@@ -33,9 +29,7 @@
         </div>
     </div>
 </div>
-
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('{{ $id }}').getContext('2d');
@@ -78,7 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Configure scales based on chart type
     if (chartType === 'bar' || chartType === 'line') {
         config.options.scales = {
             y: {
@@ -132,21 +125,5 @@ document.addEventListener('DOMContentLoaded', function() {
     window[`chart_${('{{ $id }}').replace('-', '_')}`] = chart;
 });
 
-// Export functionality
-function exportChart(chartId, format) {
-    const chart = window[`chart_${chartId.replace('-', '_')}`];
-    if (!chart) return;
-
-    if (format === 'png') {
-        const url = chart.toBase64Image();
-        const link = document.createElement('a');
-        link.download = `chart_${chartId}.png`;
-        link.href = url;
-        link.click();
-    } else if (format === 'pdf') {
-        // For PDF export, you'd need to include jsPDF library
-        console.log('PDF export requires jsPDF library');
-    }
-}
 </script>
 @endpush

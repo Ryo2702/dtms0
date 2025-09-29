@@ -7,7 +7,7 @@
                 $currentRoute = request()->route()->getName();
             @endphp
             <div class="flex items-center space-x-2">
-                <h1 class="truncate">DTMS</h1>
+                <h1 class="truncate">DOCTRAMS</h1>
             </div>
 
             <!-- Mobile Close Button - Only show on mobile/tablet -->
@@ -100,7 +100,6 @@
                 }
                 $rejectedCount = $rejectedQuery->count();
 
-                // Canceled documents
                 $canceledQuery = \App\Models\DocumentReview::where('status', 'canceled');
                 if ($user->type === 'Head') {
                     $canceledQuery->where(function ($q) use ($user) {
@@ -171,22 +170,22 @@
 
                     <!-- Document Status -->
                     <x-sidebar-label text="Document Status" />
-                    <x-sidebar-item :route="route('documents.reviews.index')" :active="$currentRoute === 'documents.reviews.index'" icon="file-clock" :badge="['class' => 'badge-error', 'count' => $pendingReviews]" data-notification-type="pending">
+                    <x-sidebar-item :route="route('documents.status.pending')" :active="in_array($currentRoute, ['documents.reviews.index', 'documents.status.pending'])" icon="clock" :badge="['class' => 'badge-error', 'count' => $pendingReviews]" data-notification-type="pending">
                         <span class="truncate">Pending</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.reviews.completed')" :active="$currentRoute === 'documents.reviews.completed'" icon="check-circle" :badge="[
+                    <x-sidebar-item :route="route('documents.status.closed')" :active="$currentRoute === 'documents.status.closed'" icon="check-circle" :badge="[
                         'class' => 'badge-success',
                         'count' => $completedCount,
                     ]" data-notification-type="completed">
                         <span class="truncate">Closed</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.reviews.index', ['status' => 'rejected'])" :active="$currentRoute === 'documents.reviews.index' && request('status') === 'rejected'" icon="x-circle" :badge="['class' => 'badge-error', 'count' => $rejectedCount]" data-notification-type="rejected">
+                    <x-sidebar-item :route="route('documents.status.rejected')" :active="$currentRoute === 'documents.status.rejected'" icon="x-circle" :badge="['class' => 'badge-error', 'count' => $rejectedCount]" data-notification-type="rejected">
                         <span class="truncate">Rejected</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.reviews.index', ['status' => 'canceled'])" :active="$currentRoute === 'documents.reviews.index' && request('status') === 'canceled'" icon="ban" :badge="['class' => 'badge-neutral', 'count' => $canceledCount]" data-notification-type="canceled">
+                    <x-sidebar-item :route="route('documents.status.canceled')" :active="$currentRoute === 'documents.status.canceled'" icon="ban" :badge="['class' => 'badge-neutral', 'count' => $canceledCount]" data-notification-type="canceled">
                         <span class="truncate">Canceled</span>
                     </x-sidebar-item>
                 @endif
@@ -221,10 +220,8 @@
         </div>
     </div>
 
-    <!-- AJAX Notification Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Only run for Staff and Head users
             @if(in_array($user->type, ['Staff', 'Head']))
                 function updateNotificationCounts() {
                     fetch('{{ route("notifications.counts") }}', {
@@ -287,13 +284,10 @@
                     }
                 }
 
-                // Update counts on page load
                 updateNotificationCounts();
 
-                // Update counts every 30 seconds
-                setInterval(updateNotificationCounts, 30000);
+                setInterval(updateNotificationCounts, 2000);
 
-                // Update counts when page becomes visible (tab switching)
                 document.addEventListener('visibilitychange', function() {
                     if (!document.hidden) {
                         updateNotificationCounts();

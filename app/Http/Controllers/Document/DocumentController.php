@@ -19,10 +19,6 @@ class DocumentController extends Controller
             'title' => "Mayor's Clearance",
             'file' => 'Mayors_Clearance.docx',
         ],
-        [
-            'title' => 'Municipality Peace Order Council',
-            'file' => 'MPOC_Sample.docx',
-        ],
     ];
 
     public function __construct(
@@ -53,7 +49,6 @@ class DocumentController extends Controller
         //file location
         $viewName = match ($file) {
             'Mayors_Clearance.docx' => 'documents.mayors-clearance',
-            'MPOC_Sample.docx' => 'documents.mpoc-sample',
             default => 'documents.' . strtolower(str_replace([' ', "'", '_', '.docx'], ['-', '', '-', ''], $docInfo['title']))
         };
         return view($viewName, compact('docInfo'));
@@ -77,7 +72,6 @@ class DocumentController extends Controller
     {
         $validatedData = match ($file) {
             'Mayors_Clearance.docx' => $request->validate((new MayorClearanceRequest())->rules()),
-            'MPOC_Sample.docx' => $request->validate((new MpocRequest())->rules()),
             default => throw new \InvalidArgumentException("Unsupported document type.")
         };
 
