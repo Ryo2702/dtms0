@@ -54,7 +54,7 @@ class DocumentController extends Controller
             'reviewer_id' => $validated['reviewer_id'],
             'process_time' => $validated['process_time'],
             'title' => $validated['title'],
-            'created_via' => 'custom_form'
+            'created_via' => 'request_form'
         ];
 
         $docInfo = [

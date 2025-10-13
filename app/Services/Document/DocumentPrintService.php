@@ -3,7 +3,7 @@
 namespace App\Services\Document;
 
 use App\Models\DocumentReview;
-use App\Models\DocumentVerification;
+use App\Services\Document\DocumentIdGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Endroid\QrCode\QrCode;
@@ -14,15 +14,27 @@ use Mike42\Escpos\EscposImage;
 
 class DocumentPrintService
 {
+    private DocumentIdGenerator $documentIdGenerator;
+
+    public function __construct(DocumentIdGenerator $documentIdGenerator)
+    {
+        $this->documentIdGenerator = $documentIdGenerator;
+    }
+
     public function printReceipt(DocumentReview $review)
     {
         $user = Auth::user();
 
-        // Create a verification record
-        $verification = $this->createVerification($review, $user);
+        // Generate document ID if not exists and save to review
+        if (!$review->document_id) {
+            $documentId = $this->documentIdGenerator->generate();
+            $review->update(['document_id' => $documentId]);
+        } else {
+            $documentId = $review->document_id;
+        }
 
-        // Generate QR code
-        $qrPath = $this->generateQrCodeFile($verification);
+        // Generate QR code with document ID
+        $qrPath = $this->generateQrCodeFile($documentId);
 
         // === PRINTER CONFIG Linux===
        $printerPath = null;
@@ -34,18 +46,11 @@ class DocumentPrintService
         throw new \Exception('No thermal printer found under /dev/usb/');
         }
 
-$connector = new FilePrintConnector($printerPath);
+        $connector = new FilePrintConnector($printerPath);
         $printer = new Printer($connector);
-
 
         $printer->initialize();
         $printer->getPrintConnector()->write("\x1B\x21\x30");
-
-
-        // === WINDOWS PRINTER NAME ===
-        // $printerName = "XPrinter 58mm"; 
-        // $connector = new WindowsPrintConnector($printerName);
-        // $printer = new Printer($connector);
 
         try {
             $printer->initialize();
@@ -57,8 +62,7 @@ $connector = new FilePrintConnector($printerPath);
             $printer->feed();
 
             $printer->setJustification(Printer::JUSTIFY_LEFT);
-            $printer->text("Verification Code: " . ($verification->verification_code ?? 'N/A') . "\n");
-            $printer->text("Document ID: " . ($review->document_id ?? 'N/A') . "\n");
+            $printer->text("Document ID: " . $documentId . "\n");
             $printer->text("Employee ID: " . ($user->employee_id ?? 'N/A') . "\n");
 
             $printer->feed();
@@ -68,7 +72,6 @@ $connector = new FilePrintConnector($printerPath);
                 $printer->setJustification(Printer::JUSTIFY_CENTER);
                 $img = EscposImage::load($qrPath, false);
                 $printer->bitImage($img);
-                 $printer->setEmphasis(true);
                 $printer->feed();
                 $printer->text("Scan to Verify\n");
             } else {
@@ -77,6 +80,9 @@ $connector = new FilePrintConnector($printerPath);
 
             $printer->feed(2);
             $printer->cut();
+
+            // Mark as downloaded
+            $review->update(['downloaded_at' => now()]);
         } catch (\Exception $e) {
             Log::error('Printing failed: ' . $e->getMessage());
         } finally {
@@ -86,29 +92,16 @@ $connector = new FilePrintConnector($printerPath);
         return redirect()->back()->with('success', 'Printed Successfully');
     }
 
-    private function createVerification(DocumentReview $review, $user): DocumentVerification
-    {
-        return DocumentVerification::create([
-            'verification_code' => DocumentVerification::generateVerificationCode(),
-            'document_id' => $review->document_id,
-            'document_type' => $review->document_type,
-            'client_name' => $review->client_name,
-            'issued_by' => $user->name,
-            'issued_by_id' => $user->employee_id ?? $user->id,
-            'issued_at' => now(),
-            'document_data' => $review->document_data,
-        ]);
-    }
-
-    private function generateQrCodeFile(DocumentVerification $verification): ?string
+    private function generateQrCodeFile(string $documentId): ?string
     {
         try {
-            $qrData = route('documents.verify', $verification->verification_code);
+            // Generate URL that directly links to the document review
+            $qrData = route('documents.show-by-id', $documentId);
             
             $tempDir = storage_path('app/public/temp');
             $this->ensureDirectoryExists($tempDir);
             
-            $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'qr_' . $verification->verification_code . '.png';
+            $tempPath = $tempDir . DIRECTORY_SEPARATOR . 'qr_' . $documentId . '.png';
             
             $qrCode = new QrCode($qrData);
             $qrCode->setSize(250);

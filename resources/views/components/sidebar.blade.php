@@ -40,26 +40,6 @@
                 }
                 $receivedCount = $receivedQuery->count();
 
-                // Sent documents
-                $sentQuery = \App\Models\DocumentReview::where('original_department_id', $user->department_id)
-                    ->where('current_department_id', '!=', $user->department_id)
-                    ->whereIn('status', ['pending', 'approved']);
-
-                if ($user->type === 'Head') {
-                    $sentQuery->where(function ($q) use ($user) {
-                        $q->where('created_by', $user->id)->orWhereExists(function ($subQ) use ($user) {
-                            $subQ
-                                ->select(\DB::raw(1))
-                                ->from('users')
-                                ->whereRaw('users.id = document_reviews.created_by')
-                                ->where('users.department_id', $user->department_id);
-                        });
-                    });
-                } else {
-                    $sentQuery->where('created_by', $user->id);
-                }
-                $sentCount = $sentQuery->count();
-
                 // Completed documents
                 $completedQuery = \App\Models\DocumentReview::where('status', 'approved')->whereNotNull('downloaded_at');
 
@@ -161,11 +141,7 @@
                     <x-sidebar-label text="Document Workflow" />
 
                     <x-sidebar-item :route="route('documents.reviews.received')" :active="$currentRoute === 'documents.reviews.received'" icon="inbox" :badge="['class' => 'badge-info', 'count' => $receivedCount]" data-notification-type="received">
-                        <span class="truncate">Received</span>
-                    </x-sidebar-item>
-
-                    <x-sidebar-item :route="route('documents.reviews.sent')" :active="$currentRoute === 'documents.reviews.sent'" icon="send" :badge="['class' => 'badge-warning', 'count' => $sentCount]" data-notification-type="sent">
-                        <span class="truncate">Sent</span>
+                        <span class="truncate">Request</span>
                     </x-sidebar-item>
 
                     <!-- Document Status -->
@@ -237,10 +213,9 @@
                             // Update each notification badge
                             updateBadge('pending', data.counts.pending, 'badge-error');
                             updateBadge('received', data.counts.received, 'badge-info');
-                            updateBadge('sent', data.counts.sent, 'badge-warning');
                             updateBadge('completed', data.counts.completed, 'badge-success', data.counts.overdue_completed);
                             updateBadge('rejected', data.counts.rejected, 'badge-error');
-                            updateBadge('canceled', data.counts.canceled, 'badge-neutral');
+                            updateBadge('canceled', data.counts.canceled, 'badge-error');
                         }
                     })
                     .catch(error => {

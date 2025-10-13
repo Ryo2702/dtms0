@@ -104,13 +104,19 @@
                                                     View
                                                 </a>
 
-                                                @if ($review->status === 'approved' && $review->created_by === auth()->id() && !$review->downloaded_at)
-                                                    <a href="{{ route('documents.reviews.download', $review->id) }}"
+                                               @if ($review->created_by === auth()->id())
+                                                    <a href="{{ route('documents.reviews.print', $review->id) }}"
                                                         class="btn btn-sm btn-success">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                                                         </svg>
-                                                        Download
+                                                        @if($review->status === 'approved' && !$review->downloaded_at)
+                                                            Print
+                                                        @elseif($review->status === 'approved')
+                                                            Re-print
+                                                        @else
+                                                            Print Draft
+                                                        @endif
                                                     </a>
                                                 @elseif ($review->status === 'pending' && $review->assigned_to === auth()->id())
                                                     <span class="badge badge-info badge-sm">Awaiting Review</span>

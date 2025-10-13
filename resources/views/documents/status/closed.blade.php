@@ -135,8 +135,8 @@
                                                 View Details
                                             </a>
 
-                                            @if ($review->created_by === $user->id && $review->status === 'approved')
-                                                <a href="{{ route('documents.reviews.download', $review->id) }}"
+                                            @if ($review->created_by === $user->id)
+                                                <a href="{{ route('documents.reviews.print', $review->id) }}"
                                                     class="inline-flex items-center px-3 py-1 text-sm font-medium leading-4 text-white transition-colors bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -145,7 +145,11 @@
                                                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                                         </path>
                                                     </svg>
-                                                    Re-download
+                                                    @if($review->status === 'approved')
+                                                        Re-print
+                                                    @else
+                                                        Print
+                                                    @endif
                                                 </a>
                                             @endif
                                         </div>

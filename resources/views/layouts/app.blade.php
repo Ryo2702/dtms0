@@ -56,7 +56,30 @@
                         @endif
                     </h1>
                 </div>
+
+                 <!-- Center Search Bar -->
+                <div class="navbar-center">
+                    <div class="relative w-full max-w-sm">
+                        <form id="document-search-form" class="flex">
+                            <div class="relative flex-1">
+                                <input type="text" 
+                                       id="document-search" 
+                                       name="document_id"
+                                       placeholder="Search Document ID..." 
+                                       class="w-full px-4 py-2 pl-10 pr-12 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                                </div>
+                            </div>
+                            <button type="submit" 
+                                    class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </nav>
+            
 
             {{-- Flash Messages --}}
             <x-toast :message="session('success')" type="success" title="Success" :timeout="5000" position="top-right" />
@@ -80,14 +103,6 @@
             const sidebar = document.getElementById('mobile-sidebar');
             const sidebarLinks = document.querySelectorAll('#mobile-sidebar a');
 
-            // Debug logging
-            console.log('Sidebar elements initialized:', {
-                hamburgerBtn: !!hamburgerBtn,
-                closeBtn: !!closeBtn,
-                overlay: !!overlay,
-                sidebar: !!sidebar,
-                linksCount: sidebarLinks.length
-            });
 
             function openSidebar() {
                 if (sidebar && overlay) {
@@ -146,6 +161,48 @@
             if (window.innerWidth < 1024) {
                 closeSidebar();
             }
+
+              const searchForm = document.getElementById('document-search-form');
+            const searchInput = document.getElementById('document-search');
+
+            searchForm?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const inputValue = searchInput.value.trim();
+                
+                if (inputValue) {
+                    let documentId = inputValue;
+                    
+                    // Check if input is a URL
+                    if (inputValue.includes('http') || inputValue.includes('/document/')) {
+                        // Extract document ID from URL
+                        const urlMatch = inputValue.match(/\/document\/([^\/\?#]+)/);
+                        if (urlMatch) {
+                            documentId = urlMatch[1];
+                        } else {
+                            // Try to extract from end of URL after last slash
+                            const parts = inputValue.split('/');
+                            const lastPart = parts[parts.length - 1];
+                           
+                            if (lastPart && (lastPart.match(/^[A-Z]{2,}-\d{8}-[A-Z0-9]+$/i) || lastPart.length > 5)) {
+                                documentId = lastPart;
+                            } else {
+                                alert('Could not extract document ID from URL. Please check the format.');
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // Validate document ID format (optional but recommended)
+                    if (documentId && documentId.length > 2) {
+                        // Redirect to document review page with the extracted document ID
+                        window.location.href = `/document/${encodeURIComponent(documentId)}`;
+                    } else {
+                        alert('Please enter a valid document ID or URL');
+                    }
+                } else {
+                    alert('Please enter a document ID or paste a URL to search');
+                }
+            });
         });
     </script>
 </body>

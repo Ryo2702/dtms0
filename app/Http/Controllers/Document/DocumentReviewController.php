@@ -63,22 +63,35 @@ class DocumentReviewController extends Controller
             return $review;
         });
 
-        // Debug information for troubleshooting
-        $debugInfo = [
-            'total_reviews' => $reviews->total(),
-            'pending_count' => DocumentReview::where('status', 'pending')->count(),
-            'approved_not_downloaded' => DocumentReview::where('status', 'approved')->whereNull('downloaded_at')->count(),
-            'user_type' => $user->type,
-            'user_id' => $user->id,
-        ];
-
-        return view('documents.status.pending', compact('reviews', 'user', 'status', 'debugInfo'));
+        return view('documents.status.pending', compact('reviews', 'user', 'status'));
     }
 
     public function show($id)
     {
         $review = DocumentReview::with(['creator', 'reviewer', 'currentDepartment', 'originalDepartment'])
             ->findOrFail($id);
+
+        $user = Auth::user();
+
+        if (!$this->canViewReview($review, $user)) {
+            abort(403, 'You do not have permission to view this review.');
+        }
+
+        $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
+        $review->due_status = $this->getDueStatus($review);
+
+        return view('documents.reviews.show', compact('review'));
+    }
+
+    public function showByDocumentId($documentId)
+    {
+        $review = DocumentReview::with(['creator', 'reviewer', 'currentDepartment', 'originalDepartment'])
+            ->where('document_id', $documentId)
+            ->first();
+
+        if (!$review) {
+            return view('documents.reviews.not-found', compact('documentId'));
+        }
 
         $user = Auth::user();
 
@@ -204,36 +217,9 @@ class DocumentReviewController extends Controller
             return $review;
         });
 
-        return view('documents.reviews.received', compact('receivedReviews', 'user'));
+        return view('documents.reviews.request', compact('receivedReviews', 'user'));
     }
 
-    public function sent(Request $request)
-    {
-        $user = Auth::user();
-
-        $query = DocumentReview::with(['creator', 'reviewer', 'currentDepartment', 'originalDepartment'])
-            ->where('original_department_id', $user->department_id)
-            ->where('current_department_id', '!=', $user->department_id);
-
-        if ($user->type === 'Head') {
-            $query->where(function ($q) use ($user) {
-                $q->where('created_by', $user->id)
-                    ->orWhere('original_department_id', $user->department_id);
-            });
-        } else {
-            $query->where('created_by', $user->id);
-        }
-
-        $sentReviews = $query->orderBy('created_at', 'desc')->paginate(10);
-
-        $sentReviews->getCollection()->transform(function ($review) {
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
-            $review->due_status = $this->getDueStatus($review);
-            return $review;
-        });
-
-        return view('documents.reviews.sent', compact('sentReviews', 'user'));
-    }
 
     public function rejected(Request $request)
     {
@@ -434,13 +420,9 @@ class DocumentReviewController extends Controller
         return $query->count();
     }
 
-    public function download($id)
+    public function print($id)
     {
         $review = DocumentReview::findOrFail($id);
-
-        if ($review->created_by !== Auth::id() || $review->status !== 'approved') {
-            abort(403, 'You can only print receipt you created that have been approved.');
-        }
 
         return $this->printService->generateDocument($review);
     }

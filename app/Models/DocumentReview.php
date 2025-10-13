@@ -179,7 +179,11 @@ class DocumentReview extends Model
 
         return $totalSteps > 0 ? round(($completedSteps / $totalSteps) * 100) : 0;
     }
-
+    // Get verification URL
+    public function getVerificationUrlAttribute()
+    {
+        return route('documents.review', $this->document_id);
+    }
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
