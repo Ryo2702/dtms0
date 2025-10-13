@@ -30,7 +30,6 @@ class DocumentWorkflowService
             'document_type' => $docInfo['title'],
             'client_name' => $clientName,
             'document_data' => $data,
-            'official_receipt_number' => $data['or_number'] ?? null,
             'created_by' => $user->id,
             'assigned_to' => $data['reviewer_id'],
             'current_department_id' => $reviewer->department_id,
@@ -113,9 +112,6 @@ class DocumentWorkflowService
         $completionMessage = $notes ?? 'Document review completed successfully.';
         $completionMessage .= "\n\nStatus: " . ucfirst($timeStatus);
 
-        if ($review->official_receipt_number) {
-            $completionMessage .= "\n\nOR Number: " . $review->official_receipt_number . " (Payment Processed)";
-        }
         $completionMessage .= "\n\nDocument is ready for download and client signature.";
 
         $review->addToForwardingChain(

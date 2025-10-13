@@ -1,6 +1,4 @@
-@props([
-    'hasFee' => true,
-])
+
 
 {{-- Document Processing Section --}}
 <div class="border border-green-200 card bg-gradient-to-r from-green-50 to-blue-50">
@@ -15,7 +13,7 @@
             </button>
             <div
                 class="absolute left-0 hidden w-64 p-2 mt-2 text-sm text-white bg-gray-800 rounded-lg shadow-lg instruction-box top-full">
-                All documents must go through department review{{ $hasFee ? ' or need payment' : '' }} before download.
+                All documents must go through department review before download.
                 Document will be processed through multiple departments as needed.
             </div>
         </div>
@@ -89,7 +87,7 @@
     </a>
     <button type="submit" class="btn btn-primary">
         <i data-lucide="send" class="w-4 h-4 mr-2" stroke='currentColor'></i>
-        Send for Department Review
+        Send in Department
     </button>
 </div>
 

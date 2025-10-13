@@ -154,7 +154,7 @@
                         </a>
                         <button type="submit" class="btn btn-primary">
                             <i data-lucide="send" class="w-4 h-4 mr-2"></i>
-                            Create & Send for Review
+                            Send
                         </button>
                     </div>
                 </form>

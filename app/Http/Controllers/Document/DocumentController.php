@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Storage;
 class DocumentController extends Controller
 {
     
-
     public function __construct(
         private DocumentIdGenerator $idGenerator,
         private DocumentWorkflowService $workflowService
@@ -78,10 +77,7 @@ class DocumentController extends Controller
             abort(404, 'Document template not found.');
         }
 
-        $documentType = match ($file) {
-            default => 'Unknown Document'
-        };
-
+ 
         // Get reviewers for this document type
         $reviewers = User::whereIn('type', ['Staff', 'Head'])->get();
 
@@ -96,9 +92,6 @@ class DocumentController extends Controller
         $validated = $request->validated();
         $documentId = $this->idGenerator->generate();
         
-        $docInfo = [
-            'title' => $this->getDocumentType($file)
-        ];
 
         // Use the workflow service to create the document review
         $review = $this->workflowService->sendForReview($validated, $docInfo, $documentId);
@@ -107,10 +100,4 @@ class DocumentController extends Controller
             ->with('success', "Document has been submitted for review. Document ID: {$documentId}");
     }
 
-    private function getDocumentType($file): string
-    {
-        return match ($file) {
-            default => 'Unknown Document'
-        };
-    }
 }

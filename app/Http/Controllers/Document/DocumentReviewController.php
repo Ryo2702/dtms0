@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DocumentReview;
 use App\Models\User;
 use App\Services\Document\DocumentWorkflowService;
-use App\Services\Document\DocumentDownloadService;
+use App\Services\Document\DocumentPrintService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,7 +14,7 @@ class DocumentReviewController extends Controller
 {
     public function __construct(
         private DocumentWorkflowService $workflowService,
-        private DocumentDownloadService $downloadService
+        private DocumentPrintService $printService
     ) {}
 
     public function index(Request $request)
@@ -439,9 +439,9 @@ class DocumentReviewController extends Controller
         $review = DocumentReview::findOrFail($id);
 
         if ($review->created_by !== Auth::id() || $review->status !== 'approved') {
-            abort(403, 'You can only download documents you created that have been approved.');
+            abort(403, 'You can only print receipt you created that have been approved.');
         }
 
-        return $this->downloadService->generateDocument($review);
+        return $this->printService->generateDocument($review);
     }
 }

@@ -84,16 +84,6 @@
                                 @csrf
                                 @method('PUT')
 
-                                <!-- OR Number Update -->
-                                <div class="mb-4 form-control">
-                                    <label class="label">
-                                        <span class="font-semibold label-text">Update OR Number</span>
-                                        <span class="label-text-alt">Add/update official receipt number</span>
-                                    </label>
-                                    <input type="text" name="or_number_update" class="input input-bordered"
-                                        value="{{ $review->official_receipt_number }}" placeholder="Enter OR number">
-                                </div>
-
                                 <div class="mb-4 form-control">
                                     <label class="label">
                                         <span class="font-semibold label-text">Review Action *</span>
@@ -101,10 +91,10 @@
                                     <select name="action" class="select select-bordered" required
                                         onchange="toggleActionOptions(this.value)">
                                         <option value="">Select Action</option>
-                                        <option value="forward">Forward to Another Department</option>
-                                        <option value="complete">Complete Review & Return to Staff</option>
-                                        <option value="reject">Reject Document</option>
-                                        <option value="cancel">Cancel Document</option>
+                                        <option value="forward">Forward Review</option>
+                                        <option value="complete">Complete Review</option>
+                                        <option value="reject">Reject Review</option>
+                                        <option value="cancel">Cancel Review</option>
                                     </select>
                                 </div>
 
