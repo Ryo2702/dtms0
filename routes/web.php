@@ -51,6 +51,8 @@ Route::middleware(['auth'])->group(function () {
     // Document routes
     Route::prefix('documents')->name('documents.')->group(function () {
         Route::get('/', [DocumentController::class, 'index'])->name('index');
+        Route::get('/create', [DocumentController::class, 'create'])->name('create');
+        Route::post('/store', [DocumentController::class, 'store'])->name('store');
         Route::get('/{file}/fill', [DocumentController::class, 'form'])->name('form');
         Route::post('/{file}/download', [DocumentController::class, 'download'])->name('download');
 

@@ -41,7 +41,6 @@ class VerificationController extends Controller
             ->generate($url);
     }
 
-    // Add this new method to generate QR code as base64 image for documents
     public function generateQrCodeImage($verificationCode)
     {
         $verification = DocumentVerification::where('verification_code', $verificationCode)

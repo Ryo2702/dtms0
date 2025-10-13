@@ -62,8 +62,6 @@ class DocumentDownloadService
     private function getTemplatePath(string $documentType): string
     {
         $file = match ($documentType) {
-            "Mayor's Clearance" => 'Mayors_Clearance.docx',
-            'Municipality Peace Order Council' => 'MPOC_Sample.docx',
             default => throw new \InvalidArgumentException("Document template {$documentType} not found.")
         };
 
@@ -100,22 +98,7 @@ class DocumentDownloadService
 
         // Document-specific fields
         $data = $review->document_data;
-
-        if ($review->document_type === "Mayor's Clearance") {
-            $this->populateMayorsClearance($processor, $data, $review);
-        }
     }
-
-    private function populateMayorsClearance(TemplateProcessor $processor, array $data, DocumentReview $review): void
-    {
-        $processor->setValue('name', $data['name'] ?? '');
-        $processor->setValue('address', $data['address'] ?? '');
-        $processor->setValue('purpose', $data['purpose'] ?? '');
-        $processor->setValue('fee', $data['fee'] ?? '');
-        $processor->setValue('or_number', $review->official_receipt_number ?? 'N/A');
-        $processor->setValue('date', $data['date'] ?? now()->format('Y-m-d'));
-    }
-
 
     private function generateQrCodeFile(DocumentVerification $verification): ?string
     {
@@ -143,24 +126,6 @@ class DocumentDownloadService
             return null;
         }
     }
-
-    // private function convertSvgToPng(string $svgContent, string $outputPath): void
-    // {
-    //     // Create a simple black and white QR code image using GD
-    //     $size = 200;
-    //     $image = imagecreatetruecolor($size, $size);
-    //     $white = imagecolorallocate($image, 255, 255, 255);
-    //     $black = imagecolorallocate($image, 0, 0, 0);
-        
-    //     imagefill($image, 0, 0, $white);
-        
-    //     $font = 5;
-    //     $text = "QR Code";
-    //     imagestring($image, $font, 80, 95, $text, $black);
-        
-    //     imagepng($image, $outputPath);
-    //     imagedestroy($image);
-    // }
 
     private function ensureDirectoryExists(string $directory): void
     {

@@ -6,7 +6,7 @@
     'color' => 'text-primary', // text color for value
     'bgColor' => 'bg-white-secondary', // background class - using DTMS colors
     'textColor' => 'text-base-content', // label color
-    'iconColor' => 'text-primary', // icon color
+    'iconColor' => 'text-white', // icon color
     'subtitle' => null, // optional subtitle
     'trend' => null, // trend data (array with percentage and direction)
     'href' => null, // optional link

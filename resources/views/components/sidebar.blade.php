@@ -133,7 +133,7 @@
                     <x-sidebar-label text="Administration" />
 
                     <x-sidebar-item :route="route('admin.users.index')" :active="Str::startsWith($currentRoute, 'admin.users')" icon="users">
-                        <span class="truncate">Admins</span>
+                        <span class="truncate">Heads</span>
                     </x-sidebar-item>
 
                     <x-sidebar-item :route="route('admin.departments.index')" :active="Str::startsWith($currentRoute, 'admin.departments')" icon="building-2">

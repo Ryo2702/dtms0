@@ -4,90 +4,113 @@ namespace App\Http\Controllers\Document;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Document_Type\MayorClearanceRequest;
-use App\Http\Requests\Document_Type\MpocRequest;
 use App\Models\DocumentReview;
+use App\Models\Department;
 use App\Models\User;
 use App\Services\Document\DocumentIdGenerator;
 use App\Services\Document\DocumentWorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentController extends Controller
 {
-    private array $documents = [
-        [
-            'title' => "Mayor's Clearance",
-            'file' => 'Mayors_Clearance.docx',
-        ],
-    ];
+    
 
     public function __construct(
+        private DocumentIdGenerator $idGenerator,
         private DocumentWorkflowService $workflowService
     ) {}
 
     public function index()
     {
-        $user = Auth::user();
+        $departments = Department::where('status', 1)->get();
+             
+        $reviewers = User::whereIn('type', ['Staff', 'Head'])->get();
 
-        $pendingCount = DocumentReview::where('assigned_to', $user->id)
-            ->where('status', 'pending')
-            ->whereNull('downloaded_at')
-            ->count();
+        return view('documents.index', compact('departments', 'reviewers'));
+    }
 
-        return view('documents.index', compact('user', 'pendingCount'))
-            ->with('documents', $this->documents);
+    public function create()
+    {
+        $departments = Department::where('status', 1)->get();
+        $reviewers = User::whereIn('type', ['Staff', 'Head'])->get();
+        
+        return view('documents.create', compact('departments', 'reviewers'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'document_type' => 'required|string|max:255',
+            'client_name' => 'required|string|max:255',
+            'reviewer_id' => 'required|exists:users,id',
+            'process_time' => 'required|integer|min:1|max:10',
+        ]);
+
+        $documentId = $this->idGenerator->generate();
+            $data = [
+            'name' => $validated['client_name'],
+            'reviewer_id' => $validated['reviewer_id'],
+            'process_time' => $validated['process_time'],
+            'title' => $validated['title'],
+            'created_via' => 'custom_form'
+        ];
+
+        $docInfo = [
+            'title' => $validated['document_type']
+        ];
+
+        // Use the workflow service to create the document review
+        $review = $this->workflowService->sendForReview($data, $docInfo, $documentId);
+
+        return redirect()->route('documents.index')
+            ->with('success', "Document '{$validated['title']}' has been created and sent for review. Document ID: {$documentId}");
     }
 
     public function form($file)
     {
-        $docInfo = collect($this->documents)->firstWhere('file', $file);
-
-        if (!$docInfo) {
-            abort(404, "Document not found.");
+        // Check if template exists
+        $templatePath = storage_path("app/public/templates/{$file}");
+        
+        if (!file_exists($templatePath)) {
+            abort(404, 'Document template not found.');
         }
 
-        //file location
-        $viewName = match ($file) {
-            'Mayors_Clearance.docx' => 'documents.mayors-clearance',
-            default => 'documents.' . strtolower(str_replace([' ', "'", '_', '.docx'], ['-', '', '-', ''], $docInfo['title']))
-        };
-        return view($viewName, compact('docInfo'));
-    }
-
-    public function download(Request $request, $file, DocumentIdGenerator $idGenerator)
-    {
-        $docInfo = collect($this->documents)->firstWhere('file', $file);
-
-        if (!$docInfo) {
-            abort(404, "Document not found.");
-        }
-
-        $data = $this->validateDocumentData($request, $file);
-        $documentId = $idGenerator->generate();
-
-        return $this->sendForReview($data, $docInfo, $documentId);
-    }
-
-    private function validateDocumentData(Request $request, string $file): array
-    {
-        $validatedData = match ($file) {
-            'Mayors_Clearance.docx' => $request->validate((new MayorClearanceRequest())->rules()),
-            default => throw new \InvalidArgumentException("Unsupported document type.")
+        $documentType = match ($file) {
+            default => 'Unknown Document'
         };
 
-        return $validatedData;
+        // Get reviewers for this document type
+        $reviewers = User::whereIn('type', ['Staff', 'Head'])->get();
+
+        // Route to appropriate form view
+        return match ($file) {
+            default => abort(404, 'Form not found for this document type.')
+        };
     }
 
-    private function sendForReview(array $data, array $docInfo, string $documentId)
+    public function download($file, Request $request)
     {
-        try {
-            $review = $this->workflowService->sendForReview($data, $docInfo, $documentId);
-            $reviewer = User::find($data['reviewer_id']);
+        $validated = $request->validated();
+        $documentId = $this->idGenerator->generate();
+        
+        $docInfo = [
+            'title' => $this->getDocumentType($file)
+        ];
 
-            return redirect()->route('documents.index')
-                ->with('success', "Document sent for review to {$reviewer->name} ({$reviewer->department?->name}). Review ID: {$documentId}");
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
-        }
+        // Use the workflow service to create the document review
+        $review = $this->workflowService->sendForReview($validated, $docInfo, $documentId);
+
+        return redirect()->route('documents.reviews.index')
+            ->with('success', "Document has been submitted for review. Document ID: {$documentId}");
+    }
+
+    private function getDocumentType($file): string
+    {
+        return match ($file) {
+            default => 'Unknown Document'
+        };
     }
 }

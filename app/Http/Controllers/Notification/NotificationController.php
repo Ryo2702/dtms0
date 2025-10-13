@@ -39,7 +39,6 @@ class NotificationController extends Controller
                 ->where('status', 'pending')
                 ->count();
 
-            // Received documents (documents from other departments to current department)
             $receivedQuery = DocumentReview::where('current_department_id', $user->department_id)
                 ->where('original_department_id', '!=', $user->department_id)
                 ->where('status', 'pending');
@@ -53,7 +52,7 @@ class NotificationController extends Controller
             }
             $counts['received'] = $receivedQuery->count();
 
-            // Sent documents
+    
             $sentQuery = DocumentReview::where('original_department_id', $user->department_id)
                 ->where('current_department_id', '!=', $user->department_id)
                 ->whereIn('status', ['pending', 'approved']);
@@ -72,7 +71,6 @@ class NotificationController extends Controller
             }
             $counts['sent'] = $sentQuery->count();
 
-            // Completed documents
             $completedQuery = DocumentReview::where('status', 'approved')
                 ->whereNotNull('downloaded_at');
 

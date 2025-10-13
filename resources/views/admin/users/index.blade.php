@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="p-4 sm:p-6">
-        <x-page-header title="Admins Department" :canCreate="['ability' => 'create', 'model' => \App\Models\User::class]" :route="route('admin.departments.create')" buttonLabel="Add Account" icon="plus" />
+        <x-page-header title="Admins Department" :canCreate="['ability' => 'create', 'model' => \App\Models\User::class]" :route="route('admin.departments.create')" buttonLabel="Add Heads Account" icon="plus" />
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">

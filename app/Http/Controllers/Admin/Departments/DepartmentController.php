@@ -34,7 +34,6 @@ class DepartmentController extends Controller
             $query->where('status', 0);
         }
 
-        // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -141,7 +140,7 @@ class DepartmentController extends Controller
     public function show(Department $department)
     {
 
-        $department->load(['head', 'staff', 'admin']);
+        $department->load(['head', 'staff']);
 
         // Get department statistics
         $stats = [
@@ -150,7 +149,6 @@ class DepartmentController extends Controller
             'staff_count' => $department->getStaffCount(),
             'active_staff' => $department->getActiveStaffCount(),
             'has_head' => $department->hasHead(),
-            'has_admin' => $department->HasAdmin(),
         ];
 
         return view('admin.departments.show', compact('department', 'stats'));

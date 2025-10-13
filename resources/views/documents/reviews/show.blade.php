@@ -62,21 +62,6 @@
                             </div>
                         </div>
 
-                        <!-- OR Number Section -->
-                        <div class="mb-6">
-                            <h3 class="mb-2 text-lg font-semibold">Payment Information</h3>
-                            <div class="p-4 rounded bg-base-200">
-                                @if ($review->official_receipt_number)
-                                    <p><strong>OR Number:</strong> <span
-                                            class="badge badge-success">{{ $review->official_receipt_number }}</span></p>
-                                    <p class="text-sm text-success">✓ Payment processed</p>
-                                @else
-                                    <p class="text-warning"><strong>OR Number:</strong> Pending payment processing</p>
-                                    <p class="text-sm">Will be updated when processed by Treasurer's office</p>
-                                @endif
-                            </div>
-                        </div>
-
                         <!-- Document Data -->
                         <div class="divider">Document Details</div>
                         
