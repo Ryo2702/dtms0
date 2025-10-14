@@ -11,7 +11,7 @@
                         <h2 class="mb-6 card-title">Document Review: {{ $review->document_id }}</h2>
 
                         <!-- Status Alert -->
-                        @if ($review->status === 'approved' && $review->created_by === auth()->id())
+                        @if ($review->status === 'approved')
                             <div class="mb-6 alert alert-success">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 stroke-current shrink-0" fill="none"
                                     viewBox="0 0 24 24">
@@ -20,7 +20,7 @@
                                 </svg>
                                 <div>
                                     <h3 class="font-bold">Document Ready for Download!</h3>
-                                    <div class="text-sm">Review process completed. You can now download the document for
+                                    <div class="text-sm">Review process completed. The document can now be downloaded for
                                         signature.</div>
                                 </div>
                             </div>
@@ -31,33 +31,58 @@
                                 <h3 class="mb-2 text-lg font-semibold">Document Information</h3>
                                 <p><strong>Type:</strong> {{ $review->document_type }}</p>
                                 <p><strong>Client:</strong> {{ $review->client_name }}</p>
-                                <p><strong>Created By:</strong> {{ $review->creator->name }}
-                                    ({{ $review->creator->department?->name }})</p>
+                                <p><strong>Priority:</strong> 
+                                    <span class="badge 
+                                        @if($review->difficulty === 'normal') bg-green-500 text-white
+                                        @elseif($review->difficulty === 'important') bg-yellow-500 text-white
+                                        @elseif($review->difficulty === 'urgent') bg-red-500 text-white
+                                        @elseif($review->difficulty === 'immediate') bg-red-900 text-white
+                                        @else bg-gray-500 text-white @endif">
+                                        {{ ucfirst($review->difficulty ?? 'Normal') }}
+                                    </span>
+                                </p>
+                                <p><strong>Assigned Staff:</strong> {{ $review->assigned_staff ?? 'Not assigned' }}</p>
                                 <p><strong>Current Reviewer:</strong> {{ $review->reviewer?->name }}
                                     ({{ $review->reviewer?->department?->name }})</p>
                                 <p><strong>Submitted:</strong> {{ $review->submitted_at->format('M d, Y H:i') }}</p>
                             </div>
 
                             <div>
-                                <h3 class="mb-2 text-lg font-semibold">Review Status</h3>
+                                <h3 class="mb-2 text-lg font-semibold">Review Status & Timing</h3>
                                 <p><strong>Status:</strong>
-                                    <span
-                                        class="badge 
-                                    @if ($review->status === 'pending') badge-warning
-                                    @elseif($review->status === 'approved') badge-success
-                                    @elseif($review->status === 'rejected') badge-error
-                                    @elseif($review->status === 'canceled') badge-neutral
-                                    @else badge-info @endif">
+                                    <span class="badge 
+                                        @if ($review->status === 'pending') badge-warning
+                                        @elseif($review->status === 'approved') badge-success
+                                        @elseif($review->status === 'rejected') badge-error
+                                        @elseif($review->status === 'canceled') badge-neutral
+                                        @elseif($review->status === 'overdue') badge-error
+                                        @else badge-info @endif">
                                         {{ ucfirst($review->status) }}
                                     </span>
                                 </p>
-                                @if ($review->status === 'pending' && !$review->is_overdue)
-                                    <p><strong>Time Remaining:</strong> {{ $review->remaining_time }} minutes</p>
-                                @elseif($review->is_overdue)
-                                    <p class="text-error"><strong>Status:</strong> Overdue</p>
+                                
+                                <!-- Time Information -->
+                                <p><strong>Allocated Time:</strong> 
+                                    {{ formatTime($review->time_value ?? $review->process_time, $review->time_unit ?? 'minutes') }}
+                                </p>
+                                
+                                @if ($review->status === 'pending')
+                                    @if(!$review->is_overdue)
+                                        <p><strong>Time Remaining:</strong> 
+                                            <span class="text-warning">{{ formatRemainingTime($review->remaining_time_minutes) }}</span>
+                                        </p>
+                                    @else
+                                        <p class="text-error"><strong>Status:</strong> 
+                                            <span class="badge badge-error">Overdue by {{ formatRemainingTime(abs($review->remaining_time_minutes)) }}</span>
+                                        </p>
+                                    @endif
                                 @endif
+                                
                                 @if ($review->reviewed_at)
                                     <p><strong>Reviewed At:</strong> {{ $review->reviewed_at->format('M d, Y H:i') }}</p>
+                                    <p><strong>Time Accomplished:</strong> 
+                                        <span class="badge badge-success">{{ formatAccomplishedTime($review->submitted_at, $review->reviewed_at) }}</span>
+                                    </p>
                                 @endif
                             </div>
                         </div>
@@ -76,6 +101,18 @@
                             </div>
                         </div>
 
+                        <!-- Attachment Display -->
+                        @if($review->attachment_path)
+                            <div class="mb-6">
+                                <h4 class="font-semibold mb-2">Attachment</h4>
+                                <a href="{{ Storage::url($review->attachment_path) }}" target="_blank" 
+                                   class="btn btn-outline btn-sm">
+                                    <i data-lucide="paperclip" class="w-4 h-4 mr-2"></i>
+                                    View Attachment
+                                </a>
+                            </div>
+                        @endif
+
                         <!-- Review Actions for Heads Only -->
                         @if (auth()->user()->type === 'Head' && $review->assigned_to === auth()->id() && $review->status === 'pending')
                             <div class="divider">Review Actions (Department Head Only)</div>
@@ -84,18 +121,49 @@
                                 @csrf
                                 @method('PUT')
 
-                                <div class="mb-4 form-control">
-                                    <label class="label">
-                                        <span class="font-semibold label-text">Review Action *</span>
-                                    </label>
-                                    <select name="action" class="select select-bordered" required
-                                        onchange="toggleActionOptions(this.value)">
-                                        <option value="">Select Action</option>
-                                        <option value="forward">Forward Review</option>
-                                        <option value="complete">Complete Review</option>
-                                        <option value="reject">Reject Review</option>
-                                        <option value="cancel">Cancel Review</option>
-                                    </select>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <!-- Review Action -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="font-semibold label-text">Review Action *</span>
+                                        </label>
+                                        <select name="action" class="select select-bordered" required
+                                            onchange="toggleActionOptions(this.value)">
+                                            <option value="">Select Action</option>
+                                            <option value="forward">Forward Review</option>
+                                            <option value="complete">Complete Review</option>
+                                            <option value="reject">Reject Review</option>
+                                            <option value="cancel">Cancel Review</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Assign Staff -->
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="font-semibold label-text">Assign/Reassign Staff</span>
+                                        </label>
+                                        <select name="assigned_staff" class="select select-bordered">
+                                            <option value="">Keep current assignment ({{ $review->assigned_staff ?? 'None' }})</option>
+                                            @php
+                                                $assignedStaff = [
+                                                    ['id' => 1, 'name' => 'John Doe', 'position' => 'Document Processor'],
+                                                    ['id' => 2, 'name' => 'Jane Smith', 'position' => 'Senior Clerk'],
+                                                    ['id' => 3, 'name' => 'Mike Johnson', 'position' => 'Administrative Assistant'],
+                                                    ['id' => 4, 'name' => 'Sarah Wilson', 'position' => 'Records Officer'],
+                                                    ['id' => 5, 'name' => 'David Brown', 'position' => 'Document Specialist'],
+                                                ];
+                                            @endphp
+                                            @foreach($assignedStaff as $staff)
+                                                <option value="{{ $staff['name'] }}" 
+                                                    {{ $review->assigned_staff === $staff['name'] ? 'selected' : '' }}>
+                                                    {{ $staff['name'] }} - {{ $staff['position'] }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <label class="label">
+                                            <span class="label-text-alt">Optional: Reassign to different staff member</span>
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div class="mb-4 form-control">
@@ -114,16 +182,14 @@
 
                                             <div class="mb-4 form-control">
                                                 <label class="label">
-                                                    <span class="font-semibold label-text">Forward To Department Head
-                                                        *</span>
+                                                    <span class="font-semibold label-text">Forward To Department Head *</span>
                                                 </label>
                                                 <select name="forward_to" class="select select-bordered">
                                                     <option value="">Select Department Head</option>
                                                     @foreach (\App\Models\User::with('department')->where('type', 'Head')->where('id', '!=', auth()->id())->get()->groupBy('department.name') as $deptName => $users)
                                                         <optgroup label="{{ $deptName ?? 'No Department' }}">
                                                             @foreach ($users as $user)
-                                                                <option value="{{ $user->id }}">{{ $user->name }}
-                                                                </option>
+                                                                <option value="{{ $user->id }}">{{ $user->name }}</option>
                                                             @endforeach
                                                         </optgroup>
                                                     @endforeach
@@ -138,51 +204,66 @@
                                                     placeholder="e.g., Please process payment and add OR number, Verify client eligibility, etc."></textarea>
                                             </div>
 
-                                            <div class="mb-4 form-control">
-                                                <label class="label">
-                                                    <span class="font-semibold label-text">Time Limit *</span>
-                                                </label>
-                                                <select name="forward_process_time" class="select select-bordered">
-                                                    @for ($i = 1; $i <= 10; $i++)
-                                                        <option value="{{ $i }}">{{ $i }}
-                                                            minute{{ $i > 1 ? 's' : '' }}</option>
-                                                    @endfor
-                                                </select>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div class="form-control">
+                                                    <label class="label">
+                                                        <span class="font-semibold label-text">Time Value *</span>
+                                                    </label>
+                                                    <input type="number" name="forward_time_value" min="1" class="input input-bordered" placeholder="Enter time">
+                                                </div>
+                                                <div class="form-control">
+                                                    <label class="label">
+                                                        <span class="font-semibold label-text">Time Unit *</span>
+                                                    </label>
+                                                    <select name="forward_time_unit" class="select select-bordered">
+                                                        <option value="minutes">Minutes</option>
+                                                        <option value="days">Days</option>
+                                                        <option value="weeks">Weeks</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-control">
+                                                    <label class="label">
+                                                        <span class="font-semibold label-text">Assign Staff for Next Dept</span>
+                                                    </label>
+                                                    <select name="forward_assigned_staff" class="select select-bordered">
+                                                        <option value="">Auto-assign</option>
+                                                        @foreach($assignedStaff as $staff)
+                                                            <option value="{{ $staff['name'] }}">
+                                                                {{ $staff['name'] }} - {{ $staff['position'] }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Complete Review Options -->
+                                <!-- Complete Options -->
                                 <div id="complete_options" style="display: none;">
                                     <div class="mb-4 border border-green-200 card bg-green-50">
                                         <div class="card-body">
-                                            <h4 class="text-green-800 card-title">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                Complete Review Process
-                                            </h4>
-                                            <div class="alert alert-success">
-                                                <div>
-                                                    <h4 class="font-bold">Review Completed Successfully</h4>
-                                                    <p class="text-sm">This will mark the document as approved and return
-                                                        it to the original staff member for download. Include your
-                                                        completion notes above in the Review Notes field.</p>
-                                                </div>
-                                            </div>
-
+                                            <h4 class="text-green-800 card-title">Complete Review</h4>
+                                            <p class="text-sm text-green-600">
+                                                This will mark the document as approved and ready for download.
+                                            </p>
+                                            
                                             <div class="mt-4 form-control">
                                                 <label class="label">
-                                                    <span class="font-semibold label-text">Additional Completion Notes
-                                                        (Optional)</span>
-                                                    <span class="label-text-alt">Any extra details about the completed
-                                                        review</span>
+                                                    <span class="font-semibold label-text">Final Staff Assignment</span>
                                                 </label>
-                                                <textarea name="completion_summary" class="textarea textarea-bordered" rows="3"
-                                                    placeholder="e.g., Document reviewed and verified. OR Number added. Ready for client signature."></textarea>
+                                                <select name="final_assigned_staff" class="select select-bordered">
+                                                    <option value="">Keep current assignment ({{ $review->assigned_staff ?? 'None' }})</option>
+                                                    @foreach($assignedStaff as $staff)
+                                                        <option value="{{ $staff['name'] }}" 
+                                                            {{ $review->assigned_staff === $staff['name'] ? 'selected' : '' }}>
+                                                            {{ $staff['name'] }} - {{ $staff['position'] }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <label class="label">
+                                                    <span class="label-text-alt">Staff responsible for final document preparation</span>
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
@@ -192,63 +273,23 @@
                                 <div id="reject_options" style="display: none;">
                                     <div class="mb-4 border border-red-200 card bg-red-50">
                                         <div class="card-body">
-                                            <h4 class="text-red-800 card-title">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                                Reject Document
-                                            </h4>
-                                            <div class="alert alert-error">
-                                                <div>
-                                                    <h4 class="font-bold">Document Will Be Rejected</h4>
-                                                    <p class="text-sm">Please provide clear reasons for rejection so the
-                                                        staff member can address the issues.</p>
-                                                </div>
-                                            </div>
-
+                                            <h4 class="text-red-800 card-title">Reject Document</h4>
+                                            <p class="text-sm text-red-600">
+                                                This will reject the document and send it back to the creator.
+                                            </p>
+                                            
                                             <div class="mt-4 form-control">
                                                 <label class="label">
                                                     <span class="font-semibold label-text">Rejection Reason *</span>
-                                                    <span class="label-text-alt">Be specific about what needs to be
-                                                        fixed</span>
                                                 </label>
-                                                <textarea name="rejection_reason" class="textarea textarea-bordered" rows="3"
-                                                    placeholder="e.g., Missing required documents, Invalid client information, Fee calculation error, etc."></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Cancel Options -->
-                                <div id="cancel_options" style="display: none;">
-                                    <div class="mb-4 border border-gray-200 card bg-gray-50">
-                                        <div class="card-body">
-                                            <h4 class="text-gray-800 card-title">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                Cancel Document
-                                            </h4>
-                                            <div class="alert alert-warning">
-                                                <div>
-                                                    <h4 class="font-bold">Document Will Be Canceled</h4>
-                                                    <p class="text-sm">This action will permanently cancel the document
-                                                        review process.</p>
-                                                </div>
-                                            </div>
-
-                                            <div class="mt-4 form-control">
-                                                <label class="label">
-                                                    <span class="font-semibold label-text">Cancellation Reason *</span>
-                                                    <span class="label-text-alt">Please explain why this document is being
-                                                        canceled</span>
-                                                </label>
-                                                <textarea name="cancellation_reason" class="textarea textarea-bordered" rows="3"
-                                                    placeholder="e.g., Client request cancellation, Duplicate submission, Process no longer needed, etc."></textarea>
+                                                <select name="rejection_reason" class="select select-bordered">
+                                                    <option value="">Select reason</option>
+                                                    <option value="incomplete_information">Incomplete Information</option>
+                                                    <option value="invalid_documents">Invalid Documents</option>
+                                                    <option value="does_not_meet_requirements">Does Not Meet Requirements</option>
+                                                    <option value="missing_attachments">Missing Attachments</option>
+                                                    <option value="other">Other (specify in notes)</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -267,18 +308,25 @@
                             </form>
                         @endif
 
-                        <!-- Download Option for Original Creator -->
-                        @if ($review->status === 'approved' && $review->created_by === auth()->id())
-                            <div class="mt-6">
-                                <a href="{{ route('documents.reviews.print', $review->id) }}"
-                                    class="btn btn-success btn-lg">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Print for the Proccess!
-                                </a>
+                        <!-- Download Section -->
+                        @if ($review->status === 'approved')
+                            <div class="divider">Download Document</div>
+                            <div class="p-4 rounded-lg bg-success/10 border border-success/20">
+                                <h4 class="font-semibold text-success mb-2">Document Ready for Download</h4>
+                                <p class="text-sm mb-4">This document has been approved and is ready for download and signature.</p>
+                                
+                                <div class="flex gap-2">
+                                    <a href="{{ route('documents.download', $review->id) }}" 
+                                       class="btn btn-success btn-sm">
+                                        <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                                        Download Document
+                                    </a>
+                                    
+                                    <button class="btn btn-outline btn-sm" onclick="window.print()">
+                                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
+                                        Print
+                                    </button>
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -300,33 +348,36 @@
                             <div class="space-y-4">
                                 @foreach ($review->forwarding_chain as $index => $step)
                                     @php
-                                        // Fix: Add default values for missing keys
                                         $stepStatus = $step['status'] ?? 'completed';
                                         $stepNumber = $step['step'] ?? $index + 1;
                                         $stepAction = $step['action'] ?? 'forwarded';
                                         $stepTimestamp = $step['timestamp'] ?? ($step['forwarded_at'] ?? now());
                                         $fromUserName = $step['from_user_name'] ?? 'Unknown User';
-                                        $fromUserType =
-                                            $step['from_user_type'] ?? ($step['from_user_id'] ? 'Staff' : 'System');
+                                        $fromUserType = $step['from_user_type'] ?? 'Staff';
                                         $fromDepartment = $step['from_department'] ?? null;
                                         $toUserName = $step['to_user_name'] ?? null;
                                         $toUserType = $step['to_user_type'] ?? null;
                                         $toDepartment = $step['to_department'] ?? null;
-                                        $processTime = $step['process_time'] ?? null;
+                                        $allocatedTime = $step['allocated_time'] ?? null;
+                                        $accomplishedTime = $step['accomplished_time'] ?? null;
+                                        $isOverdue = $step['is_overdue'] ?? false;
+                                        $assignedStaff = $step['assigned_staff'] ?? null;
                                         $notes = $step['notes'] ?? null;
                                     @endphp
 
-                                    <div
-                                        class="border-l-4 
+                                    <div class="border-l-4 
                                         @if ($stepStatus === 'completed') border-success
-                                        @elseif($stepStatus === 'pending') border-warning
+                                        @elseif($stepStatus === 'pending' && !$isOverdue) border-warning
+                                        @elseif($stepStatus === 'pending' && $isOverdue) border-error
+                                        @elseif($stepStatus === 'overdue') border-error
                                         @else border-gray-300 @endif pl-4 pb-4">
 
                                         <div class="flex items-center gap-2 mb-2">
-                                            <div
-                                                class="badge 
+                                            <div class="badge 
                                                 @if ($stepStatus === 'completed') badge-success
-                                                @elseif($stepStatus === 'pending') badge-warning
+                                                @elseif($stepStatus === 'pending' && !$isOverdue) badge-warning
+                                                @elseif($stepStatus === 'pending' && $isOverdue) badge-error
+                                                @elseif($stepStatus === 'overdue') badge-error
                                                 @else badge-ghost @endif badge-sm">
                                                 {{ $stepNumber }}
                                             </div>
@@ -341,13 +392,15 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M5 13l4 4L19 7" />
                                                 </svg>
-                                            @elseif($stepStatus === 'pending')
+                                            @elseif($stepStatus === 'pending' && !$isOverdue)
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                     class="w-4 h-4 text-warning animate-spin" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
+                                            @elseif($isOverdue || $stepStatus === 'overdue')
+                                                <span class="badge badge-error badge-xs">OVERDUE</span>
                                             @endif
                                         </div>
 
@@ -375,9 +428,20 @@
                                                 @endif
                                             @endif
 
-                                            @if ($processTime)
-                                                <p><strong>Time Limit:</strong> {{ $processTime }}
-                                                    minute{{ $processTime > 1 ? 's' : '' }}</p>
+                                            @if ($assignedStaff)
+                                                <p><strong>Staff:</strong> 
+                                                    <span class="badge badge-info badge-xs">{{ $assignedStaff }}</span>
+                                                </p>
+                                            @endif
+
+                                            @if ($allocatedTime)
+                                                <p><strong>Allocated Time:</strong> {{ $allocatedTime }}</p>
+                                            @endif
+
+                                            @if ($accomplishedTime)
+                                                <p><strong>Time Accomplished:</strong> 
+                                                    <span class="badge badge-success badge-xs">{{ $accomplishedTime }}</span>
+                                                </p>
                                             @endif
 
                                             @if ($notes)
@@ -394,12 +458,12 @@
                             <div class="p-3 mt-4 rounded bg-base-200">
                                 <div class="text-sm">
                                     <strong>Current Status:</strong>
-                                    <span
-                                        class="badge 
+                                    <span class="badge 
                                         @if ($review->status === 'pending') badge-warning
                                         @elseif($review->status === 'approved') badge-success
                                         @elseif($review->status === 'rejected') badge-error
                                         @elseif($review->status === 'downloaded') badge-info
+                                        @elseif($review->status === 'overdue') badge-error
                                         @else badge-ghost @endif">
                                         {{ ucfirst($review->status) }}
                                     </span>
@@ -413,24 +477,55 @@
                                 @endif
                             </div>
                         @else
-                            <div class="py-4 text-center">
-                                <div class="mb-2 text-base-content/70">Review process tracking</div>
-                                <div class="text-sm">
-                                    <div class="flex items-center justify-between p-2 mb-2 rounded bg-base-200">
-                                        <span>📝 Document Created</span>
-                                        <span class="badge badge-success badge-sm">✓</span>
+                            <!-- Default tracking display -->
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-success pl-4 pb-4">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <div class="badge badge-success badge-sm">1</div>
+                                        <span class="text-sm font-semibold">
+                                            {{ $review->submitted_at->format('M d, H:i') }}
+                                        </span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-success"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
                                     </div>
-                                    <div class="flex items-center justify-between p-2 mb-2 rounded bg-base-200">
-                                        <span>📤 Sent for Review</span>
-                                        <span class="badge badge-warning badge-sm">⏳</span>
+                                    <div class="space-y-1 text-sm">
+                                        <p><strong>Action:</strong> Document Submitted</p>
+                                        <p><strong>Submitted:</strong> {{ $review->submitted_at->format('M d, Y H:i') }}</p>
+                                        @if ($review->assigned_staff)
+                                            <p><strong>Staff:</strong> 
+                                                <span class="badge badge-info badge-xs">{{ $review->assigned_staff }}</span>
+                                            </p>
+                                        @endif
                                     </div>
-                                    <div class="flex items-center justify-between p-2 rounded opacity-50 bg-base-200">
-                                        <span>✅ Review Complete</span>
-                                        <span class="badge badge-ghost badge-sm">-</span>
+                                </div>
+
+                                <div class="border-l-4 border-warning pl-4 pb-4">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <div class="badge badge-warning badge-sm">2</div>
+                                        <span class="text-sm font-semibold">In Progress</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="w-4 h-4 text-warning animate-spin" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
                                     </div>
-                                    <div class="flex items-center justify-between p-2 rounded opacity-50 bg-base-200">
-                                        <span>📥 Ready for Download</span>
-                                        <span class="badge badge-ghost badge-sm">-</span>
+                                    <div class="space-y-1 text-sm">
+                                        <p><strong>Action:</strong> Under Review</p>
+                                        <p><strong>Reviewer:</strong> {{ $review->reviewer->name }}
+                                            <span class="badge badge-xs">{{ $review->reviewer->type }}</span>
+                                        </p>
+                                        @if ($review->reviewer->department)
+                                            <p><strong>Dept:</strong> {{ $review->reviewer->department->name }}</p>
+                                        @endif
+                                        @if ($review->assigned_staff)
+                                            <p><strong>Staff:</strong> 
+                                                <span class="badge badge-info badge-xs">{{ $review->assigned_staff }}</span>
+                                            </p>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -441,109 +536,53 @@
         </div>
     </div>
 
+    <!-- JavaScript for Form Controls -->
     <script>
         function toggleActionOptions(action) {
-            const forwardOptions = document.getElementById('forward_options');
-            const completeOptions = document.getElementById('complete_options');
-            const rejectOptions = document.getElementById('reject_options');
-            const cancelOptions = document.getElementById('cancel_options');
-
-            // Hide all options first
-            forwardOptions.style.display = 'none';
-            completeOptions.style.display = 'none';
-            rejectOptions.style.display = 'none';
-            cancelOptions.style.display = 'none';
-
-            // Clear all field values and requirements
-            document.querySelectorAll('#forward_options select, #forward_options textarea').forEach(field => {
-                field.removeAttribute('required');
-                if (field.tagName === 'SELECT') field.value = '';
-                if (field.tagName === 'TEXTAREA') field.value = '';
-            });
-
-            document.querySelectorAll('#reject_options textarea').forEach(field => {
-                field.removeAttribute('required');
-                field.value = '';
-            });
-
-            document.querySelectorAll('#cancel_options textarea').forEach(field => {
-                field.removeAttribute('required');
-                field.value = '';
-            });
-
-            // Show relevant options and set requirements
+            // Hide all option divs
+            document.getElementById('forward_options').style.display = 'none';
+            document.getElementById('complete_options').style.display = 'none';
+            document.getElementById('reject_options').style.display = 'none';
+            
+            // Show relevant option div
             if (action === 'forward') {
-                forwardOptions.style.display = 'block';
-                document.querySelector('select[name="forward_to"]').setAttribute('required', 'required');
-                document.querySelector('textarea[name="forward_notes"]').setAttribute('required', 'required');
-                document.querySelector('select[name="forward_process_time"]').setAttribute('required', 'required');
+                document.getElementById('forward_options').style.display = 'block';
             } else if (action === 'complete') {
-                completeOptions.style.display = 'block';
-                // No required fields for complete action
+                document.getElementById('complete_options').style.display = 'block';
             } else if (action === 'reject') {
-                rejectOptions.style.display = 'block';
-                document.querySelector('textarea[name="rejection_reason"]').setAttribute('required', 'required');
-            } else if (action === 'cancel') {
-                cancelOptions.style.display = 'block';
-                document.querySelector('textarea[name="cancellation_reason"]').setAttribute('required', 'required');
+                document.getElementById('reject_options').style.display = 'block';
+            }
+        }
+    </script>
+
+    @php
+        // Helper function to format time display
+        function formatTime($value, $unit) {
+            return $value . ' ' . ucfirst($unit);
+        }
+
+        function formatRemainingTime($minutes) {
+            if ($minutes < 60) {
+                return $minutes . ' minute' . ($minutes != 1 ? 's' : '');
+            } elseif ($minutes < 1440) { // Less than a day
+                $hours = floor($minutes / 60);
+                return $hours . ' hour' . ($hours != 1 ? 's' : '');
+            } else {
+                $days = floor($minutes / 1440);
+                return $days . ' day' . ($days != 1 ? 's' : '');
             }
         }
 
-        // Form submission validation
-        document.querySelector('form')?.addEventListener('submit', function(e) {
-            const action = document.querySelector('select[name="action"]').value;
-
-            if (!action) {
-                e.preventDefault();
-                alert('Please select a review action.');
-                return false;
+        function formatAccomplishedTime($startTime, $endTime) {
+            $diff = $endTime->diff($startTime);
+            
+            if ($diff->d > 0) {
+                return $diff->d . ' day' . ($diff->d > 1 ? 's' : '');
+            } elseif ($diff->h > 0) {
+                return $diff->h . ' hour' . ($diff->h > 1 ? 's' : '') . ' ' . $diff->i . ' min';
+            } else {
+                return $diff->i . ' minute' . ($diff->i != 1 ? 's' : '');
             }
-
-            const reviewNotes = document.querySelector('textarea[name="review_notes"]').value.trim();
-            if (!reviewNotes) {
-                e.preventDefault();
-                alert('Please add review notes.');
-                return false;
-            }
-
-            // Validate based on action
-            if (action === 'forward') {
-                const forwardTo = document.querySelector('select[name="forward_to"]').value;
-                const forwardNotes = document.querySelector('textarea[name="forward_notes"]').value.trim();
-
-                if (!forwardTo || !forwardNotes) {
-                    e.preventDefault();
-                    alert('Please fill in all forward details (Department Head and Instructions).');
-                    return false;
-                }
-            }
-
-            if (action === 'reject') {
-                const rejectionReason = document.querySelector('textarea[name="rejection_reason"]').value.trim();
-                if (!rejectionReason) {
-                    e.preventDefault();
-                    alert('Please provide a rejection reason.');
-                    return false;
-                }
-            }
-
-            // Confirmation dialog
-            let confirmMessage = '';
-            if (action === 'complete') {
-                confirmMessage = 'Complete this review and return the document to the staff member for download?';
-            } else if (action === 'forward') {
-                const forwardToName = document.querySelector('select[name="forward_to"] option:checked').text;
-                confirmMessage = `Forward this document to ${forwardToName} for further review?`;
-            } else if (action === 'reject') {
-                confirmMessage = 'Reject this document? The staff member will need to resubmit with corrections.';
-            }
-
-            if (!confirm(confirmMessage)) {
-                e.preventDefault();
-                return false;
-            }
-
-            return true;
-        });
-    </script>
+        }
+    @endphp
 @endsection

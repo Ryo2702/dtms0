@@ -116,10 +116,6 @@ class User extends Authenticatable
         return $query->where('type', 'Head');
     }
 
-    public function scopeByStaff($query)
-    {
-        return $query->where('type', 'Staff');
-    }
 
     public function getLastSeenAttribute(): string
     {
@@ -153,14 +149,6 @@ class User extends Authenticatable
     public function isHead(): bool
     {
         return $this->type === 'Head';
-    }
-
-    /**
-     * Check if user is staff
-     */
-    public function isStaff(): bool
-    {
-        return $this->type === 'Staff';
     }
 
     /**
@@ -198,7 +186,6 @@ class User extends Authenticatable
         return match ($this->type) {
             'Admin' => '<span class="badge badge-error">Admin</span>',
             'Head' => '<span class="badge badge-warning">Head</span>',
-            'Staff' => '<span class="badge badge-info">Staff</span>',
             default => '<span class="badge badge-outline">' . $this->type . '</span>'
         };
     }

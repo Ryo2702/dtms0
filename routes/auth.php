@@ -1,6 +1,7 @@
 <?php
 
 
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Document\DocumentController;
 use App\Http\Controllers\Document\DocumentReviewController;
 use App\Http\Controllers\Document\DocumentAdminController;
@@ -14,14 +15,13 @@ Route::get('/document/{documentId}', [DocumentReviewController::class, 'showByDo
 
 
 Route::middleware(['auth'])->group(function () {
-    // Notification routes
+
     Route::get('/notifications/counts', [NotificationController::class, 'getCounts'])
         ->name('notifications.counts');
     
     Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])
         ->name('notifications.mark-read');
-
-    // Single dashboard route that handles all roles
+Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDocumentTypes']);
     Route::get('/dashboard', function () {
         /** @var User $authUser */
         $authUser = Auth::user();
@@ -31,7 +31,6 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-    // Profile routes
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'show'])->name('show');
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
@@ -40,7 +39,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/remove-avatar', [ProfileController::class, 'removeAvatar'])->name('remove-avatar');
     });
 
-    // Document routes
     Route::prefix('documents')->name('documents.')->group(function () {
         Route::get('/', [DocumentController::class, 'index'])->name('index');
         Route::get('/create', [DocumentController::class, 'create'])->name('create');

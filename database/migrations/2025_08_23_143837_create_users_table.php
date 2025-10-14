@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->unsignedBigInteger('department_id')->nullable();
-            $table->enum('type', ['Staff', 'Head']);
+            $table->enum('type', ['Head']);
             $table->timestamp('last_activity')->nullable();
             $table->boolean('status')->default(1);
             $table->rememberToken();

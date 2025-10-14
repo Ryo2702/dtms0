@@ -41,12 +41,6 @@ class Department extends Model
         return $this->hasMany(User::class);
     }
 
-    //Get the Staff of this Department
-    public function staff(): HasMany
-    {
-        return $this->hasMany(User::class)->where('type', 'Staff');
-    }
-
     //Admin
     public function admin(): HasOne
     {
@@ -92,7 +86,6 @@ class Department extends Model
         $year = now()->year;
         $typeCode = match ($type) {
             'Head' => 'H',
-            'Staff' => 'S',
             'Admin' => 'A',
             default => 'S'
         };

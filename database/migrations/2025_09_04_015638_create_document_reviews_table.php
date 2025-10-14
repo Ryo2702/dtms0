@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('client_name');
             $table->json('document_data'); // Store form data
             $table->string('official_receipt_number')->nullable();
-            $table->unsignedBigInteger('created_by'); // Staff/Head who created
+            $table->unsignedBigInteger('created_by'); // who created
             $table->unsignedBigInteger('assigned_to')->nullable(); // Department reviewer
             $table->enum('status', ['pending', 'in_review', 'approved', 'rejected'])->default('pending');
             $table->text('review_notes')->nullable();

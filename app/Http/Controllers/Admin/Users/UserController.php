@@ -64,7 +64,6 @@ class UserController extends Controller
 
         // Get counts
         $activeHeadCount = User::where('type', 'Head')->active()->count();
-        $activeStaffCount = User::where('type', 'Staff')->active()->count();
         $inactiveUsersCount = User::inactive()->count();
 
         $heads = User::where('type', 'Head')->with(['department.staff'])->get();
@@ -82,7 +81,6 @@ class UserController extends Controller
             'users',
             'departments',
             'activeHeadCount',
-            'activeStaffCount',
             'inactiveUsersCount',
             'heads',
             'sortField',

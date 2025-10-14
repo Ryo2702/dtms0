@@ -56,6 +56,11 @@ class DocumentPrintService
             $printer->initialize();
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->setEmphasis(true);
+
+              // Add department name
+            $departmentName = $review->originalDepartment->name ?? 'N/A';
+            $printer->text(strtoupper($departmentName) . "\n" . "\n");
+
             $printer->text(now()->toDateTimeString() . "\n");
             $printer->text("Document Receipt\n");
             $printer->setEmphasis(true);
@@ -63,7 +68,6 @@ class DocumentPrintService
 
             $printer->setJustification(Printer::JUSTIFY_LEFT);
             $printer->text("Document ID: " . $documentId . "\n");
-            $printer->text("Employee ID: " . ($user->employee_id ?? 'N/A') . "\n");
 
             $printer->feed();
 

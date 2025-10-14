@@ -130,7 +130,7 @@
                 @endif
 
                 <!-- Document Management -->
-                @if ($user->type === 'Staff' || $user->type === 'Head')
+                @if ($user->type === 'Head')
                     <x-sidebar-label text="Document Management" />
 
                     <x-sidebar-item :route="route('documents.index')" :active="$currentRoute === 'documents.index'" icon="file-text">
@@ -164,15 +164,16 @@
                     <x-sidebar-item :route="route('documents.status.canceled')" :active="$currentRoute === 'documents.status.canceled'" icon="ban" :badge="['class' => 'badge-neutral', 'count' => $canceledCount]" data-notification-type="canceled">
                         <span class="truncate">Canceled</span>
                     </x-sidebar-item>
-                @endif
 
-                <!-- Department Management -->
-                @if ($user->type === 'Head')
                     <x-sidebar-label text="Department Management" />
 
                     <x-sidebar-item :route="route('head.staff.index')" :active="Str::startsWith($currentRoute, 'head.staff')" icon="user-cog">
-                        <span class="truncate">Staff Accounts</span>
+                        <span class="truncate">Staff Management</span>
                     </x-sidebar-item>
+
+                    {{-- <x-sidebar-item :route="route('head.report.index')" :active="Str::startsWith($currentRoute, 'head.staff')" icon="file">
+                        <span class="truncate">Report</span>
+                    </x-sidebar-item> --}}
                 @endif
 
                 <!-- User Settings -->
@@ -213,7 +214,7 @@
                             // Update each notification badge
                             updateBadge('pending', data.counts.pending, 'badge-error');
                             updateBadge('received', data.counts.received, 'badge-info');
-                            updateBadge('completed', data.counts.completed, 'badge-success', data.counts.overdue_completed);
+                            updateBadge('completed', data.counts.completed, 'badge-success');
                             updateBadge('rejected', data.counts.rejected, 'badge-error');
                             updateBadge('canceled', data.counts.canceled, 'badge-error');
                         }

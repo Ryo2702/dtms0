@@ -58,47 +58,74 @@
                         Create Custom Document
                     </h2>
                     
-                    <form action="{{ route('documents.store') }}" method="POST" class="space-y-4">
+                    <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Document Title -->
-                            <div class="form-control">
+                        <!-- Document Type -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Document Type *</span>
+                            </label>
+                            <select name="document_type" id="document_type_select" required 
+                                class="select select-bordered w-full @error('document_type') select-error @enderror"
+                                onchange="updateTitle(this.value)">
+                                <option value="">Select document type</option>
+                                <optgroup label="Mayor's Office">
+                                    <option value="Business Permit">Business Permit</option>
+                                    <option value="Barangay Clearance">Barangay Clearance</option>
+                                    <option value="Certificate of Indigency">Certificate of Indigency</option>
+                                    <option value="Certificate of Residency">Certificate of Residency</option>
+                                    <option value="Mayor's Clearance">Mayor's Clearance</option>
+                                </optgroup>
+                                <optgroup label="City Engineer's Office">
+                                    <option value="Building Permit">Building Permit</option>
+                                    <option value="Electrical Permit">Electrical Permit</option>
+                                    <option value="Plumbing Permit">Plumbing Permit</option>
+                                    <option value="Excavation Permit">Excavation Permit</option>
+                                    <option value="Demolition Permit">Demolition Permit</option>
+                                </optgroup>
+                                <optgroup label="City Treasurer's Office">
+                                    <option value="Real Property Tax Clearance">Real Property Tax Clearance</option>
+                                    <option value="Business Tax Clearance">Business Tax Clearance</option>
+                                    <option value="Certificate of No Pending Case">Certificate of No Pending Case</option>
+                                    <option value="Tax Declaration">Tax Declaration</option>
+                                    <option value="Payment Certification">Payment Certification</option>
+                                </optgroup>
+                                <optgroup label="City Health Office">
+                                    <option value="Health Certificate">Health Certificate</option>
+                                    <option value="Sanitary Permit">Sanitary Permit</option>
+                                    <option value="Medical Certificate">Medical Certificate</option>
+                                    <option value="Food Handler's Permit">Food Handler's Permit</option>
+                                    <option value="Water Testing Certificate">Water Testing Certificate</option>
+                                </optgroup>
+                                <optgroup label="City Planning Office">
+                                    <option value="Zoning Clearance">Zoning Clearance</option>
+                                    <option value="Site Development Permit">Site Development Permit</option>
+                                    <option value="Subdivision Clearance">Subdivision Clearance</option>
+                                    <option value="Location Clearance">Location Clearance</option>
+                                    <option value="Development Plan Approval">Development Plan Approval</option>
+                                </optgroup>
+                            </select>
+                            @error('document_type')
                                 <label class="label">
-                                    <span class="label-text font-medium">Document Title *</span>
+                                    <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
-                                <input type="text" name="title" required 
-                                    class="input input-bordered w-full @error('title') input-error @enderror" 
-                                    placeholder="Enter document title" value="{{ old('title') }}">
-                                @error('title')
-                                    <label class="label">
-                                        <span class="label-text-alt text-error">{{ $message }}</span>
-                                    </label>
-                                @enderror
-                            </div>
+                            @enderror
+                        </div>
 
-                            <!-- Document Type -->
-                            <div class="form-control">
+                        <!-- Document Title (Auto-filled) -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Document Title *</span>
+                            </label>
+                            <input type="text" name="title" id="document_title" required 
+                                class="input input-bordered w-full @error('title') input-error @enderror" 
+                                placeholder="Auto-filled based on document type" value="{{ old('title') }}" readonly>
+                            @error('title')
                                 <label class="label">
-                                    <span class="label-text font-medium">Document Type *</span>
+                                    <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
-                                <select name="document_type" required 
-                                    class="select select-bordered w-full @error('document_type') select-error @enderror">
-                                    <option value="">Select document type</option>
-                                    <option value="Certificate" {{ old('document_type') == 'Certificate' ? 'selected' : '' }}>Certificate</option>
-                                    <option value="Clearance" {{ old('document_type') == 'Clearance' ? 'selected' : '' }}>Clearance</option>
-                                    <option value="Permit" {{ old('document_type') == 'Permit' ? 'selected' : '' }}>Permit</option>
-                                    <option value="License" {{ old('document_type') == 'License' ? 'selected' : '' }}>License</option>
-                                    <option value="Registration" {{ old('document_type') == 'Registration' ? 'selected' : '' }}>Registration</option>
-                                    <option value="Application" {{ old('document_type') == 'Application' ? 'selected' : '' }}>Application</option>
-                                    <option value="Other" {{ old('document_type') == 'Other' ? 'selected' : '' }}>Other</option>
-                                </select>
-                                @error('document_type')
-                                    <label class="label">
-                                        <span class="label-text-alt text-error">{{ $message }}</span>
-                                    </label>
-                                @enderror
-                            </div>
+                            @enderror
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -126,13 +153,15 @@
                                     class="select select-bordered w-full @error('reviewer_id') select-error @enderror">
                                     <option value="">Select reviewer</option>
                                     @foreach($reviewers as $reviewer)
-                                        <option value="{{ $reviewer->id }}" 
-                                            {{ old('reviewer_id') == $reviewer->id ? 'selected' : '' }}>
-                                            {{ $reviewer->name }} ({{ $reviewer->type }})
-                                            @if($reviewer->department)
-                                                - {{ $reviewer->department->name }}
-                                            @endif
-                                        </option>
+                                        @if($reviewer->id !== auth()->id())
+                                            <option value="{{ $reviewer->id }}" 
+                                                {{ old('reviewer_id') == $reviewer->id ? 'selected' : '' }}>
+                                                {{ $reviewer->name }} ({{ $reviewer->type }})
+                                                @if($reviewer->department)
+                                                    - {{ $reviewer->department->name }}
+                                                @endif
+                                            </option>
+                                        @endif
                                     @endforeach
                                 </select>
                                 @error('reviewer_id')
@@ -143,15 +172,97 @@
                             </div>
                         </div>
 
-                        <!-- Processing Time -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Processing Time -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-medium">Processing Time *</span>
+                                </label>
+                                <input type="number" name="process_time" min="1" required 
+                                    class="input input-bordered w-full @error('process_time') input-error @enderror" 
+                                    placeholder="Enter time value" value="{{ old('process_time', 1) }}">
+                                @error('process_time')
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ $message }}</span>
+                                    </label>
+                                @enderror
+                            </div>
+
+                            <!-- Time Unit -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-medium">Time Unit *</span>
+                                </label>
+                                <select name="time_unit" required 
+                                    class="select select-bordered w-full @error('time_unit') select-error @enderror">
+                                    <option value="">Select unit</option>
+                                    <option value="minutes" {{ old('time_unit') == 'minutes' ? 'selected' : '' }}>Minutes</option>
+                                    <option value="days" {{ old('time_unit') == 'days' ? 'selected' : '' }}>Days</option>
+                                    <option value="weeks" {{ old('time_unit') == 'weeks' ? 'selected' : '' }}>Weeks</option>
+                                </select>
+                                @error('time_unit')
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ $message }}</span>
+                                    </label>
+                                @enderror
+                            </div>
+
+                            <!-- Difficulty -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text font-medium">Priority Level *</span>
+                                </label>
+                                <select name="difficulty" required 
+                                    class="select select-bordered w-full @error('difficulty') select-error @enderror"
+                                    onchange="updateDifficultyColor(this)">
+                                    <option value="">Select priority</option>
+                                    <option value="normal" style="background-color: #10b981; color: white;" {{ old('difficulty') == 'normal' ? 'selected' : '' }}>Normal</option>
+                                    <option value="important" style="background-color: #f59e0b; color: white;" {{ old('difficulty') == 'important' ? 'selected' : '' }}>Important</option>
+                                    <option value="urgent" style="background-color: #ef4444; color: white;" {{ old('difficulty') == 'urgent' ? 'selected' : '' }}>Urgent</option>
+                                    <option value="immediate" style="background-color: #7c2d12; color: white;" {{ old('difficulty') == 'immediate' ? 'selected' : '' }}>Immediate</option>
+                                </select>
+                                @error('difficulty')
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ $message }}</span>
+                                    </label>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Assigned Staff -->
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text font-medium">Expected Processing Time (minutes) *</span>
+                                <span class="label-text font-medium">Assign Staff *</span>
                             </label>
-                            <input type="number" name="process_time" min="1" max="10" required 
-                                class="input input-bordered w-full @error('process_time') input-error @enderror" 
-                                placeholder="Enter processing time in minutes (1-10)" value="{{ old('process_time', 5) }}">
-                            @error('process_time')
+                            <select name="assigned_staff" required 
+                                class="select select-bordered w-full @error('assigned_staff') select-error @enderror">
+                                <option value="">Select staff member</option>
+                                @foreach($assignedStaff as $staff)
+                                    <option value="{{ $staff['name'] }}" 
+                                        {{ old('assigned_staff') == $staff['name'] ? 'selected' : '' }}>
+                                        {{ $staff['name'] }} - {{ $staff['position'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('assigned_staff')
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ $message }}</span>
+                                </label>
+                            @enderror
+                        </div>
+
+                        <!-- File Attachment -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Attachment (Optional)</span>
+                            </label>
+                            <input type="file" name="attachment" 
+                                class="file-input file-input-bordered w-full @error('attachment') file-input-error @enderror"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                            <label class="label">
+                                <span class="label-text-alt">Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 10MB)</span>
+                            </label>
+                            @error('attachment')
                                 <label class="label">
                                     <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
@@ -169,6 +280,7 @@
                 </div>
             </div>
         </div>
+
     <script>
         function toggleInstruction(button) {
             const box = button.parentElement.querySelector('.instruction-box');
@@ -182,5 +294,28 @@
                 }
             });
         });
+
+        function updateTitle(documentType) {
+            const titleInput = document.getElementById('document_title');
+            titleInput.value = documentType;
+        }
+
+        function updateDifficultyColor(select) {
+            const value = select.value;
+            const colors = {
+                'normal': '#10b981',
+                'important': '#f59e0b', 
+                'urgent': '#ef4444',
+                'immediate': '#7c2d12'
+            };
+            
+            if (colors[value]) {
+                select.style.backgroundColor = colors[value];
+                select.style.color = 'white';
+            } else {
+                select.style.backgroundColor = '';
+                select.style.color = '';
+            }
+        }
     </script>
 @endsection
