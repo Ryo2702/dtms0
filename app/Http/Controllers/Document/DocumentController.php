@@ -144,48 +144,59 @@ class DocumentController extends Controller
             ->with('success', "Document has been submitted for review. Document ID: {$documentId}");
     }
     public function getDocumentTypes($departmentId)
-{
-    // Local Government Unit Document Types - 5 tracking processes only
-    $documentTypes = [
-        1 => [ // Mayor's Office
-            'Business Permit',
-            'Barangay Clearance',
-            'Certificate of Indigency',
-            'Certificate of Residency',
-            'Mayor\'s Clearance'
-        ],
-        2 => [ // City Engineer's Office
-            'Building Permit',
-            'Electrical Permit',
-            'Plumbing Permit',
-            'Excavation Permit',
-            'Demolition Permit'
-        ],
-        3 => [ // City Treasurer's Office
-            'Real Property Tax Clearance',
-            'Business Tax Clearance',
-            'Certificate of No Pending Case',
-            'Tax Declaration',
-            'Payment Certification'
-        ],
-        4 => [ // City Health Office
-            'Health Certificate',
-            'Sanitary Permit',
-            'Medical Certificate',
-            'Food Handler\'s Permit',
-            'Water Testing Certificate'
-        ],
-        5 => [ // City Planning Office
-            'Zoning Clearance',
-            'Site Development Permit',
-            'Subdivision Clearance',
-            'Location Clearance',
-            'Development Plan Approval'
-        ]
-    ];
+    {
+        // Get document types from database
+        $documentTypes = \App\Models\DocumentType::active()
+            ->byDepartment($departmentId)
+            ->pluck('name')
+            ->toArray();
 
-    return response()->json($documentTypes[$departmentId] ?? []);
-}
+        // Fallback to hardcoded types if no database types exist
+        if (empty($documentTypes)) {
+            // Local Government Unit Document Types - 5 tracking processes only
+            $hardcodedTypes = [
+                1 => [ // Mayor's Office
+                    'Business Permit',
+                    'Barangay Clearance',
+                    'Certificate of Indigency',
+                    'Certificate of Residency',
+                    'Mayor\'s Clearance'
+                ],
+                2 => [ // City Engineer's Office
+                    'Building Permit',
+                    'Electrical Permit',
+                    'Plumbing Permit',
+                    'Excavation Permit',
+                    'Demolition Permit'
+                ],
+                3 => [ // City Treasurer's Office
+                    'Real Property Tax Clearance',
+                    'Business Tax Clearance',
+                    'Certificate of No Pending Case',
+                    'Tax Declaration',
+                    'Payment Certification'
+                ],
+                4 => [ // City Health Office
+                    'Health Certificate',
+                    'Sanitary Permit',
+                    'Medical Certificate',
+                    'Food Handler\'s Permit',
+                    'Water Testing Certificate'
+                ],
+                5 => [ // City Planning Office
+                    'Zoning Clearance',
+                    'Site Development Permit',
+                    'Subdivision Clearance',
+                    'Location Clearance',
+                    'Development Plan Approval'
+                ]
+            ];
+
+            $documentTypes = $hardcodedTypes[$departmentId] ?? [];
+        }
+
+        return response()->json($documentTypes);
+    }
     private function convertTimeToMinutes($value, $unit)
     {
         return match($unit) {

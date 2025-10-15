@@ -47,6 +47,18 @@ class Department extends Model
         return $this->hasOne(User::class)->where('type', 'Admin');
     }
 
+    // Get document types for this department
+    public function documentTypes(): HasMany
+    {
+        return $this->hasMany(DocumentType::class);
+    }
+
+    // Get active document types for this department
+    public function activeDocumentTypes(): HasMany
+    {
+        return $this->documentTypes()->where('status', true);
+    }
+
     // Get document reviews where this department is the current department
     public function currentDocumentReviews(): HasMany
     {

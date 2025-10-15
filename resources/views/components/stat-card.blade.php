@@ -3,9 +3,9 @@
     'value',
     'icon' => null,
     'iconName' => null, // For dynamic component icons (e.g., 'users', 'building')
-    'color' => 'text-primary', // text color for value
+    'color' => 'text-white', // text color for value
     'bgColor' => 'bg-white-secondary', // background class - using DTMS colors
-    'textColor' => 'text-base-content', // label color
+    'textColor' => 'text-white', // label color
     'iconColor' => 'text-white', // icon color
     'subtitle' => null, // optional subtitle
     'trend' => null, // trend data (array with percentage and direction)

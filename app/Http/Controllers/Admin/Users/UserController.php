@@ -66,7 +66,7 @@ class UserController extends Controller
         $activeHeadCount = User::where('type', 'Head')->active()->count();
         $inactiveUsersCount = User::inactive()->count();
 
-        $heads = User::where('type', 'Head')->with(['department.staff'])->get();
+        $heads = User::where('type', 'Head')->get();
 
         // If it's an AJAX request, return only the table content
         if ($request->ajax()) {

@@ -7,7 +7,6 @@
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
             <x-stat-card bgColor="bg-stat-secondary" title="Active Admins" :value="$activeHeadCount" />
-            <x-stat-card bgColor="bg-stat-accent" title="Active Staff" :value="$activeStaffCount" />
             <x-stat-card bgColor="bg-stat-danger" title="Inactive Users" :value="$inactiveUsersCount" />
         </div>
 
@@ -42,29 +41,6 @@
                     </tr>
                 @endforeach
             </x-data-table>
-        </div>
-
-        <!-- Heads and Staff -->
-        <div class="mt-12">
-            <h2 class="mb-4 text-xl font-semibold">Heads and Their Staff</h2>
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                @foreach ($heads as $head)
-                    <div class="p-4 rounded-lg shadow bg-white-secondary">
-                        <div class="mb-2 font-bold">{{ $head->name }}
-                            <span class="badge badge-info">{{ $head->department->name ?? 'No Department' }}</span>
-                        </div>
-                        <div class="mb-2 text-sm text-gray-500">Email: {{ $head->email }}</div>
-                        <div class="mb-2 text-sm text-gray-500">Staff Members:</div>
-                        <ul class="text-sm list-disc list-inside">
-                            @forelse ($head->department->staff as $staff)
-                                <li>{{ $staff->name }} ({{ $staff->email }})</li>
-                            @empty
-                                <li class="text-gray-400">No staff assigned.</li>
-                            @endforelse
-                        </ul>
-                    </div>
-                @endforeach
-            </div>
         </div>
     </div>
 @endsection

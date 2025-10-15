@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Document\DocumentController;
 use App\Http\Controllers\Document\DocumentReviewController;
 use App\Http\Controllers\Document\DocumentAdminController;
+use App\Http\Controllers\DocumentTypeController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,11 @@ Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDo
         });
 
     });
+
+    // Document Types Management
+    Route::resource('document-types', DocumentTypeController::class)->except(['show']);
+    Route::patch('/document-types/{documentType}/toggle-status', [DocumentTypeController::class, 'toggleStatus'])->name('document-types.toggle-status');
+    Route::get('/api/document-types/department/{departmentId}', [DocumentTypeController::class, 'getByDepartment'])->name('api.document-types.by-department');
 
     Route::middleware(['role:Staff'])->group(function () {
         Route::get('/staff-area', fn() => "Staff Access Only");

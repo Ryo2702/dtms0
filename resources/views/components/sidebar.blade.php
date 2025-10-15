@@ -171,9 +171,9 @@
                         <span class="truncate">Staff Management</span>
                     </x-sidebar-item>
 
-                    {{-- <x-sidebar-item :route="route('head.report.index')" :active="Str::startsWith($currentRoute, 'head.staff')" icon="file">
+                    <x-sidebar-item :route="route('head.report.index')" :active="Str::startsWith($currentRoute, 'head.report')" icon="file">
                         <span class="truncate">Report</span>
-                    </x-sidebar-item> --}}
+                    </x-sidebar-item>
                 @endif
 
                 <!-- User Settings -->

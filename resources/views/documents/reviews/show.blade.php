@@ -307,28 +307,6 @@
                                 </div>
                             </form>
                         @endif
-
-                        <!-- Download Section -->
-                        @if ($review->status === 'approved')
-                            <div class="divider">Download Document</div>
-                            <div class="p-4 rounded-lg bg-success/10 border border-success/20">
-                                <h4 class="font-semibold text-success mb-2">Document Ready for Download</h4>
-                                <p class="text-sm mb-4">This document has been approved and is ready for download and signature.</p>
-                                
-                                <div class="flex gap-2">
-                                    <a href="{{ route('documents.download', $review->id) }}" 
-                                       class="btn btn-success btn-sm">
-                                        <i data-lucide="download" class="w-4 h-4 mr-2"></i>
-                                        Download Document
-                                    </a>
-                                    
-                                    <button class="btn btn-outline btn-sm" onclick="window.print()">
-                                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
-                                        Print
-                                    </button>
-                                </div>
-                            </div>
-                        @endif
                     </div>
                 </div>
             </div>

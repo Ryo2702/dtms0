@@ -20,7 +20,7 @@
 
 
         <div id="filter-results">
-            <x-data-table :headers="['ID', 'Logo', 'Code', 'Name', 'Head', 'Staff Count', 'Status', 'Actions']" :paginator="$departments" emptyMessage="No departments found.">
+            <x-data-table :headers="['ID', 'Logo', 'Code', 'Name', 'Head', 'Status', 'Actions']" :paginator="$departments" emptyMessage="No departments found.">
                 @foreach ($departments as $department)
                     <tr>
                         <td class="px-4 py-3">{{ $department->id }}</td>
@@ -35,7 +35,6 @@
                         <td class="px-4 py-3 font-mono text-sm">{{ $department->code }}</td>
                         <td class="px-4 py-3 font-medium">{{ $department->name }}</td>
                         <td class="px-4 py-3">{{ $department->head?->name ?? '—' }}</td>
-                        <td class="px-4 py-3">{{ $department->staff->count() }}</td>
                         <td class="px-4 py-3">
                             <x-status-badge :status="$department->status" />
                         </td>

@@ -24,7 +24,7 @@ class DepartmentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Department::with(['head', 'staff']);
+        $query = Department::with(['head']);
 
         // Status filtering
         $status = $request->get('status');
@@ -146,8 +146,6 @@ class DepartmentController extends Controller
         $stats = [
             'total_users' => $department->getTotalUsersCount(),
             'active_users' => $department->getActiveUsersCount(),
-            'staff_count' => $department->getStaffCount(),
-            'active_staff' => $department->getActiveStaffCount(),
             'has_head' => $department->hasHead(),
         ];
 

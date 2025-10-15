@@ -91,20 +91,7 @@
                                     <option value="Tax Declaration">Tax Declaration</option>
                                     <option value="Payment Certification">Payment Certification</option>
                                 </optgroup>
-                                <optgroup label="City Health Office">
-                                    <option value="Health Certificate">Health Certificate</option>
-                                    <option value="Sanitary Permit">Sanitary Permit</option>
-                                    <option value="Medical Certificate">Medical Certificate</option>
-                                    <option value="Food Handler's Permit">Food Handler's Permit</option>
-                                    <option value="Water Testing Certificate">Water Testing Certificate</option>
-                                </optgroup>
-                                <optgroup label="City Planning Office">
-                                    <option value="Zoning Clearance">Zoning Clearance</option>
-                                    <option value="Site Development Permit">Site Development Permit</option>
-                                    <option value="Subdivision Clearance">Subdivision Clearance</option>
-                                    <option value="Location Clearance">Location Clearance</option>
-                                    <option value="Development Plan Approval">Development Plan Approval</option>
-                                </optgroup>
+                         
                             </select>
                             @error('document_type')
                                 <label class="label">
