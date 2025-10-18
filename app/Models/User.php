@@ -5,24 +5,21 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
-
     protected $fillable = [
         'employee_id',
         'name',
@@ -32,7 +29,7 @@ class User extends Authenticatable
         'type',
         'status',
         'last_activity',
-        'avatar'
+        'avatar',
     ];
 
     protected $hidden = [
@@ -44,11 +41,12 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'last_activity'     => 'datetime',
-            'status'            => 'boolean',
+            'password' => 'hashed',
+            'last_activity' => 'datetime',
+            'status' => 'boolean',
         ];
     }
+
     protected $attributes = [
         'status' => 1,
     ];
@@ -116,7 +114,6 @@ class User extends Authenticatable
         return $query->where('type', 'Head');
     }
 
-
     public function getLastSeenAttribute(): string
     {
         if ($this->isOnline()) {
@@ -130,7 +127,6 @@ class User extends Authenticatable
         return $this->last_activity->diffForHumans();
     }
 
-
     public function activate()
     {
         $this->update(['status' => 1]);
@@ -143,6 +139,7 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Department::class);
     }
+
     /**
      * Check if user is head
      */
@@ -158,10 +155,12 @@ class User extends Authenticatable
     {
         return $this->type === 'Admin';
     }
+
     public function getIsActiveAttribute(): bool
     {
         return $this->status == 1;
     }
+
     /**
      * Get the department name attribute
      */
@@ -186,7 +185,7 @@ class User extends Authenticatable
         return match ($this->type) {
             'Admin' => '<span class="badge badge-error">Admin</span>',
             'Head' => '<span class="badge badge-warning">Head</span>',
-            default => '<span class="badge badge-outline">' . $this->type . '</span>'
+            default => '<span class="badge badge-outline">'.$this->type.'</span>'
         };
     }
 
@@ -205,12 +204,12 @@ class User extends Authenticatable
      */
     public function getAvatarUrlAttribute(): string
     {
-        if ($this->avatar && Storage::exists('public/' . $this->avatar)) {
+        if ($this->avatar && Storage::exists('public/'.$this->avatar)) {
             return Storage::url($this->avatar);
         }
 
         // Return default avatar (you can use a service like Gravatar or a default image)
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
     }
 
     /**
@@ -218,7 +217,7 @@ class User extends Authenticatable
      */
     public function hasValidMunicipalId(): bool
     {
-        if (!$this->employee_id) {
+        if (! $this->employee_id) {
             return false;
         }
 
@@ -228,16 +227,17 @@ class User extends Authenticatable
 
     public function regenerateMunicipalId(): bool
     {
-        if (!$this->department_id || !$this->type) {
+        if (! $this->department_id || ! $this->type) {
             return false;
         }
 
         $department = Department::find($this->department_id);
-        if (!$department) {
+        if (! $department) {
             return false;
         }
 
         $this->employee_id = $department->generateMunicipalId($this->type);
+
         return $this->save();
     }
 }

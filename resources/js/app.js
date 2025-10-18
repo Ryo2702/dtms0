@@ -51,3 +51,14 @@ createIcons({
 });
 
 window.$ = window.jQuery = $;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new MutationObserver(() => {
+        createIcons();
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});

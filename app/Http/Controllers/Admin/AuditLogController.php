@@ -36,7 +36,7 @@ class AuditLogController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where('description', 'like', '%'.$request->search.'%');
         }
 
         // Paginate results
@@ -86,7 +86,7 @@ class AuditLogController extends Controller
     public function show(AuditLog $auditLog)
     {
         $auditLog->load('user');
-        
+
         return view('admin.audit-logs.show', compact('auditLog'));
     }
 
@@ -115,21 +115,21 @@ class AuditLogController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where('description', 'like', '%'.$request->search.'%');
         }
 
         $logs = $query->get();
 
-        $filename = 'audit_logs_' . now()->format('Y_m_d_H_i_s') . '.csv';
-        
+        $filename = 'audit_logs_'.now()->format('Y_m_d_H_i_s').'.csv';
+
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ];
 
-        $callback = function() use ($logs) {
+        $callback = function () use ($logs) {
             $file = fopen('php://output', 'w');
-            
+
             // Add CSV headers
             fputcsv($file, [
                 'ID',
@@ -142,7 +142,7 @@ class AuditLogController extends Controller
                 'User Agent',
                 'URL',
                 'Method',
-                'Date & Time'
+                'Date & Time',
             ]);
 
             // Add data rows
@@ -183,10 +183,10 @@ class AuditLogController extends Controller
     {
         $action = $request->input('action', 'test');
         $user = Auth::user();
-        
+
         // Manually log the test action
         AuditLog::log($action, "Test action performed: {$action} by {$user->name}");
-        
+
         return redirect()->back()->with('success', "Test action '{$action}' has been logged successfully!");
     }
 }

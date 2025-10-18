@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Department;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class DepartmentPolicy
 {
@@ -24,7 +23,6 @@ class DepartmentPolicy
         return $user->hasRole('Admin');
     }
 
-
     public function create(User $user): bool
     {
         // only admins can create
@@ -40,6 +38,7 @@ class DepartmentPolicy
     {
         return $user->hasRole('Admin');
     }
+
     /**
      * Determine whether the user can delete the model.
      */

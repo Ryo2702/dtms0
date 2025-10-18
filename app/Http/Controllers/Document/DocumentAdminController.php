@@ -28,7 +28,8 @@ class DocumentAdminController extends Controller
             $review->processing_time = $review->submitted_at && $review->downloaded_at
                 ? $review->submitted_at->diffInMinutes($review->downloaded_at)
                 : null;
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+
             return $review;
         });
 
@@ -104,7 +105,7 @@ class DocumentAdminController extends Controller
         return [
             'departments' => \App\Models\Department::all(),
             'documentTypes' => DocumentReview::select('document_type')->distinct()->pluck('document_type'),
-            'userTypes' => ['Head', 'Staff']
+            'userTypes' => ['Head', 'Staff'],
         ];
     }
 

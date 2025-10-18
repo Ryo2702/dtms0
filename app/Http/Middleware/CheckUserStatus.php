@@ -26,7 +26,7 @@ class CheckUserStatus
                 $request->session()->regenerateToken();
 
                 return redirect()->route('login')->withErrors([
-                    'municipal_id' => 'Your account has been deactivated. Please contact the administrator for assistance.'
+                    'municipal_id' => 'Your account has been deactivated. Please contact the administrator for assistance.',
                 ]);
             }
         }

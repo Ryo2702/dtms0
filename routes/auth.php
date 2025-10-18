@@ -1,28 +1,25 @@
 <?php
 
-
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Document\DocumentController;
 use App\Http\Controllers\Document\DocumentReviewController;
-use App\Http\Controllers\Document\DocumentAdminController;
-use App\Http\Controllers\DocumentTypeController;
+use App\Http\Controllers\Document\DocumentTypeController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-
 Route::get('/document/{documentId}', [DocumentReviewController::class, 'showByDocumentId'])->name('documents.show-by-id');
-
 
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/notifications/counts', [NotificationController::class, 'getCounts'])
         ->name('notifications.counts');
-    
+
     Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])
         ->name('notifications.mark-read');
-Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDocumentTypes']);
+    Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDocumentTypes']);
+   
     Route::get('/dashboard', function () {
         /** @var User $authUser */
         $authUser = Auth::user();
@@ -30,6 +27,7 @@ Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDo
 
         return view('dashboard', compact('user'));
     })->name('dashboard');
+   
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::prefix('profile')->name('profile.')->group(function () {
@@ -56,20 +54,19 @@ Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDo
         });
 
         Route::prefix('status')->name('status.')->group(function () {
-             Route::get('/pending', [DocumentReviewController::class, 'index'])->name('pending');
-             Route::get('/closed', [DocumentReviewController::class, 'closed'])->name('closed');
-             Route::get('/rejected', [DocumentReviewController::class, 'rejected'])->name('rejected');
-             Route::get('/canceled', [DocumentReviewController::class, 'canceled'])->name('canceled');
+            Route::get('/pending', [DocumentReviewController::class, 'index'])->name('pending');
+            Route::get('/closed', [DocumentReviewController::class, 'closed'])->name('closed');
+            Route::get('/rejected', [DocumentReviewController::class, 'rejected'])->name('rejected');
+            Route::get('/canceled', [DocumentReviewController::class, 'canceled'])->name('canceled');
         });
 
     });
-
-    // Document Types Management
-    Route::resource('document-types', DocumentTypeController::class)->except(['show']);
-    Route::patch('/document-types/{documentType}/toggle-status', [DocumentTypeController::class, 'toggleStatus'])->name('document-types.toggle-status');
-    Route::get('/api/document-types/department/{departmentId}', [DocumentTypeController::class, 'getByDepartment'])->name('api.document-types.by-department');
-
+    Route::prefix('document-types')->name('document-types.')->group(function () {
+        Route::get('/', [DocumentTypeController::class, 'index'])->name('index');
+        Route::post('/', [DocumentTypeController::class, 'store'])->name('store');
+        Route::put('/{documentType}', [DocumentTypeController::class, 'update'])->name('update');
+    });
     Route::middleware(['role:Staff'])->group(function () {
-        Route::get('/staff-area', fn() => "Staff Access Only");
+        Route::get('/staff-area', fn() => 'Staff Access Only');
     });
 });

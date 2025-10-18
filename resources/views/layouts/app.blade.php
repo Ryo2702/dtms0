@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dtms">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="dtms">
 
 <head>
     <meta charset="UTF-8">
@@ -94,6 +94,7 @@
         </div>
     </div>
 
+    @stack('scripts')
     <!-- Mobile Sidebar JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {

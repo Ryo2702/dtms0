@@ -13,6 +13,7 @@ class UserPolicy
     public function viewAny(?User $user = null)
     {
         $authUser = $user ?? Auth::user();
+
         return $authUser && $authUser->type === 'Admin';
     }
 
@@ -22,6 +23,7 @@ class UserPolicy
     public function view(?User $user = null, ?User $model = null)
     {
         $authUser = $user ?? Auth::user();
+
         return $authUser && $authUser->type === 'Admin';
     }
 
@@ -31,6 +33,7 @@ class UserPolicy
     public function create(?User $user = null)
     {
         $authUser = $user ?? Auth::user();
+
         return $authUser && $authUser->type === 'Admin';
     }
 
@@ -40,6 +43,7 @@ class UserPolicy
     public function update(?User $user = null, ?User $model = null)
     {
         $authUser = $user ?? Auth::user();
+
         return $authUser && $authUser->type === 'Admin';
     }
 
@@ -49,6 +53,7 @@ class UserPolicy
     public function delete(?User $user = null, ?User $model = null)
     {
         $authUser = $user ?? Auth::user();
+
         return $authUser && $authUser->type === 'Admin';
     }
 }

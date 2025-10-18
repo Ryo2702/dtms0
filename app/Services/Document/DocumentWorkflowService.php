@@ -2,8 +2,8 @@
 
 namespace App\Services\Document;
 
-use App\Models\User;
 use App\Models\DocumentReview;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class DocumentWorkflowService
@@ -12,7 +12,7 @@ class DocumentWorkflowService
     {
         $user = Auth::user();
 
-        if (!in_array($user->type, ['Staff', 'Head'])) {
+        if (! in_array($user->type, ['Staff', 'Head'])) {
             throw new \Exception('You do not have permission to send documents for review.');
         }
 
@@ -53,7 +53,7 @@ class DocumentWorkflowService
                     'notes' => 'Document created and prepared for review',
                     'process_time' => null,
                     'timestamp' => now()->toISOString(),
-                    'status' => 'completed'
+                    'status' => 'completed',
                 ],
                 [
                     'step' => 2,
@@ -70,9 +70,9 @@ class DocumentWorkflowService
                     'process_time' => $processTime,
                     'timestamp' => now()->toISOString(),
                     'status' => 'pending',
-                    'due_at' => now()->addMinutes($processTime)->toISOString()
-                ]
-            ]
+                    'due_at' => now()->addMinutes($processTime)->toISOString(),
+                ],
+            ],
         ]);
     }
 
@@ -94,7 +94,7 @@ class DocumentWorkflowService
             'assigned_to' => $forwardTo->id,
             'current_department_id' => $forwardTo->department_id,
             'process_time_minutes' => $processTime,
-            'due_at' => now()->addMinutes($processTime)
+            'due_at' => now()->addMinutes($processTime),
         ]);
     }
 
@@ -102,15 +102,15 @@ class DocumentWorkflowService
     {
         $originalCreator = User::find($review->created_by);
 
-        if (!$originalCreator) {
+        if (! $originalCreator) {
             throw new \Exception('Original document creator not found.');
         }
 
-        $wasOnTime = !$review->due_at || now()->lessThanOrEqualTo($review->due_at);
+        $wasOnTime = ! $review->due_at || now()->lessThanOrEqualTo($review->due_at);
         $timeStatus = $wasOnTime ? 'completed on time' : 'completed overdue';
 
         $completionMessage = $notes ?? 'Document review completed successfully.';
-        $completionMessage .= "\n\nStatus: " . ucfirst($timeStatus);
+        $completionMessage .= "\n\nStatus: ".ucfirst($timeStatus);
 
         $completionMessage .= "\n\nDocument is ready for download and client signature.";
 
@@ -131,7 +131,7 @@ class DocumentWorkflowService
             'is_final_review' => true,
             'review_notes' => $notes,
             'reviewed_at' => now(),
-            'completed_on_time' => $wasOnTime
+            'completed_on_time' => $wasOnTime,
         ]);
     }
 
@@ -139,7 +139,7 @@ class DocumentWorkflowService
     {
         $originalCreator = User::find($review->created_by);
 
-        if (!$originalCreator) {
+        if (! $originalCreator) {
             throw new \Exception('Original document creator not found.');
         }
 
@@ -156,7 +156,7 @@ class DocumentWorkflowService
             'review_notes' => $notes,
             'reviewed_at' => now(),
             'assigned_to' => $originalCreator->id,
-            'current_department_id' => $originalCreator->department_id
+            'current_department_id' => $originalCreator->department_id,
         ]);
     }
 
@@ -164,7 +164,7 @@ class DocumentWorkflowService
     {
         $originalCreator = User::find($review->created_by);
 
-        if (!$originalCreator) {
+        if (! $originalCreator) {
             throw new \Exception('Original document creator not found.');
         }
 
@@ -181,7 +181,7 @@ class DocumentWorkflowService
             'review_notes' => $notes,
             'reviewed_at' => now(),
             'assigned_to' => $originalCreator->id,
-            'current_department_id' => $originalCreator->department_id
+            'current_department_id' => $originalCreator->department_id,
         ]);
     }
 }

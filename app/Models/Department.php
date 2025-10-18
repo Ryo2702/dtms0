@@ -17,31 +17,33 @@ class Department extends Model
         'code',
         'description',
         'logo',
-        'status'
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'status' => 'boolean'
+            'status' => 'boolean',
         ];
     }
+
     protected $attributes = [
         'status' => 1,
     ];
-    //Get the Head of this Department 
+
+    // Get the Head of this Department
     public function head(): HasOne
     {
         return $this->hasOne(User::class)->where('type', 'Head')->where('status', 1);
     }
 
-    //Get all users of this Department
+    // Get all users of this Department
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    //Admin
+    // Admin
     public function admin(): HasOne
     {
         return $this->hasOne(User::class)->where('type', 'Admin');
@@ -92,7 +94,7 @@ class Department extends Model
         return $this->admin()->exists();
     }
 
-    //get the next user code
+    // get the next user code
     public function generateEmployeeId(string $type): string
     {
         $year = now()->year;
@@ -107,25 +109,25 @@ class Department extends Model
         $lastUser = DB::table('users')
             ->where('department_id', $this->id)
             ->where('type', $type)
-            ->where('employee_id', 'like', $prefix . '%')
+            ->where('employee_id', 'like', $prefix.'%')
             ->orderBy('employee_id', 'desc')
             ->first();
 
-        if (!$lastUser) {
+        if (! $lastUser) {
             $nextNumber = 1;
         } else {
-            // use employee_id (the actual column) 
+            // use employee_id (the actual column)
             $lastCode = $lastUser->employee_id;
             $lastDashPos = strrpos($lastCode, '-');
             if ($lastDashPos !== false) {
                 $number = (int) substr($lastCode, $lastDashPos + 1);
                 $nextNumber = $number + 1;
             } else {
-                $nextNumber =  1;
+                $nextNumber = 1;
             }
         }
 
-        return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        return $prefix.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -159,7 +161,7 @@ class Department extends Model
 
     public function getLogoUrl(): ?string
     {
-        return $this->logo ? asset('storage/' . $this->logo) : null;
+        return $this->logo ? asset('storage/'.$this->logo) : null;
     }
 
     /**

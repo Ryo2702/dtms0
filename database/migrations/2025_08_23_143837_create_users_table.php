@@ -25,7 +25,6 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
 
-
             $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
             $table->index(['department_id', 'type']);
             $table->index(['employee_id', 'status']);

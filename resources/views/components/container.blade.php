@@ -1,3 +1,3 @@
-<div class="bg-base-100 rounded-lg shadow-md overflow-hidden">
+<div class="container max-w-7xl mx-auto px-4">
     {{ $slot }}
 </div>

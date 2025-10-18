@@ -2,7 +2,8 @@
 @auth
     <div class="flex flex-col h-full overflow-hidden">
         <!-- Header -->
-        <div class="flex items-center justify-between p-3 text-sm font-bold border-b sm:p-4 sm:text-base md:text-lg border-white/10 shrink-0">
+        <div
+            class="flex items-center justify-between p-3 text-sm font-bold border-b sm:p-4 sm:text-base md:text-lg border-white/10 shrink-0">
             @php
                 $currentRoute = request()->route()->getName();
             @endphp
@@ -112,7 +113,8 @@
                 @if ($user->type === 'Admin')
                     <x-sidebar-label text="Administration" />
 
-                    <x-sidebar-item :route="route('admin.users.index')" :active="Str::startsWith($currentRoute, 'admin.users')" icon="users">
+                    <x-sidebar-item :route="route('admin.users.index')" :active="Str::startsWith($currentRoute, 'admin.users')"
+                        icon="users">
                         <span class="truncate">Heads</span>
                     </x-sidebar-item>
 
@@ -120,7 +122,8 @@
                         <span class="truncate">Departments</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('admin.documents.track')" :active="$currentRoute === 'documents.reviews.admin.track'" icon="file-search">
+                    <x-sidebar-item :route="route('admin.documents.track')"
+                        :active="$currentRoute === 'documents.reviews.admin.track'" icon="file-search">
                         <span class="truncate">Document Track</span>
                     </x-sidebar-item>
 
@@ -133,14 +136,16 @@
                 @if ($user->type === 'Head')
                     <x-sidebar-label text="Document Management" />
 
-                    <x-sidebar-item :route="route('documents.index')" :active="$currentRoute === 'documents.index'" icon="file-text">
+                    <x-sidebar-item :route="route('documents.index')" :active="$currentRoute === 'documents.index'"
+                        icon="file-text">
                         <span class="truncate">Documents</span>
                     </x-sidebar-item>
 
                     <!-- Document Workflow -->
                     <x-sidebar-label text="Document Workflow" />
 
-                    <x-sidebar-item :route="route('documents.reviews.received')" :active="$currentRoute === 'documents.reviews.received'" icon="inbox" :badge="['class' => 'badge-info', 'count' => $receivedCount]" data-notification-type="received">
+                    <x-sidebar-item :route="route('documents.reviews.received')"
+                        :active="$currentRoute === 'documents.reviews.received'" icon="inbox" :badge="['class' => 'badge-info', 'count' => $receivedCount]" data-notification-type="received">
                         <span class="truncate">Request</span>
                     </x-sidebar-item>
 
@@ -150,46 +155,57 @@
                         <span class="truncate">Pending</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.status.closed')" :active="$currentRoute === 'documents.status.closed'" icon="check-circle" :badge="[
+                    <x-sidebar-item :route="route('documents.status.closed')"
+                        :active="$currentRoute === 'documents.status.closed'" icon="check-circle" :badge="[
                         'class' => 'badge-success',
                         'count' => $completedCount,
                     ]" data-notification-type="completed">
                         <span class="truncate">Closed</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.status.rejected')" :active="$currentRoute === 'documents.status.rejected'" icon="x-circle" :badge="['class' => 'badge-error', 'count' => $rejectedCount]" data-notification-type="rejected">
+                    <x-sidebar-item :route="route('documents.status.rejected')"
+                        :active="$currentRoute === 'documents.status.rejected'" icon="x-circle" :badge="['class' => 'badge-error', 'count' => $rejectedCount]" data-notification-type="rejected">
                         <span class="truncate">Rejected</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('documents.status.canceled')" :active="$currentRoute === 'documents.status.canceled'" icon="ban" :badge="['class' => 'badge-neutral', 'count' => $canceledCount]" data-notification-type="canceled">
+                    <x-sidebar-item :route="route('documents.status.canceled')"
+                        :active="$currentRoute === 'documents.status.canceled'" icon="ban" :badge="['class' => 'badge-neutral', 'count' => $canceledCount]" data-notification-type="canceled">
                         <span class="truncate">Canceled</span>
                     </x-sidebar-item>
 
                     <x-sidebar-label text="Department Management" />
 
-                    <x-sidebar-item :route="route('head.staff.index')" :active="Str::startsWith($currentRoute, 'head.staff')" icon="user-cog">
+                    <x-sidebar-item :route="route('head.staff.index')" :active="Str::startsWith($currentRoute, 'head.staff')"
+                        icon="user-cog">
                         <span class="truncate">Staff Management</span>
                     </x-sidebar-item>
 
-                    <x-sidebar-item :route="route('head.report.index')" :active="Str::startsWith($currentRoute, 'head.report')" icon="file">
-                        <span class="truncate">Report</span>
+                    <x-sidebar-item :route="route('document-types.index')" :active="Str::startsWith($currentRoute, 'document-types')" icon="file-type">
+                        <span class="truncate">Document Types</span>
                     </x-sidebar-item>
+
+                    {{-- <x-sidebar-item :route="route('head.report.index')"
+                        :active="Str::startsWith($currentRoute, 'head.report')" icon="file">
+                        <span class="truncate">Report</span>
+                    </x-sidebar-item> --}}
                 @endif
 
                 <!-- User Settings -->
                 <x-sidebar-label text="Settings" />
 
-                <x-sidebar-item :route="route('profile.show')" :active="Str::startsWith($currentRoute, 'profile')" icon="user">
+                <x-sidebar-item :route="route('profile.show')" :active="Str::startsWith($currentRoute, 'profile')"
+                    icon="user">
                     <span class="truncate">Profile</span>
                 </x-sidebar-item>
             </ul>
         </div>
 
-        <!-- Logout Section - Fixed at bottom -->
+        <!-- Logout Section -->
         <div class="p-2 mt-auto border-t sm:p-3 border-white/10 shrink-0">
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf
-                <button class="flex items-center justify-center w-full h-auto min-h-0 p-2 text-xs btn btn-logout sm:text-sm">
+                <button
+                    class="flex items-center justify-center w-full h-auto min-h-0 p-2 text-xs btn btn-logout sm:text-sm">
                     <i data-lucide="log-out" class="flex-shrink-0 w-3 h-3 mr-1 sm:h-4 sm:w-4 sm:mr-2"></i>
                     <span class="truncate">Logout</span>
                 </button>
@@ -198,7 +214,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             @if(in_array($user->type, ['Staff', 'Head']))
                 function updateNotificationCounts() {
                     fetch('{{ route("notifications.counts") }}', {
@@ -208,37 +224,37 @@
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Update each notification badge
-                            updateBadge('pending', data.counts.pending, 'badge-error');
-                            updateBadge('received', data.counts.received, 'badge-info');
-                            updateBadge('completed', data.counts.completed, 'badge-success');
-                            updateBadge('rejected', data.counts.rejected, 'badge-error');
-                            updateBadge('canceled', data.counts.canceled, 'badge-error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching notification counts:', error);
-                    });
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Update each notification badge
+                                updateBadge('pending', data.counts.pending, 'badge-error');
+                                updateBadge('received', data.counts.received, 'badge-info');
+                                updateBadge('completed', data.counts.completed, 'badge-success');
+                                updateBadge('rejected', data.counts.rejected, 'badge-error');
+                                updateBadge('canceled', data.counts.canceled, 'badge-error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching notification counts:', error);
+                        });
                 }
 
                 function updateBadge(type, count, badgeClass, overdueCount = 0) {
                     const menuItem = document.querySelector(`[data-notification-type="${type}"]`);
                     if (!menuItem) return;
 
-                    const badgeContainer = menuItem.querySelector('.flex.items-center.gap-1') || 
-                                         menuItem.querySelector('.badge')?.parentElement;
-                    
+                    const badgeContainer = menuItem.querySelector('.flex.items-center.gap-1') ||
+                        menuItem.querySelector('.badge')?.parentElement;
+
                     if (badgeContainer) {
                         if (count > 0) {
                             let badgeHtml = `<div class="badge ${badgeClass} badge-xs lg:badge-sm">${count}</div>`;
-                            
+
                             if (overdueCount > 0) {
                                 badgeHtml += `<div class="badge badge-error badge-xs lg:badge-sm" title="Overdue">${overdueCount}</div>`;
                             }
-                            
+
                             badgeContainer.innerHTML = badgeHtml;
                             badgeContainer.style.display = 'flex';
                         } else {
@@ -249,12 +265,12 @@
                         const linkElement = menuItem.querySelector('a');
                         const badgeDiv = document.createElement('div');
                         badgeDiv.className = 'flex items-center gap-1';
-                        
+
                         let badgeHtml = `<div class="badge ${badgeClass} badge-xs lg:badge-sm">${count}</div>`;
                         if (overdueCount > 0) {
                             badgeHtml += `<div class="badge badge-error badge-xs lg:badge-sm" title="Overdue">${overdueCount}</div>`;
                         }
-                        
+
                         badgeDiv.innerHTML = badgeHtml;
                         linkElement.appendChild(badgeDiv);
                     }
@@ -264,12 +280,12 @@
 
                 setInterval(updateNotificationCounts, 2000);
 
-                document.addEventListener('visibilitychange', function() {
+                document.addEventListener('visibilitychange', function () {
                     if (!document.hidden) {
                         updateNotificationCounts();
                     }
                 });
             @endif
-        });
+            });
     </script>
 @endauth

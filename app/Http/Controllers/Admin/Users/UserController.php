@@ -22,10 +22,10 @@ class UserController extends Controller
         $allowedSorts = ['id', 'name', 'email', 'employee_id', 'created_at', 'type'];
         $allowedDirections = ['asc', 'desc'];
 
-        if (!in_array($sortField, $allowedSorts)) {
+        if (! in_array($sortField, $allowedSorts)) {
             $sortField = 'created_at';
         }
-        if (!in_array($sortDirection, $allowedDirections)) {
+        if (! in_array($sortDirection, $allowedDirections)) {
             $sortDirection = 'desc';
         }
 

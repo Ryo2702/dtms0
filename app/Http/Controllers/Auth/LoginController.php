@@ -28,8 +28,9 @@ class LoginController extends Controller
             // Check if the account is deactivated
             if ($user->status == 0) {
                 Auth::logout(); // Log out the user immediately
+
                 return back()->withErrors([
-                    'municipal_id' => 'Your account has been deactivated. Please contact the administrator for assistance.'
+                    'municipal_id' => 'Your account has been deactivated. Please contact the administrator for assistance.',
                 ]);
             }
 
@@ -39,16 +40,16 @@ class LoginController extends Controller
         }
 
         return back()->withErrors([
-            'municipal_id' => 'Invalid Credentials'
+            'municipal_id' => 'Invalid Credentials',
         ]);
     }
-
 
     public function logout(Request $request)
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }

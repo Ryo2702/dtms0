@@ -17,12 +17,12 @@ class UserRequest extends FormRequest
         $id = $this->route('user')?->id;
 
         return [
-            'name'         => 'required|string|max:255',
-            'email'        => 'required|email|unique:users,email,' . $id,
-            'password'     => $id ? 'nullable|min:6' : 'required|min:6',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$id,
+            'password' => $id ? 'nullable|min:6' : 'required|min:6',
             'department_id' => 'required|exists:departments,id',
-            'type'         => 'required|in:Staff,Head,Admin',
-            'status'       => 'boolean',
+            'type' => 'required|in:Staff,Head,Admin',
+            'status' => 'boolean',
         ];
     }
 
@@ -30,20 +30,20 @@ class UserRequest extends FormRequest
     {
         return [
             'name.required' => 'Name is required.',
-            'name.max'      => 'Name must not exceed 255 characters.',
+            'name.max' => 'Name must not exceed 255 characters.',
 
             'email.required' => 'Email address is required.',
-            'email.email'    => 'Please enter a valid email address.',
-            'email.unique'   => 'This email address is already registered.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.unique' => 'This email address is already registered.',
 
             'password.required' => 'Password is required.',
-            'password.min'      => 'Password must be at least 6 characters long.',
+            'password.min' => 'Password must be at least 6 characters long.',
 
             'department_id.required' => 'Department is required.',
-            'department_id.exists'   => 'Selected department does not exist.',
+            'department_id.exists' => 'Selected department does not exist.',
 
             'type.required' => 'User type is required.',
-            'type.in'       => 'User type must be Staff, Head, or Admin.',
+            'type.in' => 'User type must be Staff, Head, or Admin.',
 
             'status.boolean' => 'Status must be either active (1) or inactive (0).',
         ];

@@ -62,13 +62,13 @@ class DepartmentRequest extends FormRequest
             'head_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('users', 'id')->where(fn($q) => $q->where('type', 'Head')),
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('type', 'Head')),
                 Rule::unique('departments', 'head_id')->ignore($id),
             ],
 
             'staff_ids.*' => [
                 'integer',
-                Rule::exists('users', 'id')->where(fn($q) => $q->where('type', 'Staff')),
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('type', 'Staff')),
             ],
 
             'staff_ids' => [
@@ -167,7 +167,7 @@ class DepartmentRequest extends FormRequest
         }
 
         // Ensure head_id is nullable if not provided
-        if (!$this->filled('head_id')) {
+        if (! $this->filled('head_id')) {
             $this->merge(['head_id' => null]);
         }
     }

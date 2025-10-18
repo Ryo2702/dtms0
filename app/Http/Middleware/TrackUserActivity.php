@@ -21,6 +21,7 @@ class TrackUserActivity
             $user = Auth::user();
             $user->update(['last_activity' => now()]);
         }
+
         return $next($request);
     }
 }

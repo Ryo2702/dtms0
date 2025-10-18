@@ -8,11 +8,10 @@ use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
 class DepartmentController extends Controller
@@ -94,7 +93,7 @@ class DepartmentController extends Controller
                 // Handle logo upload
                 if ($request->hasFile('logo')) {
                     $logo = $request->file('logo');
-                    $filename = time() . '_' . $logo->getClientOriginalName();
+                    $filename = time().'_'.$logo->getClientOriginalName();
                     $data['logo'] = $logo->storeAs('departments', $filename, 'public');
                 }
 
@@ -105,12 +104,12 @@ class DepartmentController extends Controller
 
                 if ($request->filled('head_email')) {
                     $head = User::create([
-                        'name'          => $request->input('head_name'),
-                        'email'         => $request->input('head_email'),
-                        'password'      => Hash::make($request->input('head_password')),
+                        'name' => $request->input('head_name'),
+                        'email' => $request->input('head_email'),
+                        'password' => Hash::make($request->input('head_password')),
                         'department_id' => $department->id,
-                        'type'          => 'Head',
-                        'status'        => 1,
+                        'type' => 'Head',
+                        'status' => 1,
                     ]);
 
                     // Ensure role exists and assign
@@ -122,11 +121,11 @@ class DepartmentController extends Controller
             });
 
             return redirect()->route('admin.departments.index')
-                ->with('success', "Department and Head created successfully!");
+                ->with('success', 'Department and Head created successfully!');
         } catch (\Exception $e) {
             Log::error('Department creation with head failed:', [
                 'error' => $e->getMessage(),
-                'data' => $request->all()
+                'data' => $request->all(),
             ]);
 
             return back()->with('error', 'Failed to create department and head. Please try again.')
@@ -162,7 +161,6 @@ class DepartmentController extends Controller
         return view('admin.departments.edit', compact('department'));
     }
 
-
     /**
      * Update the specified resource in storage.
      */
@@ -181,7 +179,7 @@ class DepartmentController extends Controller
                 }
 
                 $logo = $request->file('logo');
-                $filename = time() . '_' . $logo->getClientOriginalName();
+                $filename = time().'_'.$logo->getClientOriginalName();
                 $data['logo'] = $logo->storeAs('departments', $filename, 'public');
             }
 
@@ -200,14 +198,13 @@ class DepartmentController extends Controller
             Log::error('Department update failed:', [
                 'error' => $e->getMessage(),
                 'department_id' => $department->id,
-                'data' => $request->all()
+                'data' => $request->all(),
             ]);
 
             return back()->with('error', 'Failed to update department. Please try again.')
                 ->withInput();
         }
     }
-
 
     /**
      * Regenerate municipal IDs for all users in department
@@ -223,7 +220,7 @@ class DepartmentController extends Controller
 
         Log::info("Regenerated municipal IDs for department {$department->name}", [
             'department_id' => $department->id,
-            'users_updated' => $users->count()
+            'users_updated' => $users->count(),
         ]);
     }
 }

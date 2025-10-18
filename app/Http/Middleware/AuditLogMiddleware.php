@@ -54,12 +54,12 @@ class AuditLogMiddleware
         }
 
         $action = $this->determineAction($request);
-        
+
         // Only proceed if we have a valid action
-        if (!$action) {
+        if (! $action) {
             return;
         }
-        
+
         $description = $this->generateDescription($request, $action);
 
         // Only log if we have a meaningful description
@@ -75,8 +75,8 @@ class AuditLogMiddleware
     {
         $method = $request->method();
         $route = $request->route();
-        
-        if (!$route) {
+
+        if (! $route) {
             return null;
         }
 
@@ -105,7 +105,7 @@ class AuditLogMiddleware
             if ($method === 'GET' && str_contains($path, '/download')) {
                 return 'download';
             }
-            if ($method === 'POST' && !str_contains($path, '/approve') && !str_contains($path, '/reject') && !str_contains($path, '/forward')) {
+            if ($method === 'POST' && ! str_contains($path, '/approve') && ! str_contains($path, '/reject') && ! str_contains($path, '/forward')) {
                 return 'create';
             }
             if ($method === 'PUT' || $method === 'PATCH') {
@@ -158,69 +158,69 @@ class AuditLogMiddleware
         $user = Auth::user();
         $path = $request->path();
         $route = $request->route();
-        
+
         // Safety check for user
-        if (!$user) {
+        if (! $user) {
             return null;
         }
-        
+
         switch ($action) {
             case 'login':
                 return "User {$user->name} logged into the system";
-                
+
             case 'logout':
                 return "User {$user->name} logged out of the system";
-                
+
             case 'create':
                 if (str_contains($path, 'documents')) {
-                    return "Created a new document for review";
+                    return 'Created a new document for review';
                 }
                 if (str_contains($path, 'users') || str_contains($path, 'staff')) {
-                    return "Created a new user account";
+                    return 'Created a new user account';
                 }
                 if (str_contains($path, 'departments')) {
-                    return "Created a new department";
+                    return 'Created a new department';
                 }
                 break;
-                
+
             case 'update':
                 if (str_contains($path, 'documents')) {
-                    return "Updated document information";
+                    return 'Updated document information';
                 }
                 if (str_contains($path, 'users') || str_contains($path, 'staff')) {
-                    return "Updated user account information";
+                    return 'Updated user account information';
                 }
                 if (str_contains($path, 'departments')) {
-                    return "Updated department information";
+                    return 'Updated department information';
                 }
                 if (str_contains($path, 'profile')) {
-                    return "Updated profile information";
+                    return 'Updated profile information';
                 }
                 break;
-                
+
             case 'delete':
                 if (str_contains($path, 'documents')) {
-                    return "Deleted a document";
+                    return 'Deleted a document';
                 }
                 if (str_contains($path, 'users') || str_contains($path, 'staff')) {
-                    return "Deleted a user account";
+                    return 'Deleted a user account';
                 }
                 if (str_contains($path, 'departments')) {
-                    return "Deleted a department";
+                    return 'Deleted a department';
                 }
                 break;
-                
+
             case 'approve':
-                return "Approved a document review";
-                
+                return 'Approved a document review';
+
             case 'reject':
-                return "Rejected a document review";
-                
+                return 'Rejected a document review';
+
             case 'forward':
-                return "Forwarded a document to another department";
-                
+                return 'Forwarded a document to another department';
+
             case 'download':
-                return "Downloaded a document";
+                return 'Downloaded a document';
         }
 
         return null;

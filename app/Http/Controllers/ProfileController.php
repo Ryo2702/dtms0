@@ -53,8 +53,8 @@ class ProfileController extends Controller
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
             // Delete old avatar if exists
-            if ($user->avatar && Storage::exists('public/' . $user->avatar)) {
-                Storage::delete('public/' . $user->avatar);
+            if ($user->avatar && Storage::exists('public/'.$user->avatar)) {
+                Storage::delete('public/'.$user->avatar);
             }
 
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
@@ -93,8 +93,8 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->avatar && Storage::exists('public/' . $user->avatar)) {
-            Storage::delete('public/' . $user->avatar);
+        if ($user->avatar && Storage::exists('public/'.$user->avatar)) {
+            Storage::delete('public/'.$user->avatar);
         }
 
         $user->update(['avatar' => null]);

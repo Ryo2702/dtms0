@@ -49,13 +49,13 @@
             </div>
         </div>
 
-        <!-- Create Custom Document Form -->
+        <!-- Create Request Document Form -->
         <div class="mb-8">
             <div class="bg-white-secondary card shadow-xl">
                 <div class="card-body">
                     <h2 class="mb-4 text-xl card-title">
                         <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
-                        Create Custom Document
+                        Create Request Document
                     </h2>
                     
                     <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
@@ -68,36 +68,23 @@
                             </label>
                             <select name="document_type" id="document_type_select" required 
                                 class="select select-bordered w-full @error('document_type') select-error @enderror"
-                                onchange="updateTitle(this.value)">
+                                onchange="updateTitle(this)">
                                 <option value="">Select document type</option>
-                                <optgroup label="Mayor's Office">
-                                    <option value="Business Permit">Business Permit</option>
-                                    <option value="Barangay Clearance">Barangay Clearance</option>
-                                    <option value="Certificate of Indigency">Certificate of Indigency</option>
-                                    <option value="Certificate of Residency">Certificate of Residency</option>
-                                    <option value="Mayor's Clearance">Mayor's Clearance</option>
-                                </optgroup>
-                                <optgroup label="City Engineer's Office">
-                                    <option value="Building Permit">Building Permit</option>
-                                    <option value="Electrical Permit">Electrical Permit</option>
-                                    <option value="Plumbing Permit">Plumbing Permit</option>
-                                    <option value="Excavation Permit">Excavation Permit</option>
-                                    <option value="Demolition Permit">Demolition Permit</option>
-                                </optgroup>
-                                <optgroup label="City Treasurer's Office">
-                                    <option value="Real Property Tax Clearance">Real Property Tax Clearance</option>
-                                    <option value="Business Tax Clearance">Business Tax Clearance</option>
-                                    <option value="Certificate of No Pending Case">Certificate of No Pending Case</option>
-                                    <option value="Tax Declaration">Tax Declaration</option>
-                                    <option value="Payment Certification">Payment Certification</option>
-                                </optgroup>
-                         
+                                @foreach ($documentTypes as $type)
+                                    <option value="{{$type->title}}"
+                                        data-description="{{$type->description}}">
+                                        {{$type->title}}
+                                    </option>
+                                @endforeach
                             </select>
                             @error('document_type')
                                 <label class="label">
                                     <span class="label-text-alt text-error">{{ $message }}</span>
                                 </label>
                             @enderror
+                            <label class="label">
+                                <span class="label-text-alt" id="document_description"></span>
+                            </label>
                         </div>
 
                         <!-- Document Title (Auto-filled) -->
@@ -123,7 +110,7 @@
                                 </label>
                                 <input type="text" name="client_name" required 
                                     class="input input-bordered w-full @error('client_name') input-error @enderror" 
-                                    placeholder="Enter client's full name" value="{{ old('client_name') }}">
+                                    placeholder="Last Name, First Name Middle Initial" value="{{ old('client_name') }}">
                                 @error('client_name')
                                     <label class="label">
                                         <span class="label-text-alt text-error">{{ $message }}</span>
@@ -267,6 +254,7 @@
                 </div>
             </div>
         </div>
+    </div>
 
     <script>
         function toggleInstruction(button) {
@@ -282,9 +270,15 @@
             });
         });
 
-        function updateTitle(documentType) {
+        function updateTitle(select) {
             const titleInput = document.getElementById('document_title');
-            titleInput.value = documentType;
+            const descriptionSpan = document.getElementById('document_description');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            titleInput.value = selectedOption.value;
+            if (descriptionSpan) {
+                descriptionSpan.textContent = selectedOption.dataset.description || '';
+            }
         }
 
         function updateDifficultyColor(select) {

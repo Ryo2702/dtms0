@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class DocumentReview extends Model
 {
@@ -29,7 +28,7 @@ class DocumentReview extends Model
         'due_at',
         'forwarding_chain',
         'is_final_review',
-        'completed_on_time'
+        'completed_on_time',
     ];
 
     protected $casts = [
@@ -41,7 +40,7 @@ class DocumentReview extends Model
         'due_at' => 'datetime',
         'is_final_review' => 'boolean',
         'completed_on_time' => 'boolean',
-        'process_time_minutes' => 'integer'
+        'process_time_minutes' => 'integer',
     ];
 
     // Relationships
@@ -73,7 +72,7 @@ class DocumentReview extends Model
 
     public function getRemainingTimeAttribute()
     {
-        if (!$this->due_at || $this->isExpired()) {
+        if (! $this->due_at || $this->isExpired()) {
             return 0;
         }
 
@@ -82,7 +81,7 @@ class DocumentReview extends Model
 
     public function getDueStatusAttribute()
     {
-        if (!$this->due_at) {
+        if (! $this->due_at) {
             return 'no_deadline';
         }
 
@@ -94,6 +93,7 @@ class DocumentReview extends Model
             if ($minutesLeft <= 30) {
                 return 'due_soon'; // Within 30 minutes
             }
+
             return 'on_time';
         } else {
             return 'overdue';
@@ -102,7 +102,7 @@ class DocumentReview extends Model
 
     public function getIsOverdueAttribute()
     {
-        return $this->due_at && now()->greaterThan($this->due_at) && !$this->downloaded_at;
+        return $this->due_at && now()->greaterThan($this->due_at) && ! $this->downloaded_at;
     }
 
     public function addToForwardingChain($action, $fromUser, $toUser = null, $notes = null, $processTime = null)
@@ -128,7 +128,7 @@ class DocumentReview extends Model
             'notes' => $notes,
             'process_time' => $processTime,
             'timestamp' => now()->toISOString(),
-            'status' => $this->getStepStatus($action)
+            'status' => $this->getStepStatus($action),
         ];
 
         $chain[] = $chainEntry;
@@ -159,31 +159,46 @@ class DocumentReview extends Model
 
     public function getCurrentStepAttribute()
     {
-        if (!$this->forwarding_chain) return null;
+        if (! $this->forwarding_chain) {
+            return null;
+        }
 
         $pendingStep = collect($this->forwarding_chain)->firstWhere('status', 'pending');
+
         return $pendingStep ?? collect($this->forwarding_chain)->last();
     }
 
     public function getProgressPercentageAttribute()
     {
-        if (!$this->forwarding_chain) return 0;
+        if (! $this->forwarding_chain) {
+            return 0;
+        }
 
         $totalSteps = count($this->forwarding_chain);
         $completedSteps = collect($this->forwarding_chain)->where('status', 'completed')->count();
 
-        if ($this->status === 'downloaded') return 100;
-        if ($this->status === 'approved') return 90;
-        if ($this->status === 'rejected') return 100;
-        if ($this->status === 'canceled') return 100;
+        if ($this->status === 'downloaded') {
+            return 100;
+        }
+        if ($this->status === 'approved') {
+            return 90;
+        }
+        if ($this->status === 'rejected') {
+            return 100;
+        }
+        if ($this->status === 'canceled') {
+            return 100;
+        }
 
         return $totalSteps > 0 ? round(($completedSteps / $totalSteps) * 100) : 0;
     }
+
     // Get verification URL
     public function getVerificationUrlAttribute()
     {
         return route('documents.review', $this->document_id);
     }
+
     public function scopePending($query)
     {
         return $query->where('status', 'pending');

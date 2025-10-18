@@ -189,7 +189,7 @@ main {
 }
 
 .stat-value {
-    color: var(--dtms-text) !important;
+    color: white !important;
     font-size: 2rem !important;
     font-weight: 700 !important;
     margin-bottom: 0.5rem !important;

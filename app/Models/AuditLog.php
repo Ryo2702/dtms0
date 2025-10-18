@@ -73,8 +73,8 @@ class AuditLog extends Model
     public function getChangesAttribute(): array
     {
         $changes = [];
-        
-        if (!empty($this->old_values) && !empty($this->new_values)) {
+
+        if (! empty($this->old_values) && ! empty($this->new_values)) {
             foreach ($this->new_values as $key => $newValue) {
                 $oldValue = $this->old_values[$key] ?? null;
                 if ($oldValue !== $newValue) {
@@ -85,7 +85,7 @@ class AuditLog extends Model
                 }
             }
         }
-        
+
         return $changes;
     }
 
@@ -94,7 +94,7 @@ class AuditLog extends Model
      */
     public function getActionBadgeClassAttribute(): string
     {
-        return match($this->action) {
+        return match ($this->action) {
             'login' => 'badge-success',
             'logout' => 'badge-info',
             'create' => 'badge-primary',

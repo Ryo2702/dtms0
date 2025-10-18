@@ -57,7 +57,7 @@ return new class extends Migration
                 'original_department_id',
                 'forwarding_notes',
                 'forwarding_chain',
-                'is_final_review'
+                'is_final_review',
             ]);
         });
     }

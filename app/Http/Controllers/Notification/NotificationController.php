@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Notification;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Models\DocumentReview;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,8 +18,8 @@ class NotificationController extends Controller
     public function getCounts(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
-        if (!$user || !in_array($user->type, ['Staff', 'Head'])) {
+
+        if (! $user || ! in_array($user->type, ['Staff', 'Head'])) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -52,7 +52,6 @@ class NotificationController extends Controller
             }
             $counts['received'] = $receivedQuery->count();
 
-    
             $sentQuery = DocumentReview::where('original_department_id', $user->department_id)
                 ->where('current_department_id', '!=', $user->department_id)
                 ->whereIn('status', ['pending', 'approved']);
@@ -130,16 +129,16 @@ class NotificationController extends Controller
             return response()->json([
                 'success' => true,
                 'counts' => $counts,
-                'timestamp' => now()->toISOString()
+                'timestamp' => now()->toISOString(),
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching notification counts: ' . $e->getMessage());
-            
+            Log::error('Error fetching notification counts: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error fetching notification counts',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -150,8 +149,8 @@ class NotificationController extends Controller
     public function markAsRead(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
-        if (!$user) {
+
+        if (! $user) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -162,15 +161,15 @@ class NotificationController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Notifications marked as read',
-                'type' => $type
+                'type' => $type,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error marking notifications as read: ' . $e->getMessage());
-            
+            Log::error('Error marking notifications as read: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error marking notifications as read'
+                'message' => 'Error marking notifications as read',
             ], 500);
         }
     }

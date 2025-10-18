@@ -3,20 +3,16 @@
 namespace App\Http\Controllers\Document;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Document_Type\MayorClearanceRequest;
-use App\Models\DocumentReview;
 use App\Models\Department;
 use App\Models\User;
+use App\Models\DocumentType;
 use App\Services\Document\DocumentIdGenerator;
-use App\Services\Document\DocumentWorkflowService;
 use App\Services\Document\DocumentPrintService;
+use App\Services\Document\DocumentWorkflowService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class DocumentController extends Controller
 {
-    
     public function __construct(
         private DocumentIdGenerator $idGenerator,
         private DocumentWorkflowService $workflowService,
@@ -26,26 +22,10 @@ class DocumentController extends Controller
     public function index()
     {
         $departments = Department::where('status', 1)->get();
-             
+
         $reviewers = User::whereIn('type', ['Head'])->get();
 
-        $assignedStaff = 
-            [
-                ['id' => 1, 'name' => 'John Doe', 'position' => 'Document Processor'],
-                ['id' => 2, 'name' => 'Jane Smith', 'position' => 'Senior Clerk'],
-                ['id' => 3, 'name' => 'Mike Johnson', 'position' => 'Administrative Assistant'],
-                ['id' => 4, 'name' => 'Sarah Wilson', 'position' => 'Records Officer'],
-                ['id' => 5, 'name' => 'David Brown', 'position' => 'Document Specialist'],
-        ];
-
-        return view('documents.index', compact('departments', 'reviewers', 'assignedStaff'));
-    }
-
-    public function create()
-    {
-        $departments = Department::where('status', 1)->get();
-        $reviewers = User::whereIn('type', ['Head'])->get();
-        $assignedStaff = 
+        $assignedStaff =
             [
                 ['id' => 1, 'name' => 'John Doe', 'position' => 'Document Processor'],
                 ['id' => 2, 'name' => 'Jane Smith', 'position' => 'Senior Clerk'],
@@ -53,13 +33,33 @@ class DocumentController extends Controller
                 ['id' => 4, 'name' => 'Sarah Wilson', 'position' => 'Records Officer'],
                 ['id' => 5, 'name' => 'David Brown', 'position' => 'Document Specialist'],
             ];
+        $documentTypes = DocumentType::active()
+            ->orderBy('title')
+            ->paginate(10);
+
+        return view('documents.index', compact('departments', 'reviewers', 'assignedStaff', 'documentTypes'));
+    }
+
+    public function create()
+    {
+        $departments = Department::where('status', 1)->get();
+        $reviewers = User::whereIn('type', ['Head'])->get();
+        $assignedStaff =
+            [
+                ['id' => 1, 'name' => 'John Doe', 'position' => 'Document Processor'],
+                ['id' => 2, 'name' => 'Jane Smith', 'position' => 'Senior Clerk'],
+                ['id' => 3, 'name' => 'Mike Johnson', 'position' => 'Administrative Assistant'],
+                ['id' => 4, 'name' => 'Sarah Wilson', 'position' => 'Records Officer'],
+                ['id' => 5, 'name' => 'David Brown', 'position' => 'Document Specialist'],
+            ];
+
         return view('documents.create', compact('departments', 'reviewers', 'assignedStaff'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-          'title' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'document_type' => 'required|string|max:255',
             'client_name' => 'required|string|max:255',
             'reviewer_id' => 'required|exists:users,id',
@@ -70,17 +70,17 @@ class DocumentController extends Controller
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
         ]);
 
-            $documentId = $this->idGenerator->generate();
-        
+        $documentId = $this->idGenerator->generate();
+
         // Handle file upload
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
             $attachmentPath = $request->file('attachment')->store('document_attachments', 'public');
         }
-        
+
         // Convert time to minutes for internal processing
         $processTimeInMinutes = $this->convertTimeToMinutes($validated['process_time'], $validated['time_unit']);
-        
+
         $data = [
             'name' => $validated['client_name'],
             'reviewer_id' => $validated['reviewer_id'],
@@ -91,11 +91,11 @@ class DocumentController extends Controller
             'difficulty' => $validated['difficulty'],
             'assigned_staff' => $validated['assigned_staff'],
             'attachment_path' => $attachmentPath,
-            'created_via' => 'request_form'
+            'created_via' => 'request_form',
         ];
 
         $docInfo = [
-            'title' => $validated['document_type']
+            'title' => $validated['document_type'],
         ];
 
         // Use the workflow service to create the document review
@@ -104,24 +104,22 @@ class DocumentController extends Controller
             $this->printService->printReceipt($review);
             $printMessage = ' Receipt printed successfully.';
         } catch (\Exception $e) {
-            $printMessage = ' Note: Receipt printing failed - ' . $e->getMessage();
+            $printMessage = ' Note: Receipt printing failed - '.$e->getMessage();
         }
 
         return redirect()->route('documents.index')
             ->with('success', "Document '{$validated['title']}' has been created and sent for review. Document ID: {$documentId}");
     }
 
-
     public function form($file)
     {
         // Check if template exists
         $templatePath = storage_path("app/public/templates/{$file}");
-        
-        if (!file_exists($templatePath)) {
+
+        if (! file_exists($templatePath)) {
             abort(404, 'Document template not found.');
         }
 
- 
         // Get reviewers for this document type
         $reviewers = User::whereIn('type', ['Heads'])->get();
 
@@ -135,14 +133,14 @@ class DocumentController extends Controller
     {
         $validated = $request->validated();
         $documentId = $this->idGenerator->generate();
-        
 
         // Use the workflow service to create the document review
-        $review = $this->workflowService->sendForReview($validated, $docInfo, $documentId);
+        $review = $this->workflowService->sendForReview($validated ,$documentId);
 
         return redirect()->route('documents.reviews.index')
             ->with('success', "Document has been submitted for review. Document ID: {$documentId}");
     }
+
     public function getDocumentTypes($departmentId)
     {
         // Get document types from database
@@ -160,36 +158,36 @@ class DocumentController extends Controller
                     'Barangay Clearance',
                     'Certificate of Indigency',
                     'Certificate of Residency',
-                    'Mayor\'s Clearance'
+                    'Mayor\'s Clearance',
                 ],
                 2 => [ // City Engineer's Office
                     'Building Permit',
                     'Electrical Permit',
                     'Plumbing Permit',
                     'Excavation Permit',
-                    'Demolition Permit'
+                    'Demolition Permit',
                 ],
                 3 => [ // City Treasurer's Office
                     'Real Property Tax Clearance',
                     'Business Tax Clearance',
                     'Certificate of No Pending Case',
                     'Tax Declaration',
-                    'Payment Certification'
+                    'Payment Certification',
                 ],
                 4 => [ // City Health Office
                     'Health Certificate',
                     'Sanitary Permit',
                     'Medical Certificate',
                     'Food Handler\'s Permit',
-                    'Water Testing Certificate'
+                    'Water Testing Certificate',
                 ],
                 5 => [ // City Planning Office
                     'Zoning Clearance',
                     'Site Development Permit',
                     'Subdivision Clearance',
                     'Location Clearance',
-                    'Development Plan Approval'
-                ]
+                    'Development Plan Approval',
+                ],
             ];
 
             $documentTypes = $hardcodedTypes[$departmentId] ?? [];
@@ -197,9 +195,10 @@ class DocumentController extends Controller
 
         return response()->json($documentTypes);
     }
+
     private function convertTimeToMinutes($value, $unit)
     {
-        return match($unit) {
+        return match ($unit) {
             'minutes' => $value,
             'days' => $value * 24 * 60,
             'weeks' => $value * 7 * 24 * 60,
@@ -207,20 +206,20 @@ class DocumentController extends Controller
         };
     }
 
-//     public function getDocumentTypes($departmentId)
-// {
-//     // Dynamic document types based on department
-//     $documentTypes = [
-//         1 => [ // Mayor's Office
-//             'Mayor\'s Clearance',
-//             'Business Permit',
-//             'Barangay Clearance',
-//             // ... more types
-//         ],
-//         // ... other departments
-//     ];
+    //     public function getDocumentTypes($departmentId)
+    // {
+    //     // Dynamic document types based on department
+    //     $documentTypes = [
+    //         1 => [ // Mayor's Office
+    //             'Mayor\'s Clearance',
+    //             'Business Permit',
+    //             'Barangay Clearance',
+    //             // ... more types
+    //         ],
+    //         // ... other departments
+    //     ];
 
-//     return response()->json($documentTypes[$departmentId] ?? []);
-// }
+    //     return response()->json($documentTypes[$departmentId] ?? []);
+    // }
 
 }

@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('url')->nullable(); // The URL that was accessed
             $table->string('method')->nullable(); // HTTP method (GET, POST, etc.)
             $table->timestamps();
-            
+
             $table->index(['user_id', 'created_at']);
             $table->index(['model_type', 'model_id']);
             $table->index(['action', 'created_at']);
