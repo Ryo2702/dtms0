@@ -30,7 +30,7 @@ class DocumentController extends Controller
         $assignedStaff = AssignStaff::where('is_active', true)->get()->map(function ($staff) {
             return [
                 'full_name' => $staff->full_name,
-                'position'=> $staff->position ?? 'No Position',
+                'position' => $staff->position ?? 'No Position',
             ];
         });
 
@@ -40,15 +40,6 @@ class DocumentController extends Controller
             ->paginate(10);
 
         return view('documents.index', compact('departments', 'reviewers', 'assignedStaff', 'documentTypes'));
-    }
-
-    public function create()
-    {
-        $departments = Department::where('status', 1)->get();
-        $reviewers = User::whereIn('type', ['Head'])->get();
-        $assignedStaff = AssignStaff::active()->orderBy('full_name');
-
-        return view('documents.create', compact('departments', 'reviewers', 'assignedStaff'));
     }
 
     public function store(Request $request)
