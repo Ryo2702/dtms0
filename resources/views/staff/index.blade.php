@@ -4,43 +4,46 @@
         <div class="mb-6">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold">Document Types Management</h1>
-                    <p class="text-gray-600 mt-1">Create and manage document types for your department</p>
+                    <h1 class="text-3xl font-bold">Staff Management</h1>
+                    <p class="text-gray-600 mt-1">Create and manage Staff for your department</p>
                 </div>
 
-                <button type="button" class="btn btn-primary" onclick="addDoctypeModal.showModal()">
+                <button type="button" class="btn btn-primary" onclick="addStaffModal.showModal()">
                     <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                    Add Document Type
+                    Add Staff
                 </button>
             </div>
 
 
-            <x-data-table :headers="['Document Types', 'Description', 'Status', 'Created', 'Actions']"
-                :sortableFields="['title', 'created_at']" :paginator="$documentTypes">
+            <x-data-table :headers="['Name of Staff', 'Position', 'Role', 'Status', 'Created', 'Actions']"
+                :sortableFields="['full_name', 'position', 'role', 'created_at']" :paginator="$staffs">
 
-                @foreach ($documentTypes as $type)
+                @foreach ($staffs as $staff)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-900">
-                            {{ $type->title }}
+                            {{ $staff->full_name }}
                         </td>
                         <td class="px-4 py-3 truncate text-gray-600">
-                            {{ $type->description ?? 'No Description' }}
+                            {{ $staff->position ?? 'No Position' }}
+                        </td>
+                        <td class="px-4 py-3 truncate">
+                            {{ $staff->role }}
                         </td>
                         <td class="px-4 py-3">
-                            @if ($type->is_active)
+                            @if ($staff->is_active)
                                 <span class="badge badge-success">Active</span>
                             @else
                                 <span class="badge badge-ghost">Inactive</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600 text-sm">
-                            {{ $type->created_at->format('M d, Y') }}
+                            {{ $staff->created_at->format('M d, Y') }}
                         </td>
                         <td class="px-3 py-3">
                             <div class="flex gap-2">
-                                @if ($type->is_active)
+                                @if ($staff->is_active)
                                     <button type="button" class="btn btn-sm btn-ghost"
-                                        onclick="openEditModal({{ $type->id }}, '{{ addslashes($type->title) }}', '{{ addslashes($type->description ?? '') }}')"
+                                        onclick="openEditModal({{ $staff->id }}, '{{ addslashes($staff->full_name) }}', '{{ addslashes($staff->position ?? '') }}')"
                                         title="Edit">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
                                     </button>
@@ -53,33 +56,38 @@
         </div>
 
         {{-- Add Modal --}}
-        <x-modal id="addDoctypeModal" title="Add New Document Type" size="xl">
-            <form action="{{ route('document-types.store') }}" method="POST" id="addDocTypeForm">
+        <x-modal id="addStaffModal" title="Add New Staff" size="xl">
+            <form action="{{ route('staff.store') }}" method="POST" id="addStaffForm">
                 @csrf
 
                 <div class="mb-4">
-                    <x-form.input name="title" label="Document Title" placeholder="e.g., Clearance, Travel Order" required
+                    <x-form.input name="full_name" label="Full Name" placeholder="e.g., Charles, Jhon Doe" required
                         class="w-full" />
                 </div>
 
                 <div class="mb-4">
-                    <x-form.textarea name="description" label="Description" placeholder="Enter description..." rows="4"
+                    <x-form.input name="postion" label="Position" placeholder="Enter Position"
                         class="w-full" />
+                </div>
+
+                <div class="mb-4">
+                    <x-form.input name="role" label="Role" placeholder="Enter Role"
+                        class="w-full" required/>
                 </div>
             </form>
 
             <x-slot name="actions">
-                <button type="button" class="btn btn-ghost" onclick="addDoctypeModal.close()">
+                <button type="button" class="btn btn-ghost" onclick="addStaffModal.close()">
                     Cancel
                 </button>
-                <button type="submit" form="addDocTypeForm" class="btn btn-primary">
+                <button type="submit" form="addStaffForm" class="btn btn-primary">
                     <i data-lucide="save" class="w-4 h-4 mr-2"></i>
                     Create
                 </button>
             </x-slot>
         </x-modal>
 
-        {{-- Edit Modal --}}
+        {{-- Edit Modal
         <x-modal id="editDoctypeModal" title="Edit Document Type" size="xl">
             <form method="POST" id="editDocTypeForm">
                 @csrf
@@ -105,7 +113,7 @@
                     Update
                 </button>
             </x-slot>
-        </x-modal>
+        </x-modal> --}}
     </x-container>
 @endsection
 
@@ -133,7 +141,7 @@
                         openEditModal(oldId, "{{ addslashes(old('title', '')) }}", "{{ addslashes(old('description', '')) }}");
                     }
                 @else
-                    addDoctypeModal.showModal();
+                    addStaffModal.showModal();
                 @endif
             @endif
         });

@@ -175,7 +175,7 @@
 
                     <x-sidebar-label text="Department Management" />
 
-                    <x-sidebar-item :route="route('head.staff.index')" :active="Str::startsWith($currentRoute, 'head.staff')"
+                    <x-sidebar-item :route="route('staff.index')" :active="Str::startsWith($currentRoute, 'staff')"
                         icon="user-cog">
                         <span class="truncate">Staff Management</span>
                     </x-sidebar-item>
@@ -215,30 +215,39 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            @if(in_array($user->type, ['Staff', 'Head']))
-                function updateNotificationCounts() {
-                    fetch('{{ route("notifications.counts") }}', {
-                        method: 'GET',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            @if(in_array($user->type, ['Head']))
+                    function updateNotificationCounts() {
+                        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+
+                        const headers = {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        };
+
+                        if (csrfToken) {
+                            headers['X-CSRF-TOKEN'] = csrfToken;
                         }
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Update each notification badge
-                                updateBadge('pending', data.counts.pending, 'badge-error');
-                                updateBadge('received', data.counts.received, 'badge-info');
-                                updateBadge('completed', data.counts.completed, 'badge-success');
-                                updateBadge('rejected', data.counts.rejected, 'badge-error');
-                                updateBadge('canceled', data.counts.canceled, 'badge-error');
-                            }
+
+                        fetch('{{ route("notifications.counts") }}', {
+                            method: 'GET',
+                            headers: headers
                         })
-                        .catch(error => {
-                            console.error('Error fetching notification counts:', error);
-                        });
-                }
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    updateBadge('pending', data.counts.pending, 'badge-error');
+                                    updateBadge('received', data.counts.received, 'badge-info');
+                                    updateBadge('completed', data.counts.completed, 'badge-success');
+                                    updateBadge('rejected', data.counts.rejected, 'badge-error');
+                                    updateBadge('canceled', data.counts.canceled, 'badge-error');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching notification counts:', error);
+
+                            });
+                                    )
+                            }
 
                 function updateBadge(type, count, badgeClass, overdueCount = 0) {
                     const menuItem = document.querySelector(`[data-notification-type="${type}"]`);
@@ -286,6 +295,6 @@
                     }
                 });
             @endif
-            });
+                });
     </script>
 @endauth

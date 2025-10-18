@@ -3,26 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DocumentType extends Model
+class AssignStaff extends Model
 {
     protected $fillable = [
-        'title',
-        'description',
+        'full_name',
+        'position',
+        'role',
         'department_id',
-        'is_active',
+        'is_active'
     ];
-
     protected $casts = [
         'is_active' => 'boolean',
     ];
 
-    public function department()
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
 
-    public function scopeActive($query){
+    public function scopeActive($query): mixed
+    {
         return $query->where('is_active', true);
     }
 }

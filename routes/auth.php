@@ -1,12 +1,13 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Document\DocumentController;
 use App\Http\Controllers\Document\DocumentReviewController;
 use App\Http\Controllers\Document\DocumentTypeController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Staff\StaffController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/document/{documentId}', [DocumentReviewController::class, 'showByDocumentId'])->name('documents.show-by-id');
@@ -20,13 +21,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('notifications.mark-read');
     Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDocumentTypes']);
    
-    Route::get('/dashboard', function () {
-        /** @var User $authUser */
-        $authUser = Auth::user();
-        $user = $authUser;
-
-        return view('dashboard', compact('user'));
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
    
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -61,12 +56,15 @@ Route::middleware(['auth'])->group(function () {
         });
 
     });
+
     Route::prefix('document-types')->name('document-types.')->group(function () {
         Route::get('/', [DocumentTypeController::class, 'index'])->name('index');
         Route::post('/', [DocumentTypeController::class, 'store'])->name('store');
         Route::put('/{documentType}', [DocumentTypeController::class, 'update'])->name('update');
     });
-    Route::middleware(['role:Staff'])->group(function () {
-        Route::get('/staff-area', fn() => 'Staff Access Only');
+    
+    Route::prefix('staff')->name('staff.')->group(function () {
+        Route::get('/', [StaffController::class,'index'])->name('index');
+        Route::post('/create', [StaffController::class,'store'])->name('store');
     });
 });

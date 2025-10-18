@@ -28,8 +28,13 @@ class DocumentTypeController extends Controller
         return view('document-types.index', compact('documentTypes', 'departments'));
     }
 
-    public function store(Request $request) 
+    public function store(Request $request)
     {
+        $user = auth()->user();
+        if ($user->type !== 'Head') {
+            abort(403, 'Unauthorized access');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255|unique:document_types,title',
             'description' => 'nullable|string|max:100'

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Municipal System')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -36,7 +37,6 @@
             <!-- Top Navigation Bar -->
             <nav class="z-30 flex-shrink-0 text-white bg-primary navbar">
                 <div class="flex items-center navbar-start">
-                    <!-- Mobile Hamburger Menu Button - Hidden on desktop -->
                     <button id="hamburger-btn" class="mr-2 btn btn-ghost btn-square lg:!hidden" aria-label="Open menu">
                         <i data-lucide="menu" class="w-6 h-6 text-white"></i>
                     </button>
@@ -93,9 +93,8 @@
             </main>
         </div>
     </div>
-
     @stack('scripts')
-    <!-- Mobile Sidebar JavaScript -->
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -144,8 +143,6 @@
                     }
                 });
             });
-
-            // Keyboard and resize event handlers
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && window.innerWidth < 1024) {
                     closeSidebar();
@@ -158,7 +155,6 @@
                 }
             });
 
-            // Initialize sidebar state
             if (window.innerWidth < 1024) {
                 closeSidebar();
             }
@@ -173,14 +169,13 @@
                 if (inputValue) {
                     let documentId = inputValue;
                     
-                    // Check if input is a URL
                     if (inputValue.includes('http') || inputValue.includes('/document/')) {
                         // Extract document ID from URL
                         const urlMatch = inputValue.match(/\/document\/([^\/\?#]+)/);
                         if (urlMatch) {
                             documentId = urlMatch[1];
                         } else {
-                            // Try to extract from end of URL after last slash
+                        
                             const parts = inputValue.split('/');
                             const lastPart = parts[parts.length - 1];
                            

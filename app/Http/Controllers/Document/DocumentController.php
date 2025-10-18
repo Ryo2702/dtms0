@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Document;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssignStaff;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\DocumentType;
@@ -17,7 +18,8 @@ class DocumentController extends Controller
         private DocumentIdGenerator $idGenerator,
         private DocumentWorkflowService $workflowService,
         private DocumentPrintService $printService
-    ) {}
+    ) {
+    }
 
     public function index()
     {
@@ -25,14 +27,14 @@ class DocumentController extends Controller
 
         $reviewers = User::whereIn('type', ['Head'])->get();
 
-        $assignedStaff =
-            [
-                ['id' => 1, 'name' => 'John Doe', 'position' => 'Document Processor'],
-                ['id' => 2, 'name' => 'Jane Smith', 'position' => 'Senior Clerk'],
-                ['id' => 3, 'name' => 'Mike Johnson', 'position' => 'Administrative Assistant'],
-                ['id' => 4, 'name' => 'Sarah Wilson', 'position' => 'Records Officer'],
-                ['id' => 5, 'name' => 'David Brown', 'position' => 'Document Specialist'],
+        $assignedStaff = AssignStaff::where('is_active', true)->get()->map(function ($staff) {
+            return [
+                'full_name' => $staff->full_name,
+                'position'=> $staff->position ?? 'No Position',
             ];
+        });
+
+
         $documentTypes = DocumentType::active()
             ->orderBy('title')
             ->paginate(10);
@@ -44,14 +46,7 @@ class DocumentController extends Controller
     {
         $departments = Department::where('status', 1)->get();
         $reviewers = User::whereIn('type', ['Head'])->get();
-        $assignedStaff =
-            [
-                ['id' => 1, 'name' => 'John Doe', 'position' => 'Document Processor'],
-                ['id' => 2, 'name' => 'Jane Smith', 'position' => 'Senior Clerk'],
-                ['id' => 3, 'name' => 'Mike Johnson', 'position' => 'Administrative Assistant'],
-                ['id' => 4, 'name' => 'Sarah Wilson', 'position' => 'Records Officer'],
-                ['id' => 5, 'name' => 'David Brown', 'position' => 'Document Specialist'],
-            ];
+        $assignedStaff = AssignStaff::active()->orderBy('full_name');
 
         return view('documents.create', compact('departments', 'reviewers', 'assignedStaff'));
     }
@@ -104,7 +99,7 @@ class DocumentController extends Controller
             $this->printService->printReceipt($review);
             $printMessage = ' Receipt printed successfully.';
         } catch (\Exception $e) {
-            $printMessage = ' Note: Receipt printing failed - '.$e->getMessage();
+            $printMessage = ' Note: Receipt printing failed - ' . $e->getMessage();
         }
 
         return redirect()->route('documents.index')
@@ -116,7 +111,7 @@ class DocumentController extends Controller
         // Check if template exists
         $templatePath = storage_path("app/public/templates/{$file}");
 
-        if (! file_exists($templatePath)) {
+        if (!file_exists($templatePath)) {
             abort(404, 'Document template not found.');
         }
 
@@ -135,7 +130,7 @@ class DocumentController extends Controller
         $documentId = $this->idGenerator->generate();
 
         // Use the workflow service to create the document review
-        $review = $this->workflowService->sendForReview($validated ,$documentId);
+        $review = $this->workflowService->sendForReview($validated, $documentId);
 
         return redirect()->route('documents.reviews.index')
             ->with('success', "Document has been submitted for review. Document ID: {$documentId}");
@@ -149,50 +144,6 @@ class DocumentController extends Controller
             ->pluck('name')
             ->toArray();
 
-        // Fallback to hardcoded types if no database types exist
-        if (empty($documentTypes)) {
-            // Local Government Unit Document Types - 5 tracking processes only
-            $hardcodedTypes = [
-                1 => [ // Mayor's Office
-                    'Business Permit',
-                    'Barangay Clearance',
-                    'Certificate of Indigency',
-                    'Certificate of Residency',
-                    'Mayor\'s Clearance',
-                ],
-                2 => [ // City Engineer's Office
-                    'Building Permit',
-                    'Electrical Permit',
-                    'Plumbing Permit',
-                    'Excavation Permit',
-                    'Demolition Permit',
-                ],
-                3 => [ // City Treasurer's Office
-                    'Real Property Tax Clearance',
-                    'Business Tax Clearance',
-                    'Certificate of No Pending Case',
-                    'Tax Declaration',
-                    'Payment Certification',
-                ],
-                4 => [ // City Health Office
-                    'Health Certificate',
-                    'Sanitary Permit',
-                    'Medical Certificate',
-                    'Food Handler\'s Permit',
-                    'Water Testing Certificate',
-                ],
-                5 => [ // City Planning Office
-                    'Zoning Clearance',
-                    'Site Development Permit',
-                    'Subdivision Clearance',
-                    'Location Clearance',
-                    'Development Plan Approval',
-                ],
-            ];
-
-            $documentTypes = $hardcodedTypes[$departmentId] ?? [];
-        }
-
         return response()->json($documentTypes);
     }
 
@@ -205,21 +156,4 @@ class DocumentController extends Controller
             default => $value
         };
     }
-
-    //     public function getDocumentTypes($departmentId)
-    // {
-    //     // Dynamic document types based on department
-    //     $documentTypes = [
-    //         1 => [ // Mayor's Office
-    //             'Mayor\'s Clearance',
-    //             'Business Permit',
-    //             'Barangay Clearance',
-    //             // ... more types
-    //         ],
-    //         // ... other departments
-    //     ];
-
-    //     return response()->json($documentTypes[$departmentId] ?? []);
-    // }
-
 }

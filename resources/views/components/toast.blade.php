@@ -4,7 +4,7 @@
     'message' => null,
     'messages' => [],
     'timeout' => 5000, // ms
-    'position' => 'top-right', // top-right | top-left | bottom-right | bottom-left
+    'position' => 'top-right', 
 ])
 
 @php
@@ -61,9 +61,7 @@
                 document.querySelector('[id^="blade-toast-"]');
             if (!container) return;
             const timeout = parseInt(container.getAttribute('data-timeout') || {{ $timeout }});
-            // Auto remove after timeout
             setTimeout(() => container.remove(), timeout);
-            // Close button
             container.addEventListener('click', function(e) {
                 if (e.target.matches('[data-blade-toast-close]')) container.remove();
             });

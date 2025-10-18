@@ -212,9 +212,9 @@
                                 class="select select-bordered w-full @error('assigned_staff') select-error @enderror">
                                 <option value="">Select staff member</option>
                                 @foreach($assignedStaff as $staff)
-                                    <option value="{{ $staff['name'] }}" 
-                                        {{ old('assigned_staff') == $staff['name'] ? 'selected' : '' }}>
-                                        {{ $staff['name'] }} - {{ $staff['position'] }}
+                                    <option value="{{ $staff['full_name'] }}" 
+                                        {{ old('assigned_staff') == $staff['full_name'] ? 'selected' : '' }}>
+                                        {{ $staff['full_name'] }} - {{ $staff['position'] }}
                                     </option>
                                 @endforeach
                             </select>
