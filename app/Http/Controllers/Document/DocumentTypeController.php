@@ -18,7 +18,7 @@ class DocumentTypeController extends Controller
             abort(403, 'Unauthorized access');
         }
 
-        $documentTypes = DocumentType::active()
+        $documentTypes = DocumentType::where('department_id', $user->department_id)
             ->orderBy('title')
             ->paginate(10);
 

@@ -182,14 +182,14 @@ main {
 }
 
 .stat-title {
-    color: var(--dtms-text-light) !important;
+    color: #120f0f !important;
     font-size: 0.875rem !important;
     font-weight: 500 !important;
     margin-bottom: 0.5rem !important;
 }
 
 .stat-value {
-    color: white !important;
+    color: #120f0f !important;
     font-size: 2rem !important;
     font-weight: 700 !important;
     margin-bottom: 0.5rem !important;
@@ -332,30 +332,30 @@ main {
 .text-base-content {
     color: var(--dtms-text) !important;
 }
-/* Custom Stat Card Backgrounds */
+
 .bg-stat-primary {
-    background-color: #27548A !important;
-    color: white !important;
+    background-color: #5386c4 !important;
+    border-color: #132d4e !important;
 }
 
 .bg-stat-danger {
-    background-color: #FF3F33 !important;
-    color: white !important;
+    background-color: #e7776f !important;
+    border-color: #8f1923 !important;
 }
 
 .bg-stat-secondary {
-    background-color: #67C090 !important;
-    color: white !important;
+    background-color: #7ee2ad !important;
+    border-color: #05895d !important;
 }
 
 .bg-stat-accent {
-    background-color: #DDA853 !important;
-    color: white !important;
+    background-color: #edb967 !important;
+    border-color: #825917 !important;
+
 }
 
 .bg-stat-info{
-    background-color: #8B5DFF !important;
-    color: white !important;
+    background-color: #a586f3 !important;
 }
 
 

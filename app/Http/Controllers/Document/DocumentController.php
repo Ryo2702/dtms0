@@ -7,6 +7,7 @@ use App\Models\AssignStaff;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\DocumentType;
+use App\Models\Document; // Add this import
 use App\Services\Document\DocumentIdGenerator;
 use App\Services\Document\DocumentPrintService;
 use App\Services\Document\DocumentWorkflowService;
@@ -23,19 +24,22 @@ class DocumentController extends Controller
 
     public function index()
     {
+        $user = auth()->user();
+        
         $departments = Department::where('status', 1)->get();
 
-        $reviewers = User::whereIn('type', ['Head'])->get();
+        $reviewers = User::where('type', 'Head')->get();
 
-        $assignedStaff = AssignStaff::where('is_active', true)->get()->map(function ($staff) {
-            return [
+        $assignedStaff = AssignStaff::where('is_active', true)
+            ->where('department_id', $user->department_id)
+            ->select('full_name', 'position')
+            ->get()
+            ->map(fn($staff) => [
                 'full_name' => $staff->full_name,
                 'position' => $staff->position ?? 'No Position',
-            ];
-        });
+            ]);
 
-
-        $documentTypes = DocumentType::active()
+        $documentTypes = DocumentType::where('department_id', $user->department_id)
             ->orderBy('title')
             ->paginate(10);
 
@@ -44,6 +48,8 @@ class DocumentController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'document_type' => 'required|string|max:255',
@@ -58,35 +64,39 @@ class DocumentController extends Controller
 
         $documentId = $this->idGenerator->generate();
 
-        // Handle file upload
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
             $attachmentPath = $request->file('attachment')->store('document_attachments', 'public');
         }
 
-        // Convert time to minutes for internal processing
         $processTimeInMinutes = $this->convertTimeToMinutes($validated['process_time'], $validated['time_unit']);
 
-        $data = [
-            'name' => $validated['client_name'],
+        // Create the document record
+        $document = Document::create([
+            'document_id' => $documentId,
+            'client_name' => $validated['client_name'],
+            'title' => $validated['title'],
             'reviewer_id' => $validated['reviewer_id'],
             'process_time' => $processTimeInMinutes,
             'time_unit' => $validated['time_unit'],
             'time_value' => $validated['process_time'],
-            'title' => $validated['title'],
             'difficulty' => $validated['difficulty'],
             'assigned_staff' => $validated['assigned_staff'],
             'attachment_path' => $attachmentPath,
             'created_via' => 'request_form',
-        ];
+            'department_id' => $user->department_id,
+            'status' => 'pending'
+        ]);
 
+        // Send for review workflow
         $docInfo = [
             'title' => $validated['document_type'],
         ];
 
-        // Use the workflow service to create the document review
-        $review = $this->workflowService->sendForReview($data, $docInfo, $documentId);
         try {
+            $review = $this->workflowService->sendForReview($document->toArray(), $docInfo, $documentId);
+            
+            // Try to print receipt
             $this->printService->printReceipt($review);
             $printMessage = ' Receipt printed successfully.';
         } catch (\Exception $e) {
@@ -94,43 +104,12 @@ class DocumentController extends Controller
         }
 
         return redirect()->route('documents.index')
-            ->with('success', "Document '{$validated['title']}' has been created and sent for review. Document ID: {$documentId}");
-    }
-
-    public function form($file)
-    {
-        // Check if template exists
-        $templatePath = storage_path("app/public/templates/{$file}");
-
-        if (!file_exists($templatePath)) {
-            abort(404, 'Document template not found.');
-        }
-
-        // Get reviewers for this document type
-        $reviewers = User::whereIn('type', ['Heads'])->get();
-
-        // Route to appropriate form view
-        return match ($file) {
-            default => abort(404, 'Form not found for this document type.')
-        };
-    }
-
-    public function download($file, Request $request)
-    {
-        $validated = $request->validated();
-        $documentId = $this->idGenerator->generate();
-
-        // Use the workflow service to create the document review
-        $review = $this->workflowService->sendForReview($validated, $documentId);
-
-        return redirect()->route('documents.reviews.index')
-            ->with('success', "Document has been submitted for review. Document ID: {$documentId}");
+            ->with('success', "Document '{$validated['title']}' has been created and sent for review. Document ID: {$documentId}." . $printMessage);
     }
 
     public function getDocumentTypes($departmentId)
     {
-        // Get document types from database
-        $documentTypes = \App\Models\DocumentType::active()
+        $documentTypes = DocumentType::active()
             ->byDepartment($departmentId)
             ->pluck('name')
             ->toArray();

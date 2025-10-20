@@ -92,14 +92,11 @@
                 ];
             @endphp
 
-            {{-- Admin Statistics Cards --}}
             <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <x-stat-card 
                     title="Total Users" 
                     :value="$totalUsers"
                     iconName="users"
-                    color="text-primary"
-                    iconColor="text-primary"
                     href="{{ route('admin.users.index') }}"
                 />
                 
@@ -107,8 +104,6 @@
                     title="Active Departments" 
                     :value="$totalDepartments"
                     iconName="building"
-                    color="text-secondary"
-                    iconColor="text-secondary"
                     href="{{ route('admin.departments.index') }}"
                 />
                 
@@ -116,8 +111,6 @@
                     title="Total Documents" 
                     :value="$totalDocuments"
                     iconName="file-text"
-                    color="text-accent"
-                    iconColor="text-accent"
                 />
                 
                 <x-stat-card 
@@ -125,9 +118,6 @@
                     :value="$pendingReviews"
                     iconName="clock"
                     bgColor="bg-stat-accent"
-                    color="text-white"
-                    iconColor="text-white"
-                    textColor="text-white/80"
                 />
                 
                 <x-stat-card 
@@ -135,9 +125,6 @@
                     :value="$completedToday"
                     iconName="check-circle"
                     bgColor="bg-stat-secondary"
-                    color="text-white"
-                    iconColor="text-white"
-                    textColor="text-white/80"
                 />
                 
                 <x-stat-card 
@@ -145,13 +132,10 @@
                     :value="$overdueDocs"
                     iconName="alert-triangle"
                     bgColor="bg-stat-danger"
-                    color="text-white"
-                    iconColor="text-white"
-                    textColor="text-white/80"
                 />
             </div>
 
-            {{-- Admin Charts --}}
+            
             <div class="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
                 <x-stat-graph 
                     title="Document Activity Trends"
@@ -170,7 +154,6 @@
                 />
             </div>
 
-        {{-- Head/Staff Dashboard --}}
         @else
             @php
                 // Get user-specific statistics
@@ -270,16 +253,12 @@
                 $recentActivities = $recentActivities->sortByDesc('time_ago')->take(10);
             @endphp
 
-            {{-- Head/Staff Statistics Cards --}}
             <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
                 <x-stat-card 
                     title="Pending Reviews" 
                     :value="$pendingReviews"
                     iconName="clock"
-                    bgColor="bg-stat-accent"
-                    color="text-white"
-                    iconColor="text-white"
-                    textColor="text-white/80"
+                    bgColor="bg-stat-primary"
                     subtitle="Assigned to you"
                 />
                 
@@ -288,9 +267,6 @@
                     :value="$receivedCount"
                     iconName="inbox"
                     bgColor="bg-stat-info"
-                    color="text-white"
-                    iconColor="text-white"
-                    textColor="text-white/80"
                     subtitle="From other departments"
                 />
                 
@@ -299,9 +275,6 @@
                     :value="$completedCount"
                     iconName="check-circle"
                     bgColor="bg-stat-secondary"
-                    color="text-white"
-                    iconColor="text-white"
-                    textColor="text-white/80"
                     subtitle="Total processed"
                 />
                 
@@ -310,14 +283,10 @@
                     :value="$rejectedCount"
                     iconName="x-circle"
                     bgColor="bg-stat-danger"
-                    color="text-white"
-                    iconColor="text-white"
-                    textColor="text-white/80"
                     subtitle="Requires attention"
                 />
             </div>
 
-            {{-- Recent Activity --}}
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-1">
                 <x-recent-activity 
                     title="Your Recent Activity"

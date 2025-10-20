@@ -90,7 +90,6 @@ class DepartmentController extends Controller
             // head validation moved to DepartmentRequest
 
             DB::transaction(function () use ($request, $data) {
-                // Handle logo upload
                 if ($request->hasFile('logo')) {
                     $logo = $request->file('logo');
                     $filename = time().'_'.$logo->getClientOriginalName();
@@ -99,7 +98,7 @@ class DepartmentController extends Controller
 
                 $data['status'] = $data['status'] ?? 1;
 
-                // Create department
+
                 $department = Department::create($data);
 
                 if ($request->filled('head_email')) {
@@ -112,7 +111,6 @@ class DepartmentController extends Controller
                         'status' => 1,
                     ]);
 
-                    // Ensure role exists and assign
                     Role::firstOrCreate(
                         ['name' => 'Head', 'guard_name' => 'web']
                     );
@@ -139,9 +137,8 @@ class DepartmentController extends Controller
     public function show(Department $department)
     {
 
-        $department->load(['head', 'staff']);
+        $department->load(['head']);
 
-        // Get department statistics
         $stats = [
             'total_users' => $department->getTotalUsersCount(),
             'active_users' => $department->getActiveUsersCount(),

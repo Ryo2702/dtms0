@@ -2,35 +2,6 @@
 @section('content')
     <div class="container max-w-6xl mx-auto">
 
-        <!-- Success/Error Messages -->
-        @if(session('success'))
-            <div class="alert alert-success mb-6">
-                <i data-lucide="check-circle" class="w-6 h-6 stroke-current shrink"></i>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-error mb-6">
-                <i data-lucide="x-circle" class="w-6 h-6 stroke-current shrink"></i>
-                <span>{{ session('error') }}</span>
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div class="alert alert-error mb-6">
-                <i data-lucide="alert-circle" class="w-6 h-6 stroke-current shrink"></i>
-                <div>
-                    <p class="font-semibold">Please correct the following errors:</p>
-                    <ul class="list-disc list-inside mt-2">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-        @endif
-
         <div class="mb-6">
             <div class="flex justify-between items-center">
                 <div>
@@ -55,7 +26,7 @@
                 <div class="card-body">
                     <h2 class="mb-4 text-xl card-title">
                         <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
-                        Create Request Document
+                        Create Request Form
                     </h2>
                     
                     <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">

@@ -17,7 +17,8 @@ class StaffController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $staffs = AssignStaff::orderBy('full_name')
+        $staffs = AssignStaff::where('department_id', $user->department_id)
+            ->orderBy('full_name')
             ->paginate(10);
 
         $departments = Department::orderBy('name')->get();
@@ -39,7 +40,7 @@ class StaffController extends Controller
             'role' => 'required|string|max:255',
         ]);
 
-        $validated['department_id'] = auth()->user()->department_id;
+        $validated['department_id'] = $user->department_id;
 
         AssignStaff::create($validated);
 

@@ -3,13 +3,13 @@
     'value',
     'icon' => null,
     'iconName' => null, // For dynamic component icons (e.g., 'users', 'building')
-    'color' => 'text-white', // text color for value
-    'bgColor' => 'bg-white-secondary', // background class - using DTMS colors
-    'textColor' => 'text-white', // label color
-    'iconColor' => 'text-white', // icon color
-    'subtitle' => null, // optional subtitle
-    'trend' => null, // trend data (array with percentage and direction)
-    'href' => null, // optional link
+    'color' => 'text-black', 
+    'bgColor' => 'bg-white-secondary', 
+    'textColor' => 'text-black', 
+    'iconColor' => 'text-black', 
+    'subtitle' => null, 
+    'trend' => null, 
+    'href' => null, 
 ])
 
 @php
@@ -75,7 +75,7 @@
 
             @if ($href)
                 <div class="flex-shrink-0">
-                    <x-dynamic-component component="lucide-arrow-right" class="w-5 h-5 {{ str_contains($bgColor, 'bg-stat-') ? 'text-white/40' : 'text-base-content/40' }}" />
+                    <x-dynamic-component component="lucide-arrow-right" class="w-5 h-5 {{ str_contains($bgColor, 'bg-stat-') ? 'text-white/80' : 'text-base-content/40' }}" />
                 </div>
             @endif
         </div>
