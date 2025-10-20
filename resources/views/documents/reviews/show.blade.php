@@ -32,12 +32,16 @@
                                 <p><strong>Type:</strong> {{ $review->document_type }}</p>
                                 <p><strong>Client:</strong> {{ $review->client_name }}</p>
                                 <p><strong>Priority:</strong> 
-                                    <span class="badge 
-                                        @if($review->difficulty === 'normal') bg-green-500 text-white
-                                        @elseif($review->difficulty === 'important') bg-yellow-500 text-white
-                                        @elseif($review->difficulty === 'urgent') bg-red-500 text-white
-                                        @elseif($review->difficulty === 'immediate') bg-red-900 text-white
-                                        @else bg-gray-500 text-white @endif">
+                                    @php
+                                        $badgeClass = match($review->difficulty) {
+                                            'normal' => 'badge bg-green-500 text-white',
+                                            'important' => 'badge bg-yellow-500 text-white',
+                                            'urgent' => 'badge bg-red-500 text-white',
+                                            'immediate' => 'badge bg-red-900 text-white',
+                                            default => 'badge bg-gray-500 text-white',
+                                        };
+                                    @endphp
+                                    <span class="{{ $badgeClass }}">
                                         {{ ucfirst($review->difficulty ?? 'Normal') }}
                                     </span>
                                 </p>
