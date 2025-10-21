@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Departments;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Department\DepartmentRequest;
+use App\Models\AssignStaff;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -136,6 +137,7 @@ class DepartmentController extends Controller
      */
     public function show(Department $department)
     {
+        $user = auth()->user();
 
         $department->load(['head']);
 
@@ -143,6 +145,7 @@ class DepartmentController extends Controller
             'total_users' => $department->getTotalUsersCount(),
             'active_users' => $department->getActiveUsersCount(),
             'has_head' => $department->hasHead(),
+            
         ];
 
         return view('admin.departments.show', compact('department', 'stats'));

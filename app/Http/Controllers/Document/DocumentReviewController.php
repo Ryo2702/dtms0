@@ -62,6 +62,11 @@ class DocumentReviewController extends Controller
         $reviews->getCollection()->transform(function ($review) {
             $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
+            
+            // Ensure submitted_at exists - use created_at if submitted_at is null
+            if (!$review->submitted_at) {
+                $review->submitted_at = $review->created_at;
+            }
 
             return $review;
         });

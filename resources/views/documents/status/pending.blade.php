@@ -93,9 +93,9 @@
                                                 {{ $review->reviewer?->department?->name }}</div>
                                         </td>
                                         <td>
-                                            <div>{{ $review->submitted_at->format('M d, Y') }}</div>
+                                            <div>{{ ($review->submitted_at ?? $review->created_at)->format('M d, Y') }}</div>
                                             <div class="text-xs text-base-content/70">
-                                                {{ $review->submitted_at->format('H:i') }}</div>
+                                                {{ ($review->submitted_at ?? $review->created_at)->format('H:i') }}</div>
                                         </td>
                                         <td>
                                             <div class="flex gap-2">

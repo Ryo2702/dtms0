@@ -71,30 +71,30 @@ class DocumentController extends Controller
 
         $processTimeInMinutes = $this->convertTimeToMinutes($validated['process_time'], $validated['time_unit']);
 
-        // Create the document record
-        $document = Document::create([
-            'document_id' => $documentId,
-            'client_name' => $validated['client_name'],
+        // Prepare document data for the workflow service
+        $documentData = [
             'title' => $validated['title'],
+            'document_type' => $validated['document_type'],
+            'client_name' => $validated['client_name'],
             'reviewer_id' => $validated['reviewer_id'],
             'process_time' => $processTimeInMinutes,
-            'time_unit' => $validated['time_unit'],
             'time_value' => $validated['process_time'],
+            'time_unit' => $validated['time_unit'],
             'difficulty' => $validated['difficulty'],
             'assigned_staff' => $validated['assigned_staff'],
             'attachment_path' => $attachmentPath,
-            'created_via' => 'request_form',
-            'department_id' => $user->department_id,
-            'status' => 'pending'
-        ]);
+            'initial_notes' => 'Document request form submitted for review',
+            // Add any other fields that might be missing
+        ];
 
-        // Send for review workflow
+        // Document info for the workflow
         $docInfo = [
             'title' => $validated['document_type'],
         ];
 
         try {
-            $review = $this->workflowService->sendForReview($document->toArray(), $docInfo, $documentId);
+            // Send for review workflow - this creates the DocumentReview record
+            $review = $this->workflowService->sendForReview($documentData, $docInfo, $documentId);
             
             // Try to print receipt
             $this->printService->printReceipt($review);

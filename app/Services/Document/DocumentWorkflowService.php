@@ -22,7 +22,7 @@ class DocumentWorkflowService
             throw new \Exception('Documents can only be sent to Department Heads for review.');
         }
 
-        $clientName = $data['name'] ?? $data['resident_name'] ?? 'Unknown';
+        $clientName = $data['client_name'] ?? $data['name'] ?? $data['resident_name'] ?? 'Unknown';
         $processTime = (int) $data['process_time'];
 
         return DocumentReview::create([
@@ -39,6 +39,11 @@ class DocumentWorkflowService
             'process_time_minutes' => $processTime,
             'submitted_at' => now(),
             'due_at' => now()->addMinutes($processTime),
+            'difficulty' => $data['difficulty'] ?? 'normal',
+            'time_value' => $data['time_value'] ?? null,
+            'time_unit' => $data['time_unit'] ?? 'minutes',
+            'attachment_path' => $data['attachment_path'] ?? null,
+            'assigned_staff' => $data['assigned_staff'] ?? null,
             'forwarding_chain' => [
                 [
                     'step' => 1,

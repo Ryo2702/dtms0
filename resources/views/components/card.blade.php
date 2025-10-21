@@ -16,7 +16,6 @@
                 @endif
             </h3>
         @endif
-
         {{ $slot }}
     </div>
 </div>
