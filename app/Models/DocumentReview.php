@@ -29,8 +29,14 @@ class DocumentReview extends Model
         'forwarding_chain',
         'is_final_review',
         'completed_on_time',
+        'difficulty', 
+        'time_value', 
+        'time_unit',
+        'attachment_path',
+        'assigned_staff'
     ];
 
+    protected $appends = ['remaining_time_minutes', 'is_overdue'];
     protected $casts = [
         'document_data' => 'array',
         'forwarding_chain' => 'array',
@@ -68,6 +74,12 @@ class DocumentReview extends Model
     public function isExpired()
     {
         return $this->due_at && now()->gt($this->due_at);
+    }
+
+    public function getRemainingTimeMinutesAttribute() {
+        if (!$this->due_at) return 0;
+
+        return now()->diffInMinutes($this->due_at, false);
     }
 
     public function getRemainingTimeAttribute()
@@ -146,6 +158,7 @@ class DocumentReview extends Model
             case 'created':
             case 'downloaded':
             case 'completed':
+            case 'approved':
             case 'rejected':
             case 'canceled':
                 return 'completed';
@@ -180,6 +193,9 @@ class DocumentReview extends Model
         if ($this->status === 'downloaded') {
             return 100;
         }
+            if ($this->status === 'completed') {
+            return 100;
+        }
         if ($this->status === 'approved') {
             return 90;
         }
@@ -191,12 +207,6 @@ class DocumentReview extends Model
         }
 
         return $totalSteps > 0 ? round(($completedSteps / $totalSteps) * 100) : 0;
-    }
-
-    // Get verification URL
-    public function getVerificationUrlAttribute()
-    {
-        return route('documents.review', $this->document_id);
     }
 
     public function scopePending($query)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Document;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssignStaff;
 use App\Models\DocumentReview;
 use App\Models\User;
 use App\Services\Document\DocumentPrintService;
@@ -15,7 +16,8 @@ class DocumentReviewController extends Controller
     public function __construct(
         private DocumentWorkflowService $workflowService,
         private DocumentPrintService $printService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request)
     {
@@ -58,7 +60,7 @@ class DocumentReviewController extends Controller
         $reviews = $query->orderBy('created_at', 'desc')->paginate(10);
 
         $reviews->getCollection()->transform(function ($review) {
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
 
             return $review;
@@ -74,14 +76,25 @@ class DocumentReviewController extends Controller
 
         $user = Auth::user();
 
-        if (! $this->canViewReview($review, $user)) {
+        $this->calculateTimeProperties($review);
+
+        $assignedStaff = AssignStaff::where('is_active', true)
+            ->where('department_id', $user->department_id)
+            ->select('full_name', 'position')
+            ->get()
+            ->map(fn($staff) => [
+                'full_name' => $staff->full_name,
+                'position' => $staff->position ?? 'No Position'
+            ]);
+
+        if (!$this->canViewReview($review, $user)) {
             abort(403, 'You do not have permission to view this review.');
         }
 
-        $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+        $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
         $review->due_status = $this->getDueStatus($review);
 
-        return view('documents.reviews.show', compact('review'));
+        return view('documents.reviews.show', compact('review', 'assignedStaff'));
     }
 
     public function showByDocumentId($documentId)
@@ -90,17 +103,17 @@ class DocumentReviewController extends Controller
             ->where('document_id', $documentId)
             ->first();
 
-        if (! $review) {
+        if (!$review) {
             return view('documents.reviews.not-found', compact('documentId'));
         }
 
         $user = Auth::user();
 
-        if (! $this->canViewReview($review, $user)) {
+        if (!$this->canViewReview($review, $user)) {
             abort(403, 'You do not have permission to view this review.');
         }
 
-        $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+        $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
         $review->due_status = $this->getDueStatus($review);
 
         return view('documents.reviews.show', compact('review'));
@@ -125,13 +138,26 @@ class DocumentReviewController extends Controller
             switch ($request->action) {
                 case 'forward':
                     $forwardTo = User::findOrFail($request->forward_to);
+                    
+                    // Convert time to minutes
+                    $processTimeMinutes = $this->convertToMinutes(
+                        $request->forward_time_value, 
+                        $request->forward_time_unit
+                    );
+                    
                     $this->workflowService->forwardReview(
                         $review,
                         $user,
                         $forwardTo,
                         $request->forward_notes,
-                        (int) $request->forward_process_time
+                        $processTimeMinutes
                     );
+                    
+                    // Update assigned staff if provided
+                    if ($request->forward_assigned_staff) {
+                        $review->update(['assigned_staff' => $request->forward_assigned_staff]);
+                    }
+                    
                     $message = "Document forwarded to {$forwardTo->name} ({$forwardTo->department?->name}).";
                     break;
 
@@ -186,7 +212,6 @@ class DocumentReviewController extends Controller
 
         $completedReviews = $query->orderBy('downloaded_at', 'desc')->paginate(10);
 
-        // Calculate statistics
         $totalCompleted = $completedReviews->total();
         $overdueCompletedCount = $this->getOverdueCompletedCount($user);
 
@@ -213,7 +238,7 @@ class DocumentReviewController extends Controller
         $receivedReviews = $query->orderBy('created_at', 'desc')->paginate(10);
 
         $receivedReviews->getCollection()->transform(function ($review) {
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
 
             return $review;
@@ -246,7 +271,7 @@ class DocumentReviewController extends Controller
         $rejectedReviews = $query->orderBy('updated_at', 'desc')->paginate(10);
 
         $rejectedReviews->getCollection()->transform(function ($review) {
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
 
             return $review;
@@ -279,7 +304,7 @@ class DocumentReviewController extends Controller
         $canceledReviews = $query->orderBy('updated_at', 'desc')->paginate(10);
 
         $canceledReviews->getCollection()->transform(function ($review) {
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
             $review->due_status = $this->getDueStatus($review);
 
             return $review;
@@ -291,16 +316,18 @@ class DocumentReviewController extends Controller
     private function validateReviewUpdate(Request $request): void
     {
         $rules = [
-            'action' => 'required|in:complete,reject,forward,cancel',
-            'review_notes' => 'nullable|string|max:1000',
-            'or_number_update' => 'nullable|string|max:100',
+            'action' => 'required|in:complete,approved,reject,forward,cancel',
+            'review_notes' => 'required|string|max:1000',
+            'assigned_staff' => 'required|string|max:255',
             'completion_summary' => 'nullable|string|max:1000',
         ];
 
         if ($request->action === 'forward') {
             $rules['forward_to'] = 'required|exists:users,id';
             $rules['forward_notes'] = 'required|string|max:1000';
-            $rules['forward_process_time'] = 'required|integer|min:1|max:10';
+            $rules['forward_time_value'] = 'required|integer|min:1'; // Fixed
+            $rules['forward_time_unit'] = 'required|in:minutes,days,weeks'; // Fixed
+            $rules['forward_assigned_staff'] = 'nullable|string|max:255';
         }
 
         if ($request->action === 'reject') {
@@ -318,7 +345,7 @@ class DocumentReviewController extends Controller
     {
         $notes = $request->review_notes ?? '';
         if ($request->completion_summary) {
-            $notes .= ($notes ? "\n\n" : '').'Completion Summary: '.$request->completion_summary;
+            $notes .= ($notes ? "\n\n" : '') . 'Completion Summary: ' . $request->completion_summary;
         }
 
         return $notes;
@@ -328,7 +355,7 @@ class DocumentReviewController extends Controller
     {
         $notes = $request->review_notes ?? '';
         if ($request->rejection_reason) {
-            $notes .= ($notes ? "\n\n" : '').'Rejection Reason: '.$request->rejection_reason;
+            $notes .= ($notes ? "\n\n" : '') . 'Rejection Reason: ' . $request->rejection_reason;
         }
 
         return $notes;
@@ -338,7 +365,7 @@ class DocumentReviewController extends Controller
     {
         $notes = $request->review_notes ?? '';
         if ($request->cancellation_reason) {
-            $notes .= ($notes ? "\n\n" : '').'Cancellation Reason: '.$request->cancellation_reason;
+            $notes .= ($notes ? "\n\n" : '') . 'Cancellation Reason: ' . $request->cancellation_reason;
         }
 
         return $notes;
@@ -385,7 +412,7 @@ class DocumentReviewController extends Controller
 
     private function getDueStatus($review): string
     {
-        if (! $review->due_at) {
+        if (!$review->due_at) {
             return 'no_deadline';
         }
 
@@ -432,5 +459,30 @@ class DocumentReviewController extends Controller
         $review = DocumentReview::findOrFail($id);
 
         return $this->printService->generateDocument($review);
+    }
+
+    private function calculateTimeProperties($review)
+    {
+        $now = now();
+
+        if ($review->due_at) {
+            $review->remaining_time_minutes = $now->diffInMinutes($review->due_at, false);
+            $review->is_overdue = $review->remaining_time_minutes < 0 && !$review->download_at;
+        } else {
+            $review->remaining_time_minutes = 0;
+            $review->is_overdue = false;
+        }
+
+        $review->due_status = $this->getDueStatus($review);
+    }
+
+    private function convertToMinutes($value, $unit)
+    {
+        return match($unit) {
+            'minutes' => $value,
+            'days' => $value * 24 * 60,
+            'weeks' => $value * 7 * 24 * 60,
+            default => $value
+        };
     }
 }

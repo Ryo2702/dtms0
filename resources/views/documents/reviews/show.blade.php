@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+@use('Illuminate\Support\Facades\Storage')
 @section('content')
     <div class="container max-w-6xl mx-auto">
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -33,7 +33,8 @@
                                 <p><strong>Client:</strong> {{ $review->client_name }}</p>
                                 <p><strong>Priority:</strong> 
                                     @php
-                                        $badgeClass = match($review->difficulty) {
+                                        $difficulty = $review->difficulty ?? 'normal';
+                                        $badgeClass = match($difficulty) {
                                             'normal' => 'badge bg-green-500 text-white',
                                             'important' => 'badge bg-yellow-500 text-white',
                                             'urgent' => 'badge bg-red-500 text-white',
@@ -42,7 +43,7 @@
                                         };
                                     @endphp
                                     <span class="{{ $badgeClass }}">
-                                        {{ ucfirst($review->difficulty ?? 'Normal') }}
+                                        {{ ucfirst($difficulty) }}
                                     </span>
                                 </p>
                                 <p><strong>Assigned Staff:</strong> {{ $review->assigned_staff ?? 'Not assigned' }}</p>
@@ -56,6 +57,7 @@
                                 <p><strong>Status:</strong>
                                     <span class="badge 
                                         @if ($review->status === 'pending') badge-warning
+                                        @elseif($review->status === 'completed') badge-primary
                                         @elseif($review->status === 'approved') badge-success
                                         @elseif($review->status === 'rejected') badge-error
                                         @elseif($review->status === 'canceled') badge-neutral
@@ -67,7 +69,13 @@
                                 
                                 <!-- Time Information -->
                                 <p><strong>Allocated Time:</strong> 
-                                    {{ formatTime($review->time_value ?? $review->process_time, $review->time_unit ?? 'minutes') }}
+                                    @if($review->time_value && $review->time_unit)
+                                        {{ formatTime($review->time_value, $review->time_unit) }}
+                                    @elseif($review->process_time_minutes)
+                                        {{ formatTime($review->process_time_minutes, 'minutes') }}
+                                    @else
+                                        Not specified
+                                    @endif
                                 </p>
                                 
                                 @if ($review->status === 'pending')
@@ -117,7 +125,6 @@
                             </div>
                         @endif
 
-                        <!-- Review Actions for Heads Only -->
                         @if (auth()->user()->type === 'Head' && $review->assigned_to === auth()->id() && $review->status === 'pending')
                             <div class="divider">Review Actions (Department Head Only)</div>
 
@@ -134,10 +141,11 @@
                                         <select name="action" class="select select-bordered" required
                                             onchange="toggleActionOptions(this.value)">
                                             <option value="">Select Action</option>
-                                            <option value="forward">Forward Review</option>
-                                            <option value="complete">Complete Review</option>
-                                            <option value="reject">Reject Review</option>
-                                            <option value="cancel">Cancel Review</option>
+                                            <option value="forward">Forward</option>
+                                            <option value="complete">Complete</option>
+                                            <option value="approve">Approve</option>
+                                            <option value="reject">Reject</option>
+                                            <option value="cancel">Cancel</option>
                                         </select>
                                     </div>
 
@@ -148,19 +156,10 @@
                                         </label>
                                         <select name="assigned_staff" class="select select-bordered">
                                             <option value="">Keep current assignment ({{ $review->assigned_staff ?? 'None' }})</option>
-                                            @php
-                                                $assignedStaff = [
-                                                    ['id' => 1, 'name' => 'John Doe', 'position' => 'Document Processor'],
-                                                    ['id' => 2, 'name' => 'Jane Smith', 'position' => 'Senior Clerk'],
-                                                    ['id' => 3, 'name' => 'Mike Johnson', 'position' => 'Administrative Assistant'],
-                                                    ['id' => 4, 'name' => 'Sarah Wilson', 'position' => 'Records Officer'],
-                                                    ['id' => 5, 'name' => 'David Brown', 'position' => 'Document Specialist'],
-                                                ];
-                                            @endphp
                                             @foreach($assignedStaff as $staff)
-                                                <option value="{{ $staff['name'] }}" 
-                                                    {{ $review->assigned_staff === $staff['name'] ? 'selected' : '' }}>
-                                                    {{ $staff['name'] }} - {{ $staff['position'] }}
+                                                <option value="{{ $staff['full_name'] }}" 
+                                                    {{ $review->assigned_staff === $staff['full_name'] ? 'selected' : '' }}>
+                                                    {{ $staff['full_name'] }} - {{ $staff['position'] }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -232,8 +231,8 @@
                                                     <select name="forward_assigned_staff" class="select select-bordered">
                                                         <option value="">Auto-assign</option>
                                                         @foreach($assignedStaff as $staff)
-                                                            <option value="{{ $staff['name'] }}">
-                                                                {{ $staff['name'] }} - {{ $staff['position'] }}
+                                                            <option value="{{ $staff['full_name'] }}">
+                                                                {{ $staff['full_name'] }} - {{ $staff['position'] }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -259,9 +258,9 @@
                                                 <select name="final_assigned_staff" class="select select-bordered">
                                                     <option value="">Keep current assignment ({{ $review->assigned_staff ?? 'None' }})</option>
                                                     @foreach($assignedStaff as $staff)
-                                                        <option value="{{ $staff['name'] }}" 
-                                                            {{ $review->assigned_staff === $staff['name'] ? 'selected' : '' }}>
-                                                            {{ $staff['name'] }} - {{ $staff['position'] }}
+                                                        <option value="{{ $staff['full_name'] }}" 
+                                                            {{ $review->assigned_staff === $staff['full_name'] ? 'selected' : '' }}>
+                                                            {{ $staff['full_name'] }} - {{ $staff['position'] }}
                                                         </option>
                                                     @endforeach
                                                 </select>
@@ -536,35 +535,4 @@
             }
         }
     </script>
-
-    @php
-        // Helper function to format time display
-        function formatTime($value, $unit) {
-            return $value . ' ' . ucfirst($unit);
-        }
-
-        function formatRemainingTime($minutes) {
-            if ($minutes < 60) {
-                return $minutes . ' minute' . ($minutes != 1 ? 's' : '');
-            } elseif ($minutes < 1440) { // Less than a day
-                $hours = floor($minutes / 60);
-                return $hours . ' hour' . ($hours != 1 ? 's' : '');
-            } else {
-                $days = floor($minutes / 1440);
-                return $days . ' day' . ($days != 1 ? 's' : '');
-            }
-        }
-
-        function formatAccomplishedTime($startTime, $endTime) {
-            $diff = $endTime->diff($startTime);
-            
-            if ($diff->d > 0) {
-                return $diff->d . ' day' . ($diff->d > 1 ? 's' : '');
-            } elseif ($diff->h > 0) {
-                return $diff->h . ' hour' . ($diff->h > 1 ? 's' : '') . ' ' . $diff->i . ' min';
-            } else {
-                return $diff->i . ' minute' . ($diff->i != 1 ? 's' : '');
-            }
-        }
-    @endphp
 @endsection
