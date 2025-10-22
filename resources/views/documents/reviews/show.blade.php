@@ -31,15 +31,15 @@
                                 <h3 class="mb-2 text-lg font-semibold">Document Information</h3>
                                 <p><strong>Type:</strong> {{ $review->document_type }}</p>
                                 <p><strong>Client:</strong> {{ $review->client_name }}</p>
-                                <p><strong>Priority:</strong> 
+                                <p><strong>Difficulty:</strong> 
                                     @php
                                         $difficulty = $review->difficulty ?? 'normal';
                                         $badgeClass = match($difficulty) {
-                                            'normal' => 'badge bg-green-500 text-white',
-                                            'important' => 'badge bg-yellow-500 text-white',
-                                            'urgent' => 'badge bg-red-500 text-white',
-                                            'immediate' => 'badge bg-red-900 text-white',
-                                            default => 'badge bg-gray-500 text-white',
+                                            'normal' => 'badge badge-success',
+                                            'important' => 'badge badge-warning', 
+                                            'urgent' => 'badge badge-error',
+                                            'immediate' => 'badge badge-error',
+                                            default => 'badge badge-neutral',
                                         };
                                     @endphp
                                     <span class="{{ $badgeClass }}">

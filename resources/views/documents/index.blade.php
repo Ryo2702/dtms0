@@ -155,12 +155,12 @@
                             <!-- Difficulty -->
                             <div class="form-control">
                                 <label class="label">
-                                    <span class="label-text font-medium">Priority Level *</span>
+                                    <span class="label-text font-medium">Difficulty Level *</span>
                                 </label>
                                 <select name="difficulty" required 
                                     class="select select-bordered w-full @error('difficulty') select-error @enderror"
                                     onchange="updateDifficultyColor(this)">
-                                    <option value="">Select priority</option>
+                                    <option value="">Select Difficulty</option>
                                     <option value="normal" style="background-color: #10b981; color: white;" {{ old('difficulty') == 'normal' ? 'selected' : '' }}>Normal</option>
                                     <option value="important" style="background-color: #f59e0b; color: white;" {{ old('difficulty') == 'important' ? 'selected' : '' }}>Important</option>
                                     <option value="urgent" style="background-color: #ef4444; color: white;" {{ old('difficulty') == 'urgent' ? 'selected' : '' }}>Urgent</option>

@@ -70,7 +70,6 @@ class DocumentPrintService
 
             $printer->feed();
 
-            // Print QR Code centered
             if ($qrPath && file_exists($qrPath)) {
                 $printer->setJustification(Printer::JUSTIFY_CENTER);
                 $img = EscposImage::load($qrPath, false);
@@ -84,7 +83,6 @@ class DocumentPrintService
             $printer->feed(2);
             $printer->cut();
 
-            // Mark as downloaded
             $review->update(['downloaded_at' => now()]);
         } catch (\Exception $e) {
             Log::error('Printing failed: '.$e->getMessage());

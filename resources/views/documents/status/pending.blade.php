@@ -29,7 +29,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <span>
-                        This page shows documents that need your attention: documents pending your review and completed documents ready for download.
+                        This page shows documents that need your attention: documents pending your review.
                     </span>
                 </div>
 
@@ -118,6 +118,20 @@
                                                             Print Draft
                                                         @endif
                                                     </a>
+                                                    
+                                                    @if($review->status === 'approved' && !$review->downloaded_at)
+                                                        <form method="POST" action="{{ route('documents.reviews.markDone', $review->id) }}" class="inline">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <button type="submit" class="btn btn-sm btn-success" 
+                                                                    onclick="return confirm('Mark this document as done? This will move it to closed status.')">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                                Done
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 @elseif ($review->status === 'pending' && $review->assigned_to === auth()->id())
                                                     <span class="badge badge-info badge-sm">Awaiting Review</span>
                                                 @elseif ($review->status === 'pending' && $review->created_by === auth()->id())

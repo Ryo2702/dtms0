@@ -46,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{id}', [DocumentReviewController::class, 'show'])->name('show');
             Route::put('/{id}', [DocumentReviewController::class, 'update'])->name('update');
             Route::get('/{id}/print', [DocumentReviewController::class, 'print'])->name('print');
+            Route::patch('/{id}/mark-done', [DocumentReviewController::class, 'markDone'])->name('markDone');
         });
 
         Route::prefix('status')->name('status.')->group(function () {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Document;
 use App\Http\Controllers\Controller;
 use App\Models\AssignStaff;
 use App\Models\Department;
+use App\Models\DocumentReview;
 use App\Models\User;
 use App\Models\DocumentType;
 use App\Models\Document; // Add this import
@@ -25,7 +26,7 @@ class DocumentController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         $departments = Department::where('status', 1)->get();
 
         $reviewers = User::where('type', 'Head')->get();
@@ -71,7 +72,6 @@ class DocumentController extends Controller
 
         $processTimeInMinutes = $this->convertTimeToMinutes($validated['process_time'], $validated['time_unit']);
 
-        // Prepare document data for the workflow service
         $documentData = [
             'title' => $validated['title'],
             'document_type' => $validated['document_type'],
@@ -84,19 +84,16 @@ class DocumentController extends Controller
             'assigned_staff' => $validated['assigned_staff'],
             'attachment_path' => $attachmentPath,
             'initial_notes' => 'Document request form submitted for review',
-            // Add any other fields that might be missing
+
         ];
 
-        // Document info for the workflow
         $docInfo = [
             'title' => $validated['document_type'],
         ];
 
         try {
-            // Send for review workflow - this creates the DocumentReview record
             $review = $this->workflowService->sendForReview($documentData, $docInfo, $documentId);
-            
-            // Try to print receipt
+
             $this->printService->printReceipt($review);
             $printMessage = ' Receipt printed successfully.';
         } catch (\Exception $e) {

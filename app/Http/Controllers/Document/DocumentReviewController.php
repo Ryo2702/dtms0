@@ -158,7 +158,6 @@ class DocumentReviewController extends Controller
                         $processTimeMinutes
                     );
                     
-                    // Update assigned staff if provided
                     if ($request->forward_assigned_staff) {
                         $review->update(['assigned_staff' => $request->forward_assigned_staff]);
                     }
@@ -481,6 +480,32 @@ class DocumentReviewController extends Controller
         $review->due_status = $this->getDueStatus($review);
     }
 
+public function markDone($id)
+    {
+        $review = DocumentReview::findOrFail($id);
+        $user = auth()->user();
+
+        if ($review->created_by !== $user->id) {
+            abort(403, 'You can only mark your own documents as done.');
+        }
+
+        if ($review->status !== 'approved' || $review->downloaded_at) {
+            return back()->with('error', 'This document cannot be marked as done.');
+        }
+
+        try {
+            $review->update([
+                'downloaded_at' => now(),
+                'notes' => ($review->notes ?? '') . "\n\nDocument marked as done by " . $user->name . " on " . now()->format('Y-m-d H:i:s')
+            ]);
+
+            return redirect()->route('documents.status.closed')
+                ->with('success', 'Document has been marked as done and moved to closed status.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to mark document as done: ' . $e->getMessage());
+        }
+    }
+    
     private function convertToMinutes($value, $unit)
     {
         return match($unit) {
