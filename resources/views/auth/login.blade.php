@@ -50,7 +50,6 @@
             
             if (!employeeId) return;
 
-            // Check if there's a rate limit error in the validation errors
             const errorMessages = document.querySelectorAll('.alert-error li');
             for (let message of errorMessages) {
                 if (message.textContent.includes('Too many login attempts')) {

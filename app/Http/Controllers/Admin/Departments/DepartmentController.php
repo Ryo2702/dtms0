@@ -7,6 +7,8 @@ use App\Http\Requests\Admin\Department\DepartmentRequest;
 use App\Models\AssignStaff;
 use App\Models\Department;
 use App\Models\User;
+use App\Services\Department\DepartmentService;
+use App\Services\User\UserService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +26,10 @@ class DepartmentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Department::with(['head']);
+        $query = DepartmentService::getFilteredDepartments([
+            'with_relations' => ['head'],
+            'exclude_admin_heads' => true
+        ]);
 
         // Status filtering
         $status = $request->get('status');
@@ -51,7 +56,6 @@ class DepartmentController extends Controller
             $query->orderBy($sort, $direction);
         }
 
-        // Get counts for dashboard
         $totalDepartments = Department::count();
         $activeDepartments = Department::active()->count();
         $inactiveDepartments = Department::where('status', 0)->count();
@@ -88,7 +92,6 @@ class DepartmentController extends Controller
 
             $data = $request->validated();
 
-            // head validation moved to DepartmentRequest
 
             DB::transaction(function () use ($request, $data) {
                 if ($request->hasFile('logo')) {
@@ -141,12 +144,7 @@ class DepartmentController extends Controller
 
         $department->load(['head']);
 
-        $stats = [
-            'total_users' => $department->getTotalUsersCount(),
-            'active_users' => $department->getActiveUsersCount(),
-            'has_head' => $department->hasHead(),
-            
-        ];
+        $stats = DepartmentService::getDepartmentStats($department);
 
         return view('admin.departments.show', compact('department', 'stats'));
     }
@@ -211,7 +209,9 @@ class DepartmentController extends Controller
      */
     private function regenerateMunicipalIds(Department $department)
     {
-        $users = $department->users()->get();
+        $users = UserService::applyUserFilters(
+            $department->users(), ['include_admin' => false]
+        )->get();
 
         foreach ($users as $user) {
             $user->municipal_id = $department->generateMunicipalId($user->type);

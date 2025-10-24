@@ -129,9 +129,6 @@ class DocumentReviewController extends Controller
         $review = DocumentReview::findOrFail($id);
         $user = Auth::user();
 
-        if ($user->type !== 'Head' || $review->assigned_to !== $user->id) {
-            abort(403, 'Only department heads and staff can review their documents.');
-        }
 
         $this->validateReviewUpdate($request);
 
@@ -169,7 +166,14 @@ class DocumentReviewController extends Controller
                     $notes = $this->buildCompletionNotes($request);
                     $this->workflowService->completeReview($review, $user, $notes);
                     $originalCreator = User::find($review->created_by);
-                    $message = "Document review completed and returned to {$originalCreator->name}. Document is ready for download.";
+                    $message = "Document review completed and returned to {$originalCreator->name}. Document is completed.";
+                    break;
+
+                case 'approve':
+                    $notes = $this->buildCompletionNotes($request);
+                    $this->workflowService->completeReview($review, $user, $notes);
+                    $originalCreator = User::find($review->created_by);
+                    $message = "Document review approved and returned to {$originalCreator->name}. Document is approved.";
                     break;
 
                 case 'reject':
@@ -322,7 +326,7 @@ class DocumentReviewController extends Controller
         $rules = [
             'action' => 'required|in:complete,approved,reject,forward,cancel',
             'review_notes' => 'required|string|max:1000',
-            'assigned_staff' => 'required|string|max:255',
+            'assigned_staff' => 'nullable|string|max:255',
             'completion_summary' => 'nullable|string|max:1000',
         ];
 
@@ -470,7 +474,7 @@ class DocumentReviewController extends Controller
         $now = now();
 
         if ($review->due_at) {
-            $review->remaining_time_minutes = $now->diffInMinutes($review->due_at, false);
+            $review->remaining_time_minutes =(int) round($now->diffInMinutes($review->due_at, false));
             $review->is_overdue = $review->remaining_time_minutes < 0 && !$review->download_at;
         } else {
             $review->remaining_time_minutes = 0;
@@ -506,6 +510,26 @@ public function markDone($id)
         }
     }
     
+
+    public function getRemainingTime(DocumentReview $review){
+       try {
+        $this->calculateTimeProperties($review);
+        
+        $remainingMinutes = (int) round($review->remaining_time_minutes ?? 0);
+        
+        return response()->json([
+            'success' => true,
+            'remaining_minutes' => $remainingMinutes,
+            'is_overdue' => $review->is_overdue ?? false,
+            'status' => $review->status
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error fetching remaining time'
+        ], 500);
+    }
+    }
     private function convertToMinutes($value, $unit)
     {
         return match($unit) {

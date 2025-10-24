@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\User\UserService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -156,7 +157,10 @@ class Department extends Model
      */
     public function getActiveUsersCount(): int
     {
-        return $this->activeUsers()->count();
+        return UserService::applyUserFilters(
+            $this->users()->where('status', 1),
+            ['include_admin' => false]
+        )->count();
     }
 
     public function getLogoUrl(): ?string
@@ -198,5 +202,12 @@ class Department extends Model
     public function scopeByCode($query, $code)
     {
         return $query->where('code', strtoupper($code));
+    }
+
+    public function nonAdminUsers()  {
+        return UserService::applyUserFilters(
+            $this->users(),
+            ['include_admin' => false]
+        );
     }
 }

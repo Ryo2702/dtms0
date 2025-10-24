@@ -19,9 +19,8 @@
                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <div>
-                                    <h3 class="font-bold">Document Ready for Download!</h3>
-                                    <div class="text-sm">Review process completed. The document can now be downloaded for
-                                        signature.</div>
+                                    <h3 class="font-bold">Document is Complete!</h3>
+                                    <div class="text-sm">Review process completed. The document can now be finished.</div>
                                 </div>
                             </div>
                         @endif
@@ -78,18 +77,6 @@
                                     @endif
                                 </p>
                                 
-                                @if ($review->status === 'pending')
-                                    @if(!$review->is_overdue)
-                                        <p><strong>Time Remaining:</strong> 
-                                            <span class="text-warning">{{ formatRemainingTime($review->remaining_time_minutes) }}</span>
-                                        </p>
-                                    @else
-                                        <p class="text-error"><strong>Status:</strong> 
-                                            <span class="badge badge-error">Overdue by {{ formatRemainingTime(abs($review->remaining_time_minutes)) }}</span>
-                                        </p>
-                                    @endif
-                                @endif
-                                
                                 @if ($review->reviewed_at)
                                     <p><strong>Reviewed At:</strong> {{ $review->reviewed_at->format('M d, Y H:i') }}</p>
                                     <p><strong>Time Accomplished:</strong> 
@@ -105,7 +92,7 @@
                         <div class="mb-6">
                             <div class="p-4 space-y-2 rounded bg-base-200">
                                 @foreach ($review->document_data as $key => $value)
-                                    @if (!in_array($key, ['action', 'reviewer_id', 'process_time', '_token', 'initial_notes']))
+                                    @if (!in_array($key, ['action', 'reviewer_id', 'initial_notes']))
                                         <p><strong>{{ ucfirst(str_replace('_', ' ', $key)) }}:</strong>
                                             {{ $value }}</p>
                                     @endif
@@ -248,7 +235,7 @@
                                         <div class="card-body">
                                             <h4 class="text-green-800 card-title">Complete Review</h4>
                                             <p class="text-sm text-green-600">
-                                                This will mark the document as approved and ready for download.
+                                                This will mark the document as approved.
                                             </p>
                                             
                                             <div class="mt-4 form-control">
@@ -329,6 +316,8 @@
                             <div class="space-y-4">
                                 @foreach ($review->forwarding_chain as $index => $step)
                                     @php
+                                        
+
                                         $stepStatus = $step['status'] ?? 'completed';
                                         $stepNumber = $step['step'] ?? $index + 1;
                                         $stepAction = $step['action'] ?? 'forwarded';
@@ -344,22 +333,25 @@
                                         $isOverdue = $step['is_overdue'] ?? false;
                                         $assignedStaff = $step['assigned_staff'] ?? null;
                                         $notes = $step['notes'] ?? null;
+                                        $remainingTime = $step['remaining_time_minutes'] ?? null;
+                                        $isPendingStep = $stepStatus === 'pending';
                                     @endphp
 
                                     <div class="border-l-4 
-                                        @if ($stepStatus === 'completed') border-success
+                                        @if ($stepStatus === 'completed' || $stepStatus === 'forwarded' || $stepStatus === 'approved') border-success
                                         @elseif($stepStatus === 'pending' && !$isOverdue) border-warning
                                         @elseif($stepStatus === 'pending' && $isOverdue) border-error
                                         @elseif($stepStatus === 'overdue') border-error
-                                        @else border-gray-300 @endif pl-4 pb-4">
+                                        @else border-success @endif pl-4 pb-4">
 
                                         <div class="flex items-center gap-2 mb-2">
                                             <div class="badge 
-                                                @if ($stepStatus === 'completed') badge-success
+                                                @if ($stepStatus === 'completed' || $stepStatus === 'forwarded' || $stepStatus === 'approved') badge-success
+    
                                                 @elseif($stepStatus === 'pending' && !$isOverdue) badge-warning
                                                 @elseif($stepStatus === 'pending' && $isOverdue) badge-error
                                                 @elseif($stepStatus === 'overdue') badge-error
-                                                @else badge-ghost @endif badge-sm">
+                                                @else badge-success @endif badge-sm">
                                                 {{ $stepNumber }}
                                             </div>
 
@@ -367,12 +359,12 @@
                                                 {{ \Carbon\Carbon::parse($stepTimestamp)->format('M d, H:i') }}
                                             </span>
 
-                                            @if ($stepStatus === 'completed')
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-success"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M5 13l4 4L19 7" />
-                                                </svg>
+                                            @if ($stepStatus === 'completed' || $stepStatus === 'forwarded' || $stepStatus === 'approved')
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-success"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 13l4 4L19 7" />
+                                            </svg>
                                             @elseif($stepStatus === 'pending' && !$isOverdue)
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                     class="w-4 h-4 text-warning animate-spin" fill="none"
@@ -381,7 +373,7 @@
                                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             @elseif($isOverdue || $stepStatus === 'overdue')
-                                                <span class="badge badge-error badge-xs">OVERDUE</span>
+                                                <span class="badge badge-error badge-xs animate-pulse">OVERDUE</span>
                                             @endif
                                         </div>
 
@@ -405,7 +397,9 @@
                                                     <span class="badge badge-xs">{{ $toUserType }}</span>
                                                 </p>
                                                 @if ($toDepartment)
-                                                    <p><strong>Dept:</strong> {{ $toDepartment }}</p>
+                                                    <p><strong>Dept:</strong> 
+                                                        <span class="font-semibold">{{ $toDepartment }}</span>
+                                                    </p>
                                                 @endif
                                             @endif
 
@@ -417,6 +411,36 @@
 
                                             @if ($allocatedTime)
                                                 <p><strong>Allocated Time:</strong> {{ $allocatedTime }}</p>
+                                            @endif
+
+                                            <!-- Show countdown/overdue for pending steps -->
+                                            @if ($isPendingStep)
+                                                @if ($isOverdue && $remainingTime)
+                                                    <div class="p-2 mt-2 border border-red-300 rounded bg-red-50">
+                                                        <p class="text-sm font-bold text-red-700">
+                                                            <i class="mr-1">⚠️</i>
+                                                            OVERDUE by {{ formatRemainingTime(round(abs($remainingTime))) }}
+                                                        </p>
+                                                        <p class="text-xs text-red-600">
+                                                            Department: <strong>{{ $toDepartment ?? $fromDepartment }}</strong>
+                                                        </p>
+                                                    </div>
+                                                @elseif (!$isOverdue && $remainingTime && $remainingTime > 0)
+                                                    <div class="p-2 mt-2 border border-yellow-300 rounded bg-yellow-50">
+                                                        <p class="text-sm font-bold text-yellow-700">
+                                                            <i class="mr-1">⏱️</i>
+                                                            Time Remaining: 
+                                                            <span class="countdown-timer" 
+                                                                  data-remaining-minutes="{{ round($remainingTime) }}"
+                                                                  data-step="{{ $stepNumber }}">
+                                                                {{ formatRemainingTime(round($remainingTime)) }}
+                                                            </span>
+                                                        </p>
+                                                        <p class="text-xs text-yellow-600">
+                                                            Department: <strong>{{ $toDepartment ?? $fromDepartment }}</strong>
+                                                        </p>
+                                                    </div>
+                                                @endif
                                             @endif
 
                                             @if ($accomplishedTime)
@@ -450,6 +474,25 @@
                                     </span>
                                 </div>
 
+                                <!-- Overall countdown for current status -->
+                                @if ($review->status === 'pending')
+                                    @if (!$review->is_overdue && $review->remaining_time_minutes > 0)
+                                        <div class="mt-2 text-xs">
+                                            <strong>Overall Time Remaining:</strong>
+                                            <span class="text-warning font-bold" id="countdown-timer" 
+                                                  data-remaining-minutes="{{ $review->remaining_time_minutes }}">
+                                                {{ formatRemainingTime($review->remaining_time_minutes) }}
+                                            </span>
+                                        </div>
+                                    @elseif ($review->is_overdue)
+                                        <div class="mt-2 text-xs">
+                                            <span class="text-error font-bold animate-pulse">
+                                                ⚠️ OVERDUE by {{ formatRemainingTime(round(abs($review->remaining_time_minutes))) }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                @endif
+
                                 @if ($review->current_step ?? false)
                                     <div class="mt-1 text-xs text-base-content/70">
                                         Step {{ $review->current_step['step'] ?? 'N/A' }}:
@@ -458,7 +501,7 @@
                                 @endif
                             </div>
                         @else
-                            <!-- Default tracking display -->
+                            <!-- Default tracking display with countdown -->
                             <div class="space-y-4">
                                 <div class="border-l-4 border-success pl-4 pb-4">
                                     <div class="flex items-center gap-2 mb-2">
@@ -483,16 +526,24 @@
                                     </div>
                                 </div>
 
-                                <div class="border-l-4 border-warning pl-4 pb-4">
+                                <div class="border-l-4 
+                                    @if ($review->is_overdue) border-error
+                                    @else border-warning @endif pl-4 pb-4">
                                     <div class="flex items-center gap-2 mb-2">
-                                        <div class="badge badge-warning badge-sm">2</div>
+                                        <div class="badge 
+                                            @if ($review->is_overdue) badge-error
+                                            @else badge-warning @endif badge-sm">2</div>
                                         <span class="text-sm font-semibold">In Progress</span>
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            class="w-4 h-4 text-warning animate-spin" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
+                                        @if ($review->is_overdue)
+                                            <span class="badge badge-error badge-xs animate-pulse">OVERDUE</span>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="w-4 h-4 text-warning animate-spin" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        @endif
                                     </div>
                                     <div class="space-y-1 text-sm">
                                         <p><strong>Action:</strong> Under Review</p>
@@ -500,12 +551,40 @@
                                             <span class="badge badge-xs">{{ $review->reviewer->type }}</span>
                                         </p>
                                         @if ($review->reviewer->department)
-                                            <p><strong>Dept:</strong> {{ $review->reviewer->department->name }}</p>
+                                            <p><strong>Dept:</strong> 
+                                                <span class="font-semibold">{{ $review->reviewer->department->name }}</span>
+                                            </p>
                                         @endif
                                         @if ($review->assigned_staff)
                                             <p><strong>Staff:</strong> 
                                                 <span class="badge badge-info badge-xs">{{ $review->assigned_staff }}</span>
                                             </p>
+                                        @endif
+
+                                        <!-- Current department countdown/overdue status -->
+                                        @if ($review->status === 'pending')
+                                            @if ($review->is_overdue)
+                                                <div class="p-2 mt-2 border border-red-300 rounded bg-red-50">
+                                                    <p class="text-sm font-bold text-red-700">
+                                                        <i class="mr-1">⚠️</i>
+                                                        OVERDUE by {{ formatRemainingTime(abs($review->remaining_time_minutes)) }}
+                                                    </p>
+                                                    <p class="text-xs text-red-600">
+                                                        This department is taking too long!
+                                                    </p>
+                                                </div>
+                                            @else
+                                                <div class="p-2 mt-2 border border-yellow-300 rounded bg-yellow-50">
+                                                    <p class="text-sm font-bold text-yellow-700">
+                                                        <i class="mr-1">⏱️</i>
+                                                        Time Remaining: 
+                                                        <span id="countdown-timer" 
+                                                              data-remaining-minutes="{{ $review->remaining_time_minutes }}">
+                                                            {{ formatRemainingTime($review->remaining_time_minutes) }}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -517,8 +596,7 @@
         </div>
     </div>
 
-    <!-- JavaScript for Form Controls -->
-    <script>
+   <script>
         function toggleActionOptions(action) {
             // Hide all option divs
             document.getElementById('forward_options').style.display = 'none';
@@ -534,5 +612,115 @@
                 document.getElementById('reject_options').style.display = 'block';
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const countdownElements = document.querySelectorAll('[id="countdown-timer"], .countdown-timer');
+            
+            if (countdownElements.length > 0) {
+                const reviewId = {{ $review->id }};
+                let countdownInterval;
+                let localCountdowns = new Map(); // Store local countdown states
+                
+                function fetchRemainingTime() {
+                    fetch(`/documents/reviews/${reviewId}/remaining-time`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            countdownElements.forEach(element => {
+                                const remainingMinutes = Math.max(0, Math.round(data.remaining_minutes));
+                                localCountdowns.set(element, remainingMinutes);
+                                updateCountdownDisplay(element, remainingMinutes, data.is_overdue);
+                            });
+                        } else {
+                            console.error('Error fetching time:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ajax error:', error);
+                    });
+                }
+                
+                function updateCountdownDisplay(element, remainingMinutes, isOverdue) {
+                    // Ensure we're working with rounded integers
+                    remainingMinutes = Math.round(Math.abs(remainingMinutes));
+                    
+                    if (isOverdue || remainingMinutes <= 0) {
+                        element.textContent = '0m';
+                        element.className = element.className.replace(/text-\w+/, 'text-error') + ' font-bold animate-pulse';
+                        // Optionally reload page after a delay
+                        setTimeout(() => location.reload(), 2000);
+                        return;
+                    }
+                    
+                    const hours = Math.floor(remainingMinutes / 60);
+                    const minutes = remainingMinutes % 60;
+                    
+                    let displayText;
+                    if (hours > 0) {
+                        displayText = `${hours}h ${minutes}m`;
+                    } else {
+                        displayText = `${minutes}m`;
+                    }
+                    
+                    element.textContent = displayText;
+                    
+                    // Change color as time gets critical
+                    if (remainingMinutes <= 10) {
+                        element.className = element.className.replace(/text-\w+/, 'text-error') + ' font-bold animate-pulse';
+                    } else if (remainingMinutes <= 30) {
+                        element.className = element.className.replace(/text-\w+/, 'text-error') + ' font-bold';
+                    } else if (remainingMinutes <= 60) {
+                        element.className = element.className.replace(/text-\w+/, 'text-warning') + ' font-semibold';
+                    }
+                }
+                
+                // Local countdown function (runs every minute between server updates)
+                function localCountdownTick() {
+                    countdownElements.forEach(element => {
+                        const currentMinutes = localCountdowns.get(element);
+                        if (currentMinutes > 0) {
+                            const newMinutes = currentMinutes - 1;
+                            localCountdowns.set(element, newMinutes);
+                            updateCountdownDisplay(element, newMinutes, newMinutes <= 0);
+                        }
+                    });
+                }
+                
+                // Initial fetch
+                fetchRemainingTime();
+                
+                // Update from server every 5 minutes to stay in sync
+                const serverSyncInterval = setInterval(fetchRemainingTime, 300000); // 5 minutes
+                
+                // Local countdown every minute
+                const localCountdownInterval = setInterval(localCountdownTick, 60000); // 1 minute
+                
+                // Clear intervals when page is hidden/unloaded
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden) {
+                        clearInterval(serverSyncInterval);
+                        clearInterval(localCountdownInterval);
+                    } else {
+                        // Resume when page becomes visible again
+                        fetchRemainingTime();
+                        clearInterval(serverSyncInterval);
+                        clearInterval(localCountdownInterval);
+                        const newServerSyncInterval = setInterval(fetchRemainingTime, 300000);
+                        const newLocalCountdownInterval = setInterval(localCountdownTick, 60000);
+                    }
+                });
+                
+                window.addEventListener('beforeunload', function() {
+                    clearInterval(serverSyncInterval);
+                    clearInterval(localCountdownInterval);
+                });
+            }
+        });
     </script>
 @endsection

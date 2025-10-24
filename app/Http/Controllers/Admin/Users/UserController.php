@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Users;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\User;
+use App\Services\User\UserService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,10 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $query = User::with('department');
+        $query = UserService::applyUserFilters(
+            User::with('department'),
+            ['include_admin' => false]
+        );
 
         $sortField = $request->get('sort', 'created_at');
         $sortDirection = $request->get('direction', 'desc');
@@ -43,12 +47,10 @@ class UserController extends Controller
             $query->where('department_id', $request->department_id);
         }
 
-        // Filter by type
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
 
-        // Search by name, email, or employee_id
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -62,9 +64,16 @@ class UserController extends Controller
 
         $departments = Department::active()->orderBy('name')->get();
 
-        // Get counts
-        $activeHeadCount = User::where('type', 'Head')->active()->count();
-        $inactiveUsersCount = User::inactive()->count();
+        // // Get counts
+        $activeHeadCount = UserService::applyUserFilters(
+            User::where('type', 'Head')->active(),['include_admin' => false]
+        )->count();
+
+        $inactiveUsersCount = UserService::applyUserFilters(
+            User::inactive(), ['include_admin' => false]
+        )->count();
+
+        
 
         $heads = User::where('type', 'Head')->get();
 
