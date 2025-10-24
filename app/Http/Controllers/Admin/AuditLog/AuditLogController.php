@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\AuditLog;
 
+use App\Exports\AuditLogsExport;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AuditLogController extends Controller
 {
@@ -39,13 +40,10 @@ class AuditLogController extends Controller
             $query->where('description', 'like', '%'.$request->search.'%');
         }
 
-        // Paginate results
         $logs = $query->paginate(20)->withQueryString();
 
-        // Get filter data
         $users = User::orderBy('name')->get(['id', 'name']);
 
-        // Get statistics
         $stats = $this->getStatistics();
 
         return view('admin.audit-logs.index', compact('logs', 'users', 'stats'));
@@ -64,13 +62,7 @@ class AuditLogController extends Controller
         $topActions = AuditLog::select('action', DB::raw('count(*) as count'))
             ->groupBy('action')
             ->orderByDesc('count')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'action' => $item->action,
-                    'count' => $item->count,
-                ];
-            });
+            ->get();
 
         return [
             'totalLogs' => $totalLogs,
@@ -94,6 +86,27 @@ class AuditLogController extends Controller
      * Export audit logs (optional feature)
      */
     public function export(Request $request)
+    {
+        $format = $request->get('format', 'csv');
+
+        if ($format === 'excel') {
+            return $this->exportExcel($request);
+        }
+
+        return $this->exportCsv($request);
+    }
+
+
+
+
+    //Export as Excel
+    private function exportExcel(Request $request)  {
+        $filename = 'audit_logs_'.now()->format('Y_m_d_H_i_s').'.xlsx';
+
+        return Excel::download(new AuditLogsExport($request), $filename);
+    }
+
+   private function exportCsv(Request $request)
     {
         $query = AuditLog::with('user')->latest();
 
@@ -166,27 +179,5 @@ class AuditLogController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
-    }
-
-    /**
-     * Show test page for audit logging
-     */
-    public function test()
-    {
-        return view('admin.audit-logs.test');
-    }
-
-    /**
-     * Handle test actions for audit logging
-     */
-    public function testAction(Request $request)
-    {
-        $action = $request->input('action', 'test');
-        $user = Auth::user();
-
-        // Manually log the test action
-        AuditLog::log($action, "Test action performed: {$action} by {$user->name}");
-
-        return redirect()->back()->with('success', "Test action '{$action}' has been logged successfully!");
     }
 }

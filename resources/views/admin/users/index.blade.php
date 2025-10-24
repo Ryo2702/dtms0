@@ -36,79 +36,125 @@
                             @endif
                         </td>
                         <td class="px-4 py-3">
-                            <div class="flex items-center space-x-2">
-                                <button type="button" 
-                                        class="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                                        onclick="showUserDetails(@json($user->load('department')))">
-                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
+                            <div class="flex gap-2">
+                                <button onclick="showUserDetails({{ $user->toJson() }})" 
+                                        class="btn btn-sm btn-outline" 
+                                        title="View">
+                                    <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
                                     View
                                 </button>
-                                <x-actions :model="$user" resource="users" />
                             </div>
                         </td>
                     </tr>
                 @endforeach
             </x-data-table>
-
-            <x-modal id="userDetailsModal" title="User Details" size="lg">
-                <div class="space-y-4" id="userDetailsContent">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <x-label text="Name" />
-                            <p class="mt-1 text-sm text-gray-900" id="userName"></p>
-                        </div>
-                        <div>
-                            <x-label text="Email" />
-                            <p class="mt-1 text-sm text-gray-900" id="userEmail"></p>
-                        </div>
-                        <div>
-                            <x-label text="Employee ID" />
-                            <p class="mt-1 text-sm text-gray-900" id="userEmployeeId"></p>
-                        </div>
-                        <div>
-                            <x-label text="Department" />
-                            <p class="mt-1 text-sm text-gray-900" id="userDepartment"></p>
-                        </div>
-                        <div>
-                            <x-label text="Type" />
-                            <p class="mt-1 text-sm text-gray-900">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" id="userType"></span>
-                            </p>
-                        </div>
-                        <div>
-                            <x-label text="Status" />
-                            <p class="mt-1 text-sm text-gray-900">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" id="userStatus"></span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <x-slot name="actions">
-                    <button type="button" class="btn-error" onclick="userDetailsModal.close()">
-                        Close
-                    </button>
-                </x-slot>
-            </x-modal>
         </div>
     </div>
 
+    {{-- User Details Modal --}}
+    <x-modal id="user-details-modal" title="User Details" size="lg">
+        <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <x-label text="Name" />
+                    <p class="mt-1 text-sm text-gray-900 font-medium" id="modal-user-name"></p>
+                </div>
+                <div>
+                    <x-label text="Email" />
+                    <p class="mt-1 text-sm text-gray-900" id="modal-user-email"></p>
+                </div>
+                <div>
+                    <x-label text="Type" />
+                    <p class="mt-1 text-sm text-gray-900 capitalize" id="modal-user-type"></p>
+                </div>
+                <div>
+                    <x-label text="Status" />
+                    <div class="mt-1" id="modal-user-status">
+                        <span class="badge badge-success" id="status-active" style="display: none;">Active</span>
+                        <span class="badge badge-ghost" id="status-inactive" style="display: none;">Inactive</span>
+                    </div>
+                </div>
+                <div>
+                    <x-label text="Department" />
+                    <p class="mt-1 text-sm text-gray-900" id="modal-user-department"></p>
+                </div>
+                <div>
+                    <x-label text="Municipal ID" />
+                    <p class="mt-1 text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded" id="modal-user-employee-id"></p>
+                </div>
+            </div>
+            
+            <div class="border-t pt-4">
+                <x-label text="Account Information" />
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                        <span class="font-medium">Created:</span>
+                        <span id="modal-user-created"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Last Activity:</span>
+                        <span id="modal-user-last-activity"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <x-slot name="actions">
+            <button type="button" 
+                    onclick="editUser()" 
+                    class="btn btn-primary" 
+                    id="edit-user-btn">
+                <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
+                Edit User
+            </button>
+            <button type="button" 
+                    onclick="window['user-details-modal'].close()" 
+                    class="btn btn-secondary">
+                Close
+            </button>
+        </x-slot>
+    </x-modal>
+
     <script>
-        function showUserDetails(user) {
-            document.getElementById('userName').textContent = user.name;
-            document.getElementById('userEmail').textContent = user.email;
-            document.getElementById('userType').textContent = user.type;
-            document.getElementById('userEmployeeId').textContent = user.employee_id;
-            document.getElementById('userDepartment').textContent = user.department?.name || 'N/A';
+    let currentUser = null;
 
-            const statusElement = document.getElementById('userStatus');
-            statusElement.textContent = user.status ? 'Active' : 'Inactive';
-            statusElement.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
-
-            userDetailsModal.showModal();
+    function showUserDetails(user) {
+        currentUser = user;
+        
+        // Populate modal with user data
+        document.getElementById('modal-user-name').textContent = user.name || '';
+        document.getElementById('modal-user-email').textContent = user.email || '';
+        document.getElementById('modal-user-type').textContent = user.type || '';
+        document.getElementById('modal-user-department').textContent = user.department?.name || 'N/A';
+        document.getElementById('modal-user-employee-id').textContent = user.employee_id || '';
+        
+        // Format dates
+        const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+        const lastActivity = user.last_activity ? new Date(user.last_activity).toLocaleString() : 'Never';
+        
+        document.getElementById('modal-user-created').textContent = createdAt;
+        document.getElementById('modal-user-last-activity').textContent = lastActivity;
+        
+        // Handle status display
+        const activeStatus = document.getElementById('status-active');
+        const inactiveStatus = document.getElementById('status-inactive');
+        
+        if (user.is_active || user.status) {
+            activeStatus.style.display = 'inline-block';
+            inactiveStatus.style.display = 'none';
+        } else {
+            activeStatus.style.display = 'none';
+            inactiveStatus.style.display = 'inline-block';
         }
+        
+        // Show modal
+        window['user-details-modal'].showModal();
+    }
+
+    function editUser() {
+        if (currentUser) {
+            window.location.href = `/admin/departments/${currentUser.id}/edit`;
+        }
+    }
     </script>
 @endsection

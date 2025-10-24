@@ -107,7 +107,7 @@
             </td>
         </tr>
     @empty
-        {{-- Empty state is handled by the data-table component --}}
+       
     @endforelse
 </x-data-table>
 

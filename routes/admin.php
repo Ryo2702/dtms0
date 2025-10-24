@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\AuditLog\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Document\DocumentAdminController;
@@ -15,7 +15,6 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('departments', DepartmentController::class)->parameters(['departments' => 'department']);
         Route::post('departments/{department}/assign-head', [DepartmentController::class, 'assignHead'])->name('departments.assign-head');
         Route::delete('departments/{department}/remove-head', [DepartmentController::class, 'removeHead'])->name('departments.remove-head');
-        Route::get('departments/{department}/available-staff', [DepartmentController::class, 'getAvailableStaff'])->name('departments.available-staff');
 
         Route::prefix('documents')->name('documents.')->group(function () {
             Route::get('/track', [DocumentAdminController::class, 'track'])->name('track');

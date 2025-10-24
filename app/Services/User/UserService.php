@@ -3,6 +3,7 @@ namespace App\Services\User;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
 class UserService{
@@ -11,8 +12,11 @@ class UserService{
     }
 
     public static function applyUserFilters(Builder $query, array $options = [])  {
+        if ($query instanceof HasMany) {
+            $query = $query->getQuery();
+        }
         //Default
-        if (!isset($options['inlcude_admins']) || !$options['include_admins'] ) {
+        if (!isset($options['include_admin']) || !$options['include_admin'] ) {
             $query = self::getNonAdminUsers($query);
         }
 

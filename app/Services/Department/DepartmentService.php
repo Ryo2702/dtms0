@@ -25,7 +25,7 @@ class DepartmentService {
                 ['include_admin' => false]
             )->count(),
             'has_head' => $department->hasHead(),
-            'has_non_admin_head' => $department->head && $department->head->type !== 'Admin'
+            'has_non_admin_head' => $department->head && $department->head->type !== 'Admin',
         ];
     }
 
