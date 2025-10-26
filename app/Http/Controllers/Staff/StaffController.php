@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AssignStaff;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class StaffController extends Controller
 {
@@ -47,5 +48,35 @@ class StaffController extends Controller
         return redirect()->back()->with('success', 'Success Staff Created');
     }
 
+    public function update(Request $request, AssignStaff $staff) {
+        
+        $user = auth()->user();
+
+        if ($user->type !== 'Head') {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($staff->department_id !== $user->department_id) {
+            abort(403, 'Unauthorize person');
+        }
+        $validated = $request->validate([
+            'full_name' => [
+                'required', 
+                'string', 
+                Rule::unique('assign_staff', 'full_name')->ignore($staff->id)->where('department_id', $user->department_id)
+            ],
+            'position' => 'nullable|string|max:255',
+            'role' => [
+                'required', 
+                'string', 
+                'max:255', 
+                Rule::unique('assign_staff','role')->ignore($staff->id)->where('department_id', $user->department_id)
+            ]
+        ]);
+
+        $staff->update($validated);
+
+        return redirect()->back()->with('success', 'Staff Updated');
+    }
 
 }

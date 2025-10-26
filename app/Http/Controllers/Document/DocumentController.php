@@ -44,7 +44,7 @@ class DocumentController extends Controller
             ->orderBy('title')
             ->paginate(10);
 
-        return view('documents.index', compact('departments', 'reviewers', 'assignedStaff', 'documentTypes'));
+        return view('documents.document', compact('departments', 'reviewers', 'assignedStaff', 'documentTypes'));
     }
 
     public function store(Request $request)

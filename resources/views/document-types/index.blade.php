@@ -15,11 +15,14 @@
             </div>
 
 
-            <x-data-table :headers="['Document Types', 'Description', 'Status', 'Created', 'Actions']"
+            <x-data-table :headers="['ID','Document Types', 'Description', 'Status', 'Created', 'Actions']"
                 :sortableFields="['title', 'created_at']" :paginator="$documentTypes">
 
                 @foreach ($documentTypes as $type)
                     <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-900">
+                            {{ $documentTypes->firstItem() + $loop->index }}
+                        </td>
                         <td class="px-4 py-3 font-medium text-gray-900">
                             {{ $type->title }}
                         </td>
@@ -136,6 +139,6 @@
                     addDoctypeModal.showModal();
                 @endif
             @endif
-        });
+            });
     </script>
 @endpush

@@ -14,11 +14,6 @@ Route::get('/document/{documentId}', [DocumentReviewController::class, 'showByDo
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/notifications/counts', [NotificationController::class, 'getCounts'])
-        ->name('notifications.counts');
-
-    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])
-        ->name('notifications.mark-read');
     Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDocumentTypes']);
    
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
@@ -68,5 +63,6 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('staff')->name('staff.')->group(function () {
         Route::get('/', [StaffController::class,'index'])->name('index');
         Route::post('/create', [StaffController::class,'store'])->name('store');
+        Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
     });
 });

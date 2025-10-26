@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@use('Illuminate\Support\Facades\Storage')
 @section('content')
     <div class="container max-w-6xl mx-auto">
 
@@ -199,7 +200,7 @@
                         <!-- File Attachment -->
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text font-medium">Attachment (Optional)</span>
+                                <span class="label-text font-medium">Attachment</span>
                             </label>
                             <input type="file" name="attachment" 
                                 class="file-input file-input-bordered w-full @error('attachment') file-input-error @enderror"

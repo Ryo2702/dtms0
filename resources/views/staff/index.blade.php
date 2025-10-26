@@ -15,11 +15,14 @@
             </div>
 
 
-            <x-data-table :headers="['Name of Staff', 'Position', 'Role', 'Status', 'Created', 'Actions']"
+            <x-data-table :headers="['ID', 'Name of Staff', 'Position', 'Role', 'Status', 'Created', 'Actions']"
                 :sortableFields="['full_name', 'position', 'role', 'created_at']" :paginator="$staffs">
 
                 @foreach ($staffs as $staff)
                     <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-900">
+                            {{ $staffs->firstItem() + $loop->index }}
+                        </td>
                         <td class="px-4 py-3 font-medium text-gray-900">
                             {{ $staff->full_name }}
                         </td>
@@ -43,7 +46,7 @@
                             <div class="flex gap-2">
                                 @if ($staff->is_active)
                                     <button type="button" class="btn btn-sm btn-ghost"
-                                        onclick="openEditModal({{ $staff->id }}, '{{ addslashes($staff->full_name) }}', '{{ addslashes($staff->position ?? '') }}')"
+                                        onclick="openEditModal({{ $staff->id }}, '{{ addslashes($staff->full_name) }}', '{{ addslashes($staff->position ?? '') }}', '{{ addslashes($staff->role) }}')"
                                         title="Edit">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
                                     </button>
@@ -66,13 +69,11 @@
                 </div>
 
                 <div class="mb-4">
-                    <x-form.input name="postion" label="Position" placeholder="Enter Position"
-                        class="w-full" />
+                    <x-form.input name="position" label="Position" placeholder="Enter Position" class="w-full" />
                 </div>
 
                 <div class="mb-4">
-                    <x-form.input name="role" label="Role" placeholder="Enter Role"
-                        class="w-full" required/>
+                    <x-form.input name="role" label="Role" placeholder="Enter Role" class="w-full" required />
                 </div>
             </form>
 
@@ -87,59 +88,67 @@
             </x-slot>
         </x-modal>
 
-        {{-- Edit Modal
-        <x-modal id="editDoctypeModal" title="Edit Document Type" size="xl">
-            <form method="POST" id="editDocTypeForm">
+        {{-- Edit Modal --}}
+        <x-modal id="editStaffModal" title="Edit Staff" size="xl">
+            <form method="POST" id="editStaffForm">
                 @csrf
                 @method('PUT')
 
                 <div class="mb-4">
-                    <x-form.input name="title" id="edit_title" label="Document Title"
-                        placeholder="e.g., Clearance, Travel Order" required class="w-full" />
+                    <x-form.input name="full_name" id="edit_full_name" label="Full Name"
+                        placeholder="e.g., Charles, Jhon Doe" required class="w-full" />
                 </div>
 
                 <div class="mb-4">
-                    <x-form.textarea name="description" id="edit_description" label="Description"
-                        placeholder="Enter description..." rows="4" class="w-full" />
+                    <x-form.input name="position" id="edit_position" label="Position" placeholder="Enter Position"
+                        class="w-full" />
+                </div>
+
+                <div class="mb-4">
+                    <x-form.input name="role" id="edit_role" label="Role" placeholder="Enter Role" required
+                        class="w-full" />
                 </div>
             </form>
 
             <x-slot name="actions">
-                <button type="button" class="btn btn-ghost" onclick="editDoctypeModal.close()">
+                <button type="button" class="btn btn-ghost" onclick="editStaffModal.close()">
                     Cancel
                 </button>
-                <button type="submit" form="editDocTypeForm" class="btn btn-primary">
+                <button type="submit" form="editStaffForm" class="btn btn-primary">
                     <i data-lucide="save" class="w-4 h-4 mr-2"></i>
                     Update
                 </button>
             </x-slot>
-        </x-modal> --}}
+        </x-modal>
     </x-container>
 @endsection
 
 
 @push('scripts')
     <script>
-        function openEditModal(id, title, description) {
-            document.getElementById('edit_title').value = title;
-            document.getElementById('edit_description').value = description;
-            document.getElementById('editDocTypeForm').action = `/document-types/${id}`;
+        function openEditModal(id, fullName, position, role) {
+            document.getElementById('edit_full_name').value = fullName;
+            document.getElementById('edit_position').value = position;
+            document.getElementById('edit_role').value = role;
+            document.getElementById('editStaffForm').action = `/staff/${id}`;
 
-            editDoctypeModal.showModal();
+            editStaffModal.showModal();
 
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
         }
 
-        // Auto-open modals on validation errors
         document.addEventListener('DOMContentLoaded', function () {
             @if($errors->any())
                 @if(old('_method') === 'PUT')
-                    const oldId = "{{ old('id', '') }}";
-                    if (oldId) {
-                        openEditModal(oldId, "{{ addslashes(old('title', '')) }}", "{{ addslashes(old('description', '')) }}");
-                    }
+               
+                    @php
+                        $editingStaffId = session('editing_staff_id') ?? request()->route('staff');
+                    @endphp
+                    openEditModal(
+                        "{{ $editingStaffId }}", 
+                        "{{ addslashes(old('full_name', '')) }}", 
+                        "{{ addslashes(old('position', '')) }}", 
+                        "{{ addslashes(old('role', '')) }}"
+                    );
                 @else
                     addStaffModal.showModal();
                 @endif

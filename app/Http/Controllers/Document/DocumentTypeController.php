@@ -36,7 +36,7 @@ class DocumentTypeController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255|unique:document_types,title',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:100'
         ]);
 
@@ -49,6 +49,11 @@ class DocumentTypeController extends Controller
 
     public function update(Request $request, DocumentType $documentType)
     {
+
+        $user = auth()->user();
+        if ($user->type !== 'Head') {
+            abort(403, 'Unauthorized access');
+        }
         $validated = $request->validate([
             'title' => [
                 'required',

@@ -8,6 +8,7 @@ use App\Models\DocumentReview;
 use App\Models\User;
 use App\Services\Document\DocumentPrintService;
 use App\Services\Document\DocumentWorkflowService;
+use App\Services\Document\DocumentTimingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,8 @@ class DocumentReviewController extends Controller
 {
     public function __construct(
         private DocumentWorkflowService $workflowService,
-        private DocumentPrintService $printService
+        private DocumentPrintService $printService,
+        private DocumentTimingService $timingService
     ) {
     }
 
@@ -59,8 +61,11 @@ class DocumentReviewController extends Controller
 
         $reviews = $query->orderBy('created_at', 'desc')->paginate(10);
 
+        // Efficiently calculate timing for all reviews at once
+        $this->timingService->calculateMultipleDocumentsTiming($reviews->getCollection());
+
         $reviews->getCollection()->transform(function ($review) {
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && !$review->downloaded_at;
+            $review->is_overdue = $review->calculated_is_overdue ?? $review->is_overdue;
             $review->due_status = $this->getDueStatus($review);
             
             // Ensure submitted_at exists - use created_at if submitted_at is null
@@ -471,17 +476,15 @@ class DocumentReviewController extends Controller
 
     private function calculateTimeProperties($review)
     {
-        $now = now();
-
-        if ($review->due_at) {
-            $review->remaining_time_minutes =(int) round($now->diffInMinutes($review->due_at, false));
-            $review->is_overdue = $review->remaining_time_minutes < 0 && !$review->download_at;
-        } else {
-            $review->remaining_time_minutes = 0;
-            $review->is_overdue = false;
-        }
-
+        $timing = $this->timingService->calculateDocumentTiming($review);
+        
+        $review->remaining_time_minutes = $timing['remaining_minutes'];
+        $review->is_overdue = $timing['is_overdue'];
         $review->due_status = $this->getDueStatus($review);
+        
+        if (isset($timing['updated_chain'])) {
+            $review->forwarding_chain = $timing['updated_chain'];
+        }
     }
 
 public function markDone($id)
@@ -511,24 +514,25 @@ public function markDone($id)
     }
     
 
-    public function getRemainingTime(DocumentReview $review){
-       try {
-        $this->calculateTimeProperties($review);
-        
-        $remainingMinutes = (int) round($review->remaining_time_minutes ?? 0);
-        
-        return response()->json([
-            'success' => true,
-            'remaining_minutes' => $remainingMinutes,
-            'is_overdue' => $review->is_overdue ?? false,
-            'status' => $review->status
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error fetching remaining time'
-        ], 500);
-    }
+    public function getRemainingTime(DocumentReview $review)
+    {
+        try {
+            $timing = $this->timingService->calculateDocumentTiming($review);
+            
+            return response()->json([
+                'success' => true,
+                'remaining_minutes' => $timing['remaining_minutes'],
+                'is_overdue' => $timing['is_overdue'],
+                'status' => $review->status,
+                'current_step_index' => $timing['step_index'] ?? null,
+                'forwarding_chain' => $timing['updated_chain'] ?? null
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching remaining time'
+            ], 500);
+        }
     }
     private function convertToMinutes($value, $unit)
     {
