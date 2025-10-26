@@ -3,174 +3,119 @@
 namespace App\Http\Controllers\Notification;
 
 use App\Http\Controllers\Controller;
-use App\Models\DocumentReview;
+use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class NotificationController extends Controller
 {
     /**
-     * Get notification counts for the authenticated user
+     * Get notifications list for the authenticated user
      */
-    public function getCounts(Request $request): JsonResponse
+    public function getNotifications(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        if (! $user || ! in_array($user->type, ['Staff', 'Head'])) {
+        if (!$user) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
-        $counts = [
-            'pending' => 0,
-            'received' => 0,
-            'sent' => 0,
-            'completed' => 0,
-            'overdue_completed' => 0,
-            'rejected' => 0,
-            'canceled' => 0,
-        ];
-
         try {
-            // Pending reviews assigned to current user
-            $counts['pending'] = DocumentReview::where('assigned_to', $user->id)
-                ->where('status', 'pending')
+            $notifications = Notification::where('user_id', $user->id)
+                ->with('document')
+                ->orderBy('created_at', 'desc')
+                ->take(50)
+                ->get()
+                ->map(function ($notification) {
+                    return [
+                        'id' => $notification->id,
+                        'document_id' => $notification->document_id,
+                        'type' => $notification->type,
+                        'title' => $notification->title,
+                        'message' => $notification->message,
+                        'is_read' => $notification->is_read,
+                        'created_at' => $notification->created_at->toISOString(),
+                        'read_at' => $notification->read_at?->toISOString(),
+                    ];
+                });
+
+            $unreadCount = Notification::where('user_id', $user->id)
+                ->where('is_read', false)
                 ->count();
-
-            $receivedQuery = DocumentReview::where('current_department_id', $user->department_id)
-                ->where('original_department_id', '!=', $user->department_id)
-                ->where('status', 'pending');
-
-            if ($user->type === 'Head') {
-                $receivedQuery->where(function ($q) use ($user) {
-                    $q->whereNull('assigned_to')->orWhere('assigned_to', $user->id);
-                });
-            } else {
-                $receivedQuery->where('assigned_to', $user->id);
-            }
-            $counts['received'] = $receivedQuery->count();
-
-            $sentQuery = DocumentReview::where('original_department_id', $user->department_id)
-                ->where('current_department_id', '!=', $user->department_id)
-                ->whereIn('status', ['pending', 'approved']);
-
-            if ($user->type === 'Head') {
-                $sentQuery->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)->orWhereExists(function ($subQ) use ($user) {
-                        $subQ->select(DB::raw(1))
-                            ->from('users')
-                            ->whereRaw('users.id = document_reviews.created_by')
-                            ->where('users.department_id', $user->department_id);
-                    });
-                });
-            } else {
-                $sentQuery->where('created_by', $user->id);
-            }
-            $counts['sent'] = $sentQuery->count();
-
-            $completedQuery = DocumentReview::where('status', 'approved')
-                ->whereNotNull('downloaded_at');
-
-            if ($user->type === 'Head') {
-                $completedQuery->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)
-                        ->orWhere('assigned_to', $user->id)
-                        ->orWhere('current_department_id', $user->department_id)
-                        ->orWhere('original_department_id', $user->department_id);
-                });
-            } else {
-                $completedQuery->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
-                });
-            }
-            $counts['completed'] = $completedQuery->count();
-
-            // Count overdue completed documents
-            $overdueCompletedQuery = clone $completedQuery;
-            $counts['overdue_completed'] = $overdueCompletedQuery
-                ->whereNotNull('due_at')
-                ->whereColumn('downloaded_at', '>', 'due_at')
-                ->count();
-
-            // Rejected documents
-            $rejectedQuery = DocumentReview::where('status', 'rejected');
-            if ($user->type === 'Head') {
-                $rejectedQuery->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)
-                        ->orWhere('assigned_to', $user->id)
-                        ->orWhere('current_department_id', $user->department_id)
-                        ->orWhere('original_department_id', $user->department_id);
-                });
-            } else {
-                $rejectedQuery->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
-                });
-            }
-            $counts['rejected'] = $rejectedQuery->count();
-
-            // Canceled documents
-            $canceledQuery = DocumentReview::where('status', 'canceled');
-            if ($user->type === 'Head') {
-                $canceledQuery->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)
-                        ->orWhere('assigned_to', $user->id)
-                        ->orWhere('current_department_id', $user->department_id)
-                        ->orWhere('original_department_id', $user->department_id);
-                });
-            } else {
-                $canceledQuery->where(function ($q) use ($user) {
-                    $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
-                });
-            }
-            $counts['canceled'] = $canceledQuery->count();
 
             return response()->json([
                 'success' => true,
-                'counts' => $counts,
-                'timestamp' => now()->toISOString(),
+                'notifications' => $notifications,
+                'unread_count' => $unreadCount,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching notification counts: '.$e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error fetching notification counts',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
-            ], 500);
+            Log::error('Error fetching notifications: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error fetching notifications'], 500);
         }
     }
 
     /**
-     * Mark notifications as read (optional method for future use)
+     * Mark a specific notification as read
      */
     public function markAsRead(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if (!$user) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         try {
-            $type = $request->input('type');
-            $updated = false;
+            $notificationId = $request->input('notification_id');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Notifications marked as read',
-                'type' => $type,
+            $notification = Notification::where('id', $notificationId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$notification) {
+                return response()->json(['success' => false, 'message' => 'Notification not found'], 404);
+            }
+
+            $notification->update([
+                'is_read' => true,
+                'read_at' => now()
             ]);
 
-        } catch (\Exception $e) {
-            Log::error('Error marking notifications as read: '.$e->getMessage());
+            return response()->json(['success' => true, 'message' => 'Notification marked as read']);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Error marking notifications as read',
-            ], 500);
+        } catch (\Exception $e) {
+            Log::error('Error marking notification as read: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error updating notification'], 500);
+        }
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllAsRead(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            Notification::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now()
+                ]);
+
+            return response()->json(['success' => true, 'message' => 'All notifications marked as read']);
+
+        } catch (\Exception $e) {
+            Log::error('Error marking all notifications as read: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error updating notifications'], 500);
         }
     }
 }

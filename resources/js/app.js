@@ -24,7 +24,21 @@ import {
     ClipboardClock,
     FileClock,
     Check,
-    
+    Bell,
+    Home,
+    Users,
+    Building2,
+    MapPin,
+    ShieldCheck,
+    FileText,
+    Inbox,
+    Clock,
+    CircleCheckBig,
+    XCircle,
+    Ban,
+    UsersRound,
+    FolderOpen,
+    UserRound,
 } from "lucide";
 
 createIcons({
@@ -48,7 +62,22 @@ createIcons({
         Menu,
         X,
         FileClock,
-        Check
+        Check,
+        Bell,
+        Home,
+        Users,
+        Building2,
+        MapPin,
+        ShieldCheck,
+        FileText,
+        Inbox,
+        Clock,
+        CircleCheckBig,
+        XCircle,
+        Ban,
+        UsersRound,
+        FolderOpen,
+        UserRound,
     },
 });
 

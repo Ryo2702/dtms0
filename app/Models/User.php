@@ -127,14 +127,6 @@ class User extends Authenticatable
         return $this->last_activity->diffForHumans();
     }
 
-    public function activate()
-    {
-        $this->update(['status' => 1]);
-
-        // Remove from archive
-        $this->archive()?->delete();
-    }
-
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);

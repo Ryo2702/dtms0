@@ -2,9 +2,20 @@
 
 @section('content')
     <div
-        class="min-h-screen flex items-center justify-end lg:justify-end px-4 bg-[url('/images/background.jpg')] bg-cover bg-center">
-        <div class="w-full max-w-md h-full lg:h-screen flex items-center card glass bg-white/20 backdrop-blur-md shadow-xl">
-            <div class="card-body">
+        class="min-h-screen flex items-center justify-end px-4 bg-[url('/images/background.jpg')] bg-cover bg-center">
+
+        <!-- Right-side card -->
+        <div class="w-full max-w-md h-auto lg:h-screen flex flex-col items-center justify-center card glass bg-white/20 backdrop-blur-md shadow-xl p-8 mr-8">
+
+            <!-- Logo -->
+            <div class="avatar mb-6">
+                <div class="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 shadow-2xl overflow-hidden bg-gradient-to-br from-primary to-secondary">
+                    <img src="{{ asset('images/logo.jpg') }}" alt="DOCTRAMS Logo" class="object-cover w-full h-full" />
+                </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="card-body w-full">
                 <h1 class="text-2xl font-bold text-center mb-4">Login</h1>
 
                 @if (isset($errors) && $errors->any())
@@ -47,7 +58,6 @@
 
         function checkLockStatus() {
             const employeeId = document.querySelector('input[name="employee_id"]').value;
-            
             if (!employeeId) return;
 
             const errorMessages = document.querySelectorAll('.alert-error li');
@@ -70,8 +80,7 @@
             const loginButton = document.getElementById('loginButton');
             const buttonText = document.getElementById('buttonText');
             const errorDisplay = document.getElementById('errorDisplay');
-            
-            // Disable form and show error
+
             loginButton.disabled = true;
             loginButton.classList.add('btn-disabled');
             errorDisplay.classList.remove('hidden');
@@ -80,14 +89,13 @@
                 const minutes = Math.floor(seconds / 60);
                 const remainingSeconds = seconds % 60;
                 const timeString = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-                
                 buttonText.textContent = `Try again in ${timeString}`;
 
                 if (seconds <= 0) {
                     clearInterval(countdownInterval);
                     enableForm();
                 }
-                
+
                 seconds--;
             }, 1000);
         }
@@ -97,28 +105,20 @@
             const loginButton = document.getElementById('loginButton');
             const buttonText = document.getElementById('buttonText');
             const errorDisplay = document.getElementById('errorDisplay');
-            
+
             loginButton.disabled = false;
             loginButton.classList.remove('btn-disabled');
             buttonText.textContent = 'Login';
             errorDisplay.classList.add('hidden');
-            
+
             if (countdownInterval) {
                 clearInterval(countdownInterval);
             }
         }
 
-        // Check lock status on page load if there are validation errors
-        document.addEventListener('DOMContentLoaded', function() {
-            checkLockStatus();
-        });
-
-        // Prevent form submission when locked
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            if (isLocked) {
-                e.preventDefault();
-                return false;
-            }
+        document.addEventListener('DOMContentLoaded', checkLockStatus);
+        document.getElementById('loginForm').addEventListener('submit', e => {
+            if (isLocked) e.preventDefault();
         });
     </script>
 @endsection

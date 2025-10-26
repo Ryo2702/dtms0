@@ -21,7 +21,10 @@
         @if (count($activities) > 0)
             <div class="space-y-4 max-h-96 overflow-y-auto">
                 @foreach ($activities->take($maxItems) as $activity)
-                    <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-primary/5 transition-colors">
+                    <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-primary/5 transition-colors 
+                        @if(isset($activity['difficulty']) && $activity['difficulty'] === 'immediate') border-l-4 border-red-900 @endif
+                        @if(isset($activity['difficulty']) && $activity['difficulty'] === 'urgent') border-l-4 border-red-500 @endif
+                        @if(isset($activity['difficulty']) && $activity['difficulty'] === 'important') border-l-4 border-orange-500 @endif">
                         <div class="flex-shrink-0">
                             @if ($activity['type'] === 'document_submitted')
                                 <div class="p-2 rounded-full" style="background-color: rgba(39, 84, 138, 0.1); color: #27548A;">
@@ -71,6 +74,20 @@
                                                     {{ $activity['metadata']['client_name'] }}
                                                 </span>
                                             @endif
+                                            @if (isset($activity['metadata']['difficulty']))
+                                                @php
+                                                    $difficultyColors = [
+                                                        'immediate' => 'background-color: #7c2d12; color: white;',
+                                                        'urgent' => 'background-color: #ef4444; color: white;',
+                                                        'important' => 'background-color: #f59e0b; color: white;',
+                                                        'normal' => 'background-color: #10b981; color: white;',
+                                                    ];
+                                                    $difficultyStyle = $difficultyColors[$activity['metadata']['difficulty']] ?? '';
+                                                @endphp
+                                                <span class="badge text-xs" style="{{ $difficultyStyle }}">
+                                                    {{ ucfirst($activity['metadata']['difficulty']) }}
+                                                </span>
+                                            @endif
                                         </div>
                                     @endif
                                 </div>
@@ -79,7 +96,7 @@
                                         {{ $activity['time_ago'] }}
                                     </p>
                                     @if (isset($activity['urgent']) && $activity['urgent'])
-                                        <span class="badge text-xs mt-1" style="background-color: #FF3F33; color: white;">Urgent</span>
+                                        <span class="badge text-xs mt-1" style="background-color: #FF3F33; color: white;">Overdue</span>
                                     @endif
                                 </div>
                             </div>
@@ -87,15 +104,6 @@
                     </div>
                 @endforeach
             </div>
-
-            @if (count($activities) === 0)
-                <div class="text-center py-8">
-                    <div class="text-base-content/40 mb-2">
-                        <x-dynamic-component component="lucide-inbox" class="w-12 h-12 mx-auto" />
-                    </div>
-                    <p class="text-base-content/60">No recent activity</p>
-                </div>
-            @endif
         @else
             <div class="text-center py-8">
                 <div class="text-base-content/40 mb-2">

@@ -15,12 +15,13 @@
     <div id="sidebar-overlay" class="fixed inset-0 z-40 bg-opacity-50 lg:hidden"></div>
 
     <!-- Main Layout Container -->
-    <div class="flex h-screen overflow-hidden">
+    <nav class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside id="mobile-sidebar"
             class="fixed top-0 left-0 z-50 w-64 h-screen text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary lg:translate-x-0 lg:static lg:flex-shrink-0">
             <x-sidebar />
         </aside>
+
 
         <!-- Main Content Area -->
         <div class="flex flex-col flex-1 overflow-hidden">
@@ -29,80 +30,101 @@
                 $isAdmin = $user->type === 'Admin';
                 $logo =
                     !$isAdmin && $user->department && $user->department->logo
-                        ? Storage::url($user->department->logo)
-                        : null;
+                    ? Storage::url($user->department->logo)
+                    : null;
                 $currentRoute = request()->route()->getName();
             @endphp
 
-            <!-- Top Navigation Bar -->
-            <nav class="z-30 flex-shrink-0 text-white bg-primary navbar">
-                <div class="flex items-center navbar-start">
-                    <button id="hamburger-btn" class="mr-2 btn btn-ghost btn-square lg:!hidden" aria-label="Open menu">
-                        <i data-lucide="menu" class="w-6 h-6 text-white"></i>
-                    </button>
 
-                    @if ($logo)
-                        <img src="{{ $logo }}" alt="Department Logo"
-                            class="object-cover w-12 h-12 rounded-full lg:w-13 lg:h-13">
-                    @endif
+            <div class="navbar flex bg-primary text-white justify-between">
+                <div class="navbar-start flex items-center justify-center">
+                    <h1 class="text-3xl flex font-bold ml-2">
+                        <div class="mr-3">
+                            @if ($logo)
+                                <img src="{{ $logo }}" alt="Department Logo" class="w-15 h-15 rounded-full lg:ml-0">
+                            @endif
+                        </div>
 
-                    <h1 class="ml-2 text-xl font-semibold lg:ml-4 lg:text-2xl">
-                        @if ($isAdmin)
-                            <span class="hidden sm:inline">System Administrator</span>
-                            <span class="sm:hidden">Admin</span>
-                        @else
-                            <span class="hidden md:inline">{{ $user->department->name ?? 'Municipal System' }}</span>
-                            <span class="md:hidden">{{ Str::limit($user->department->name ?? 'Municipal', 10) }}</span>
-                        @endif
+                        <div class="items-center">
+                            @if ($isAdmin)
+                                <span class="hidden sm:inline">DOCTRAMS</span>
+                                <span class="sm:hidden">Admin</span>
+                            @else
+                                <span class="hidden md:inline">{{ $user->department->name ?? 'DOCTRAMS' }}</span>
+                                <span class="md:hidden">{{ Str::limit($user->department->name ?? 'DOCTRAMS', 8) }}</span>
+                            @endif
+                        </div>
+
                     </h1>
                 </div>
+                <div class="navbar-center hidden md:flex">
+                    <form id="document-search-form" class="join">
+                        <input id="document-search" name="document_id" type="text" placeholder="Search Document"
+                            class="input input-bordered join-item text-sm" />
+                        <button type="submit" class="btn btn-square join-item" aria-label="Search">
+                            <i data-lucide="search" class="h-4 w-4"></i>
+                        </button>
+                    </form>
+                </div>
 
-                 <!-- Center Search Bar -->
-                <div class="navbar-center">
-                    <div class="relative w-full max-w-sm">
-                        <form id="document-search-form" class="flex">
-                            <div class="relative flex-1">
-                                <input type="text" 
-                                       id="document-search" 
-                                       name="document_id"
-                                       placeholder="Search Document ID..." 
-                                       class="w-full px-4 py-2 pl-10 pr-12 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                <div class="navbar-end gap-3">
+                    <!-- Notification bell -->
+                    <div class="relative z-[100]">
+                        <button id="notification-bell" class="btn btn-ghost btn-circle text-white">
+                            <div class="indicator">
+                                <i data-lucide="bell" fill="none" class="h-6 w-6 text-white"></i>
+                                <span id="notification-badge"
+                                    class="badge badge-xs badge-error indicator-item hidden"></span>
+                            </div>
+                        </button>
+
+                        <!-- Notification Dropdown -->
+                        <div id="notification-dropdown"
+                            class="hidden absolute right-0 mt-3 w-80 max-h-96 overflow-y-auto bg-white text-black rounded-box shadow-xl border border-base-300 z-[100]">
+                            <div class="p-4 border-b border-base-300 bg-base-200">
+                                <h3 class="font-bold text-lg">Notifications</h3>
+                                <p class="text-sm opacity-70">Recent updates</p>
+                            </div>
+
+                            <div id="notification-list" class="divide-y divide-base-300">
+                                <div class="p-4 text-center text-sm opacity-50">
+                                    Loading notifications...
                                 </div>
                             </div>
-                            <button type="submit" 
-                                    class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                                <i data-lucide="search" class="w-4 h-4"></i>
-                            </button>
-                        </form>
+
+                            <div class="p-3 border-t border-base-300 bg-base-200 text-center">
+                                <button id="mark-all-read" class="btn btn-sm btn-ghost">
+                                    Mark all as read
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </nav>
-            
-
-            {{-- Flash Messages --}}
-            <x-toast :message="session('success')" type="success" title="Success" :timeout="5000" position="top-right" />
-            <x-toast :message="session('error')" type="error" title="Error" :timeout="6000" position="top-right" />
-            <x-toast :messages="$errors->all()" type="warning" title="Validation Failed" :timeout="8000"
-                position="top-right" />
-
+            </div>
+          
             <!-- Main Content Area -->
             <main class="flex-1 p-6 overflow-y-auto bg-dtms-bg">
                 @yield('content')
             </main>
         </div>
-    </div>
+    </nav>
+
+            {{-- Flash Messages --}}
+            <x-toast :message="session('success')" type="success" title="Success" :timeout="5000"
+                position="bottom-right" />
+            <x-toast :message="session('error')" type="error" title="Error" :timeout="6000" position="bottom-right" />
+            <x-toast :messages="$errors->all()" type="warning" title="Validation Failed" :timeout="8000"
+                position="bottom-right" />
     @stack('scripts')
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile sidebar functionality
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeBtn = document.getElementById('close-btn');
             const overlay = document.getElementById('sidebar-overlay');
             const sidebar = document.getElementById('mobile-sidebar');
             const sidebarLinks = document.querySelectorAll('#mobile-sidebar a');
-
 
             function openSidebar() {
                 if (sidebar && overlay) {
@@ -120,9 +142,12 @@
                 }
             }
 
+            // Only bind hamburger for mobile (LG breakpoint)
             hamburgerBtn?.addEventListener('click', (e) => {
                 e.preventDefault();
-                openSidebar();
+                if (window.innerWidth < 1024) {
+                    openSidebar();
+                }
             });
 
             closeBtn?.addEventListener('click', (e) => {
@@ -143,6 +168,7 @@
                     }
                 });
             });
+
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && window.innerWidth < 1024) {
                     closeSidebar();
@@ -159,26 +185,26 @@
                 closeSidebar();
             }
 
-              const searchForm = document.getElementById('document-search-form');
+            // Enhanced search form handling
+            const searchForm = document.getElementById('document-search-form');
             const searchInput = document.getElementById('document-search');
 
-            searchForm?.addEventListener('submit', function(e) {
+            searchForm?.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const inputValue = searchInput.value.trim();
-                
+
                 if (inputValue) {
                     let documentId = inputValue;
-                    
+
                     if (inputValue.includes('http') || inputValue.includes('/document/')) {
                         // Extract document ID from URL
                         const urlMatch = inputValue.match(/\/document\/([^\/\?#]+)/);
                         if (urlMatch) {
                             documentId = urlMatch[1];
                         } else {
-                        
                             const parts = inputValue.split('/');
                             const lastPart = parts[parts.length - 1];
-                           
+
                             if (lastPart && (lastPart.match(/^[A-Z]{2,}-\d{8}-[A-Z0-9]+$/i) || lastPart.length > 5)) {
                                 documentId = lastPart;
                             } else {
@@ -187,7 +213,7 @@
                             }
                         }
                     }
-                    
+
                     // Validate document ID format (optional but recommended)
                     if (documentId && documentId.length > 2) {
                         // Redirect to document review page with the extracted document ID
@@ -199,7 +225,311 @@
                     alert('Please enter a document ID or paste a URL to search');
                 }
             });
+
+            // Notification bell functionality
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationBadge = document.getElementById('notification-badge');
+
+            @if(in_array($user->type, ['Head']))
+                // Update notification count for heads
+                function updateNotificationBadge() {
+                    fetch('{{ route("notifications.counts") }}', {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const totalCount = data.counts.pending + data.counts.received + data.counts.rejected + data.counts.canceled;
+                                if (totalCount > 0) {
+                                    notificationBadge.textContent = totalCount > 99 ? '99+' : totalCount;
+                                    notificationBadge.classList.remove('hidden');
+                                } else {
+                                    notificationBadge.classList.add('hidden');
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching notification counts:', error);
+                        });
+                }
+
+                // Initial load and periodic update
+                updateNotificationBadge();
+                setInterval(updateNotificationBadge, 30000);
+
+                // Update when page becomes visible
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden) {
+                        updateNotificationBadge();
+                    }
+                });
+            @endif
         });
+        // Notification bell functionality
+        const notificationBell = document.getElementById('notification-bell');
+        const notificationBadge = document.getElementById('notification-badge');
+        const notificationList = document.getElementById('notification-list');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        const markAllReadBtn = document.getElementById('mark-all-read');
+
+        let notificationData = [];
+
+        // Function to close dropdown
+        function closeNotificationDropdown() {
+            if (notificationDropdown) {
+                notificationDropdown.classList.add('hidden');
+            }
+        }
+
+        // Function to toggle dropdown
+        function toggleNotificationDropdown() {
+            if (notificationDropdown) {
+                const isHidden = notificationDropdown.classList.contains('hidden');
+                if (isHidden) {
+                    notificationDropdown.classList.remove('hidden');
+                    fetchNotifications(); // Fetch when opening
+                } else {
+                    notificationDropdown.classList.add('hidden');
+                }
+            }
+        }
+
+        // Click outside to close
+        document.addEventListener('click', function(event) {
+            if (notificationBell && notificationDropdown) {
+                const isClickInsideBell = notificationBell.contains(event.target);
+                const isClickInsideDropdown = notificationDropdown.contains(event.target);
+                
+                if (!isClickInsideBell && !isClickInsideDropdown) {
+                    closeNotificationDropdown();
+                }
+            }
+        });
+
+        // Fetch and display notifications
+        function fetchNotifications() {
+            fetch('{{ route("notifications.list") }}', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        notificationData = data.notifications;
+                        renderNotifications(data.notifications);
+                        updateNotificationBadge(data.unread_count);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching notifications:', error);
+                });
+        }
+
+        // Render notifications in dropdown
+        function renderNotifications(notifications) {
+            if (!notifications || notifications.length === 0) {
+                notificationList.innerHTML = `
+                <div class="p-4 text-center text-sm opacity-50">
+                    No notifications
+                </div>
+            `;
+                return;
+            }
+
+            notificationList.innerHTML = notifications.map(notification => {
+                const unreadClass = !notification.is_read ? 'bg-primary/10' : '';
+                const iconColor = getNotificationIconColor(notification.type);
+                const icon = getNotificationIcon(notification.type);
+                const timeAgo = formatTimeAgo(notification.created_at);
+
+                return `
+                <div class="notification-item p-4 hover:bg-base-200 cursor-pointer transition ${unreadClass}" 
+                     data-id="${notification.id}" 
+                     data-document-id="${notification.document_id}"
+                     data-type="${notification.type}">
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full ${iconColor} flex items-center justify-center">
+                                <i data-lucide="${icon}" class="h-5 w-5"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-sm">${notification.title}</p>
+                            <p class="text-xs opacity-70 truncate">${notification.message}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-xs opacity-50">${timeAgo}</span>
+                                ${!notification.is_read ? '<span class="badge badge-xs badge-primary">New</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+
+            // Reinitialize lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Add click handlers
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', function () {
+                    const notificationId = this.dataset.id;
+                    const documentId = this.dataset.documentId;
+                    const type = this.dataset.type;
+
+                    markAsRead(notificationId);
+                    
+                    // Close the dropdown
+                    closeNotificationDropdown();
+
+                    // Navigate to document
+                    if (documentId) {
+                        window.location.href = `/document/${documentId}`;
+                    }
+                });
+            });
+        }
+
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            if (count > 0) {
+                notificationBadge.textContent = count > 99 ? '99+' : count;
+                notificationBadge.classList.remove('hidden');
+            } else {
+                notificationBadge.classList.add('hidden');
+            }
+        }
+
+        // Mark notification as read
+        function markAsRead(notificationId) {
+            fetch('{{ route("notifications.mark-read") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                body: JSON.stringify({ notification_id: notificationId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchNotifications();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking notification as read:', error);
+                });
+        }
+
+        // Mark all as read
+        markAllReadBtn?.addEventListener('click', function () {
+            fetch('{{ route("notifications.mark-all-read") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchNotifications();
+                        // Close dropdown after marking all as read
+                        setTimeout(() => closeNotificationDropdown(), 300);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking all as read:', error);
+                });
+        });
+
+        // Helper functions
+        function getNotificationIcon(type) {
+            const icons = {
+                'approved': 'check-circle',
+                'rejected': 'x-circle',
+                'canceled': 'ban',
+                'pending': 'clock',
+                'received': 'inbox',
+                'completed': 'check-square',
+                'overdue': 'alert-triangle'
+            };
+            return icons[type] || 'bell';
+        }
+
+        function getNotificationIconColor(type) {
+            const colors = {
+                'approved': 'bg-success text-success-content',
+                'rejected': 'bg-error text-error-content',
+                'canceled': 'bg-warning text-warning-content',
+                'pending': 'bg-info text-info-content',
+                'received': 'bg-primary text-primary-content',
+                'completed': 'bg-success text-success-content',
+                'overdue': 'bg-warning text-warning-content'
+            };
+            return colors[type] || 'bg-base-300';
+        }
+
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Fetch only unread count on load (without showing dropdown)
+        function fetchUnreadCount() {
+            fetch('{{ route("notifications.list") }}', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateNotificationBadge(data.unread_count);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching unread count:', error);
+                });
+        }
+
+        // Toggle dropdown on bell click
+        notificationBell?.addEventListener('click', function (e) {
+            e.stopPropagation(); // Prevent document click handler
+            toggleNotificationDropdown();
+        });
+
+        // Initial load - only fetch count, not full list
+        fetchUnreadCount();
+        setInterval(fetchUnreadCount, 30000); // Update count every 30 seconds
+
+        // Update when page becomes visible
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                fetchUnreadCount();
+            }
+        });
+
+
     </script>
 </body>
 

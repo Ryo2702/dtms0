@@ -202,8 +202,16 @@
                 }
                 $rejectedCount = $rejectedDocs->count();
 
-                // Recent activities
+                   // Recent activities with priority sorting
                 $recentActivities = collect();
+                
+                // Define difficulty priority weights (higher = more urgent)
+                $difficultyPriority = [
+                    'immediate' => 4,
+                    'urgent' => 3,
+                    'important' => 2,
+                    'normal' => 1,
+                ];
                 
                 // Recent document reviews
                 $recentReviews = \App\Models\DocumentReview::where(function ($q) use ($user) {
@@ -211,7 +219,7 @@
                           ->orWhere('assigned_to', $user->id);
                     })
                     ->orderBy('updated_at', 'desc')
-                    ->limit(10)
+                    ->limit(20) // Fetch more items for better filtering
                     ->get();
                 
                 foreach ($recentReviews as $review) {
@@ -221,11 +229,19 @@
                         'type' => '',
                         'time_ago' => $review->updated_at->diffForHumans(),
                         'urgent' => $review->due_at && $review->due_at->isPast() && $review->status === 'pending',
+                        'difficulty' => $review->difficulty ?? 'normal',
+                        'priority_score' => $difficultyPriority[$review->difficulty ?? 'normal'] ?? 1,
                         'metadata' => [
                             'document_type' => $review->document_type,
                             'client_name' => $review->client_name,
+                            'difficulty' => $review->difficulty ?? 'normal',
                         ]
                     ];
+                    
+                    // Boost priority score if overdue
+                    if ($activity['urgent']) {
+                        $activity['priority_score'] += 5;
+                    }
                     
                     if ($review->status === 'pending' && $review->assigned_to === $user->id) {
                         $activity['title'] = 'Document Pending Review';
@@ -249,8 +265,11 @@
                         $recentActivities->push($activity);
                     }
                 }
-                
-                $recentActivities = $recentActivities->sortByDesc('time_ago')->take(10);
+ 
+                $recentActivities = $recentActivities->sortBy([
+                    ['priority_score', 'desc'],
+                    ['time_ago', 'asc']
+                ])->values()->take(10);
             @endphp
 
             <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">

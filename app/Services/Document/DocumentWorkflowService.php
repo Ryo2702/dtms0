@@ -2,6 +2,7 @@
 
 namespace App\Services\Document;
 
+use App\Helpers\NotificationHelper;
 use App\Models\DocumentReview;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +26,7 @@ class DocumentWorkflowService
         $clientName = $data['client_name'] ?? $data['name'] ?? $data['resident_name'] ?? 'Unknown';
         $processTime = (int) $data['process_time'];
 
-        return DocumentReview::create([
+        $review = DocumentReview::create([
             'document_id' => $documentId,
             'document_type' => $docInfo['title'],
             'client_name' => $clientName,
@@ -79,6 +80,17 @@ class DocumentWorkflowService
                 ],
             ],
         ]);
+
+        // Send notification to the reviewer about the pending document
+        NotificationHelper::send(
+            $reviewer,
+            'pending',
+            'New Document for Review',
+            "You have received a new {$docInfo['title']} document from {$user->name} that requires your review.",
+            $review->id
+        );
+
+        return $review;
     }
 
     public function forwardReview(DocumentReview $review, User $currentUser, User $forwardTo, string $notes, int $processTime): void
@@ -101,6 +113,15 @@ class DocumentWorkflowService
             'process_time_minutes' => $processTime,
             'due_at' => now()->addMinutes($processTime),
         ]);
+
+        // Send notification to the person receiving the forwarded document
+        NotificationHelper::send(
+            $forwardTo,
+            'received',
+            'Document Forwarded to You',
+            "{$currentUser->name} has forwarded a {$review->document_type} document to you for review.",
+            $review->id
+        );
     }
 
     public function completeReview(DocumentReview $review, User $currentUser, string $notes): void
@@ -138,6 +159,15 @@ class DocumentWorkflowService
             'reviewed_at' => now(),
             'completed_on_time' => $wasOnTime,
         ]);
+
+        // Send notification to the original creator
+        NotificationHelper::send(
+            $originalCreator,
+            'approved',
+            'Document Approved',
+            "Your {$review->document_type} document has been approved by {$currentUser->name} and is ready for download.",
+            $review->id
+        );
     }
 
     public function rejectReview(DocumentReview $review, User $currentUser, string $notes): void
@@ -163,6 +193,15 @@ class DocumentWorkflowService
             'assigned_to' => $originalCreator->id,
             'current_department_id' => $originalCreator->department_id,
         ]);
+
+        // Send notification to the original creator
+        NotificationHelper::send(
+            $originalCreator,
+            'rejected',
+            'Document Rejected',
+            "Your {$review->document_type} document has been rejected by {$currentUser->name}. Please review the notes and resubmit.",
+            $review->id
+        );
     }
 
     public function cancelReview(DocumentReview $review, User $currentUser, string $notes): void
@@ -188,5 +227,14 @@ class DocumentWorkflowService
             'assigned_to' => $originalCreator->id,
             'current_department_id' => $originalCreator->department_id,
         ]);
+
+        // Send notification to the original creator
+        NotificationHelper::send(
+            $originalCreator,
+            'canceled',
+            'Document Canceled',
+            "Your {$review->document_type} document has been canceled by {$currentUser->name}.",
+            $review->id
+        );
     }
 }

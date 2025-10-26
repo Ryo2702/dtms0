@@ -1,300 +1,206 @@
 <!-- Sidebar Content -->
 @auth
-    <div class="flex flex-col h-full overflow-hidden">
+    <div class="flex flex-col h-full bg-primary">
         <!-- Header -->
-        <div
-            class="flex items-center justify-between p-3 text-sm font-bold border-b sm:p-4 sm:text-base md:text-lg border-white/10 shrink-0">
-            @php
-                $currentRoute = request()->route()->getName();
-            @endphp
-            <div class="flex items-center space-x-2">
-                <h1 class="truncate">DOCTRAMS</h1>
+        <div class="flex items-center justify-between p-4 text-white border-b border-white/10">
+            <div class="flex items-center space-x-3">
+                <div>
+                    <h1 class="text-lg font-bold">DOCTRAMS</h1>
+                    <p class="text-xs text-white/70">Document Tracking Managament System</p>
+                </div>
             </div>
 
-            <!-- Mobile Close Button - Only show on mobile/tablet -->
-            <button id="close-btn" class="p-1 btn btn-ghost btn-sm hover:bg-white/10 lg:!hidden">
-                <i data-lucide="arrow-left" class="w-4 h-4 text-white sm:h-5 sm:w-5"></i>
+            <!-- Mobile Close Button -->
+            <button id="close-btn" class="btn btn-ghost btn-sm lg:!hidden">
+                <i data-lucide="x" class="w-5 h-5 text-white"></i>
             </button>
         </div>
 
         @php
             $user = Auth::user();
-            $pendingReviews = $receivedCount = $sentCount = $completedCount = $rejectedCount = $canceledCount = 0;
-
-            if ($user && in_array($user->type, ['Staff', 'Head'])) {
-                // Pending reviews assigned to current user
-                $pendingReviews = \App\Models\DocumentReview::where('assigned_to', $user->id)
-                    ->where('status', 'pending')
-                    ->count();
-
-                // Received documents (documents from other departments to current department)
-                $receivedQuery = \App\Models\DocumentReview::where('current_department_id', $user->department_id)
-                    ->where('original_department_id', '!=', $user->department_id)
-                    ->where('status', 'pending');
-
-                if ($user->type === 'Head') {
-                    $receivedQuery->where(function ($q) use ($user) {
-                        $q->whereNull('assigned_to')->orWhere('assigned_to', $user->id);
-                    });
-                } else {
-                    $receivedQuery->where('assigned_to', $user->id);
-                }
-                $receivedCount = $receivedQuery->count();
-
-                // Completed documents
-                $completedQuery = \App\Models\DocumentReview::where('status', 'approved')->whereNotNull('downloaded_at');
-
-                if ($user->type === 'Head') {
-                    $completedQuery->where(function ($q) use ($user) {
-                        $q->where('created_by', $user->id)
-                            ->orWhere('assigned_to', $user->id)
-                            ->orWhere('current_department_id', $user->department_id)
-                            ->orWhere('original_department_id', $user->department_id);
-                    });
-                } else {
-                    $completedQuery->where(function ($q) use ($user) {
-                        $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
-                    });
-                }
-                $completedCount = $completedQuery->count();
-
-                // Count overdue completed documents
-                $overdueCompletedQuery = clone $completedQuery;
-                $overdueCompletedCount = $overdueCompletedQuery
-                    ->whereNotNull('due_at')
-                    ->whereColumn('downloaded_at', '>', 'due_at')
-                    ->count();
-
-                // Rejected documents
-                $rejectedQuery = \App\Models\DocumentReview::where('status', 'rejected');
-                if ($user->type === 'Head') {
-                    $rejectedQuery->where(function ($q) use ($user) {
-                        $q->where('created_by', $user->id)
-                            ->orWhere('assigned_to', $user->id)
-                            ->orWhere('current_department_id', $user->department_id)
-                            ->orWhere('original_department_id', $user->department_id);
-                    });
-                } else {
-                    $rejectedQuery->where(function ($q) use ($user) {
-                        $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
-                    });
-                }
-                $rejectedCount = $rejectedQuery->count();
-
-                $canceledQuery = \App\Models\DocumentReview::where('status', 'canceled');
-                if ($user->type === 'Head') {
-                    $canceledQuery->where(function ($q) use ($user) {
-                        $q->where('created_by', $user->id)
-                            ->orWhere('assigned_to', $user->id)
-                            ->orWhere('current_department_id', $user->department_id)
-                            ->orWhere('original_department_id', $user->department_id);
-                    });
-                } else {
-                    $canceledQuery->where(function ($q) use ($user) {
-                        $q->where('created_by', $user->id)->orWhere('assigned_to', $user->id);
-                    });
-                }
-                $canceledCount = $canceledQuery->count();
-            }
         @endphp
 
         <!-- Navigation Menu -->
-        <div class="flex-1 overflow-y-auto">
-            <ul class="p-2 space-y-1 text-xs menu sm:p-3 sm:text-sm">
-
-                <!-- Main Navigation -->
-                <x-sidebar-label text="Main" />
-
-                <x-sidebar-item :route="route('dashboard')" :active="$currentRoute === 'dashboard'" icon="home">
-                    <span class="truncate">Dashboard</span>
-                </x-sidebar-item>
+        <div class="flex-1 overflow-y-auto p-2">
+            <ul class="menu menu-sm w-full">
+                <!-- Dashboard -->
+                <li class="mb-1">
+                    <a href="{{ route('dashboard') }}"
+                        class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'dashboard' ? 'bg-white/20' : '' }}">
+                        <i data-lucide="home" class="w-5 h-5"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
 
                 <!-- Admin Section -->
                 @if ($user->type === 'Admin')
-                    <x-sidebar-label text="Administration" />
+                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
+                        <span>Administration</span>
+                    </li>
 
-                    <x-sidebar-item :route="route('admin.users.index')" :active="Str::startsWith($currentRoute, 'admin.users')"
-                        icon="users">
-                        <span class="truncate">Heads</span>
-                    </x-sidebar-item>
+                    <li class="mb-1">
+                        <a href="{{ route('admin.users.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'admin.users') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="users" class="w-5 h-5"></i>
+                            <span>Heads</span>
+                        </a>
+                    </li>
 
-                    <x-sidebar-item :route="route('admin.departments.index')" :active="Str::startsWith($currentRoute, 'admin.departments')" icon="building-2">
-                        <span class="truncate">Departments</span>
-                    </x-sidebar-item>
+                    <li class="mb-1">
+                        <a href="{{ route('admin.departments.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'admin.departments') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="building-2" class="w-5 h-5"></i>
+                            <span>Departments</span>
+                        </a>
+                    </li>
 
-                    <x-sidebar-item :route="route('admin.documents.track')"
-                        :active="$currentRoute === 'documents.reviews.admin.track'" icon="file-search">
-                        <span class="truncate">Document Track</span>
-                    </x-sidebar-item>
+                    <li class="mb-1">
+                        <a href="{{ route('admin.documents.track') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.reviews.admin.track' ? 'bg-white/20' : '' }}">
+                            <i data-lucide="map-pin" class="w-5 h-5"></i>
+                            <span>Document Track</span>
+                        </a>
+                    </li>
 
-                    <x-sidebar-item :route="route('admin.audit-logs.index')" :active="Str::startsWith($currentRoute, 'admin.audit-logs')" icon="shield-check">
-                        <span class="truncate">Audit Logs</span>
-                    </x-sidebar-item>
+                    <li class="mb-1">
+                        <a href="{{ route('admin.audit-logs.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'admin.audit-logs') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                            <span>Audit Logs</span>
+                        </a>
+                    </li>
+              
+                @else ($user->type === 'Head')
+                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
+                        <span>Document Management</span>
+                    </li>
+
+                    <li class="mb-1">
+                        <a href="{{ route('documents.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.index' ? 'bg-white/20' : '' }}">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
+                            <span>Documents</span>
+                        </a>
+                    </li>
+
+                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
+                        <span>Workflow</span>
+                    </li>
+
+                    <li class="mb-1" data-notification-type="received">
+                        <a href="{{ route('documents.reviews.received') }}"
+                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.reviews.received' ? 'bg-white/20' : '' }}">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="inbox" class="w-5 h-5"></i>
+                                <span>Request</span>
+                            </div>
+
+                        </a>
+                    </li>
+
+                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
+                        <span>Status</span>
+                    </li>
+
+                    <li class="mb-1" data-notification-type="pending">
+                        <a href="{{ route('documents.status.pending') }}"
+                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ in_array(request()->route()->getName(), ['documents.reviews.index', 'documents.status.pending']) ? 'bg-white/20' : '' }}">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="clock" class="w-5 h-5"></i>
+                                <span>Pending</span>
+                            </div>
+                        </a>
+                    </li>
+
+                    <li class="mb-1" data-notification-type="completed">
+                        <a href="{{ route('documents.status.closed') }}"
+                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.status.closed' ? 'bg-white/20' : '' }}">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="circle-check-big" class="w-5 h-5"></i>
+                                <span>Closed</span>
+                            </div>
+                        </a>
+                    </li>
+
+                    <li class="mb-1" data-notification-type="rejected">
+                        <a href="{{ route('documents.status.rejected') }}"
+                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.status.rejected' ? 'bg-white/20' : '' }}">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="x-circle" class="w-5 h-5"></i>
+                                <span>Rejected</span>
+                            </div>
+                        </a>
+                    </li>
+
+                    <li class="mb-1" data-notification-type="canceled">
+                        <a href="{{ route('documents.status.canceled') }}"
+                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.status.canceled' ? 'bg-white/20' : '' }}">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="ban" class="w-5 h-5"></i>
+                                <span>Canceled</span>
+                            </div>
+                        </a>
+                    </li>
+
+                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
+                        <span>Department</span>
+                    </li>
+
+                    <li class="mb-1">
+                        <a href="{{ route('staff.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'staff') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="users-round" class="w-5 h-5"></i>
+                            <span>Staff Management</span>
+                        </a>
+                    </li>
+
+                    <li class="mb-1">
+                        <a href="{{ route('document-types.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'document-types') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="folder-open" class="w-5 h-5"></i>
+                            <span>Document Types</span>
+                        </a>
+                    </li>
                 @endif
 
-                <!-- Document Management -->
-                @if ($user->type === 'Head')
-                    <x-sidebar-label text="Document Management" />
+                <!-- Settings -->
+                <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
+                    <span>Settings</span>
+                </li>
 
-                    <x-sidebar-item :route="route('documents.index')" :active="$currentRoute === 'documents.index'"
-                        icon="file-text">
-                        <span class="truncate">Documents</span>
-                    </x-sidebar-item>
-
-                    <!-- Document Workflow -->
-                    <x-sidebar-label text="Document Workflow" />
-
-                    <x-sidebar-item :route="route('documents.reviews.received')"
-                        :active="$currentRoute === 'documents.reviews.received'" icon="inbox" :badge="['class' => 'badge-info', 'count' => $receivedCount]" data-notification-type="received">
-                        <span class="truncate">Request</span>
-                    </x-sidebar-item>
-
-                    <!-- Document Status -->
-                    <x-sidebar-label text="Document Status" />
-                    <x-sidebar-item :route="route('documents.status.pending')" :active="in_array($currentRoute, ['documents.reviews.index', 'documents.status.pending'])" icon="clock" :badge="['class' => 'badge-error', 'count' => $pendingReviews]" data-notification-type="pending">
-                        <span class="truncate">Pending</span>
-                    </x-sidebar-item>
-
-                    <x-sidebar-item :route="route('documents.status.closed')"
-                        :active="$currentRoute === 'documents.status.closed'" icon="check-circle" :badge="[
-                        'class' => 'badge-success',
-                        'count' => $completedCount,
-                    ]" data-notification-type="completed">
-                        <span class="truncate">Closed</span>
-                    </x-sidebar-item>
-
-                    <x-sidebar-item :route="route('documents.status.rejected')"
-                        :active="$currentRoute === 'documents.status.rejected'" icon="x-circle" :badge="['class' => 'badge-error', 'count' => $rejectedCount]" data-notification-type="rejected">
-                        <span class="truncate">Rejected</span>
-                    </x-sidebar-item>
-
-                    <x-sidebar-item :route="route('documents.status.canceled')"
-                        :active="$currentRoute === 'documents.status.canceled'" icon="ban" :badge="['class' => 'badge-neutral', 'count' => $canceledCount]" data-notification-type="canceled">
-                        <span class="truncate">Canceled</span>
-                    </x-sidebar-item>
-
-                    <x-sidebar-label text="Department Management" />
-
-                    <x-sidebar-item :route="route('staff.index')" :active="Str::startsWith($currentRoute, 'staff')"
-                        icon="user-cog">
-                        <span class="truncate">Staff Management</span>
-                    </x-sidebar-item>
-
-                    <x-sidebar-item :route="route('document-types.index')" :active="Str::startsWith($currentRoute, 'document-types')" icon="file-type">
-                        <span class="truncate">Document Types</span>
-                    </x-sidebar-item>
-
-                    {{-- <x-sidebar-item :route="route('head.report.index')"
-                        :active="Str::startsWith($currentRoute, 'head.report')" icon="file">
-                        <span class="truncate">Report</span>
-                    </x-sidebar-item> --}}
-                @endif
-
-                <!-- User Settings -->
-                <x-sidebar-label text="Settings" />
-
-                <x-sidebar-item :route="route('profile.show')" :active="Str::startsWith($currentRoute, 'profile')"
-                    icon="user">
-                    <span class="truncate">Profile</span>
-                </x-sidebar-item>
+                <li class="mb-1">
+                    <a href="{{ route('profile.show') }}"
+                        class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'profile') ? 'bg-white/20' : '' }}">
+                        <i data-lucide="user-round" class="w-5 h-5"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
             </ul>
         </div>
 
-        <!-- Logout Section -->
-        <div class="p-2 mt-auto border-t sm:p-3 border-white/10 shrink-0">
+        <!-- User Info & Logout -->
+        <div class="p-4 border-t border-white/10">
+            <div class="flex items-center gap-3 mb-3 p-3 bg-white/10 rounded-lg">
+                <div class="avatar">
+                    <div class="w-10 rounded-full">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=random"
+                            alt="{{ $user->name }}" />
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-white truncate">{{ $user->name }}</div>
+                    <div class="text-xs text-white/70 truncate">{{ $user->email }}</div>
+                </div>
+            </div>
+
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf
-                <button
-                    class="flex items-center justify-center w-full h-auto min-h-0 p-2 text-xs btn btn-logout sm:text-sm">
-                    <i data-lucide="log-out" class="flex-shrink-0 w-3 h-3 mr-1 sm:h-4 sm:w-4 sm:mr-2"></i>
-                    <span class="truncate">Logout</span>
+                <button class="btn btn-outline btn-sm w-full text-white border-white/30 hover:bg-white hover:text-primary">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+                    Logout
                 </button>
             </form>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            @if(in_array($user->type, ['Head']))
-                    function updateNotificationCounts() {
-                        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
-
-                        const headers = {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        };
-
-                        if (csrfToken) {
-                            headers['X-CSRF-TOKEN'] = csrfToken;
-                        }
-
-                        fetch('{{ route("notifications.counts") }}', {
-                            method: 'GET',
-                            headers: headers
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    updateBadge('pending', data.counts.pending, 'badge-error');
-                                    updateBadge('received', data.counts.received, 'badge-info');
-                                    updateBadge('completed', data.counts.completed, 'badge-success');
-                                    updateBadge('rejected', data.counts.rejected, 'badge-error');
-                                    updateBadge('canceled', data.counts.canceled, 'badge-error');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error fetching notification counts:', error);
-
-                            });
-                                    )
-                            }
-
-                function updateBadge(type, count, badgeClass, overdueCount = 0) {
-                    const menuItem = document.querySelector(`[data-notification-type="${type}"]`);
-                    if (!menuItem) return;
-
-                    const badgeContainer = menuItem.querySelector('.flex.items-center.gap-1') ||
-                        menuItem.querySelector('.badge')?.parentElement;
-
-                    if (badgeContainer) {
-                        if (count > 0) {
-                            let badgeHtml = `<div class="badge ${badgeClass} badge-xs lg:badge-sm">${count}</div>`;
-
-                            if (overdueCount > 0) {
-                                badgeHtml += `<div class="badge badge-error badge-xs lg:badge-sm" title="Overdue">${overdueCount}</div>`;
-                            }
-
-                            badgeContainer.innerHTML = badgeHtml;
-                            badgeContainer.style.display = 'flex';
-                        } else {
-                            badgeContainer.style.display = 'none';
-                        }
-                    } else if (count > 0) {
-                        // Create badge container if it doesn't exist
-                        const linkElement = menuItem.querySelector('a');
-                        const badgeDiv = document.createElement('div');
-                        badgeDiv.className = 'flex items-center gap-1';
-
-                        let badgeHtml = `<div class="badge ${badgeClass} badge-xs lg:badge-sm">${count}</div>`;
-                        if (overdueCount > 0) {
-                            badgeHtml += `<div class="badge badge-error badge-xs lg:badge-sm" title="Overdue">${overdueCount}</div>`;
-                        }
-
-                        badgeDiv.innerHTML = badgeHtml;
-                        linkElement.appendChild(badgeDiv);
-                    }
-                }
-
-                updateNotificationCounts();
-
-                setInterval(updateNotificationCounts, 2000);
-
-                document.addEventListener('visibilitychange', function () {
-                    if (!document.hidden) {
-                        updateNotificationCounts();
-                    }
-                });
-            @endif
-                });
-    </script>
 @endauth

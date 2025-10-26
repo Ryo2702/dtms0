@@ -102,15 +102,13 @@ class Department extends Model
         $typeCode = match ($type) {
             'Head' => 'H',
             'Admin' => 'A',
-            default => 'S'
+            default => 'H'
         };
 
         $prefix = "{$this->code}{$typeCode}-{$year}-";
 
         $lastUser = DB::table('users')
-            ->where('department_id', $this->id)
-            ->where('type', $type)
-            ->where('employee_id', 'like', $prefix.'%')
+            ->where('employee_id', 'like', "%-{$year}-%")
             ->orderBy('employee_id', 'desc')
             ->first();
 
