@@ -56,22 +56,29 @@
         let countdownInterval;
         let isLocked = false;
 
-        function checkLockStatus() {
-            const employeeId = document.querySelector('input[name="employee_id"]').value;
+        async function checkLockStatus() {
+            const employeeIdInput = document.querySelector('input[name="employee_id"]');
+            const employeeId = employeeIdInput.value || localStorage.getItem('lastEmployeeId');
+            
             if (!employeeId) return;
 
-            const errorMessages = document.querySelectorAll('.alert-error li');
-            for (let message of errorMessages) {
-                if (message.textContent.includes('Too many login attempts')) {
-                    const timeMatch = message.textContent.match(/(\d+):(\d+)/);
-                    if (timeMatch) {
-                        const minutes = parseInt(timeMatch[1]);
-                        const seconds = parseInt(timeMatch[2]);
-                        const totalSeconds = (minutes * 60) + seconds;
-                        startCountdown(totalSeconds);
-                        return;
-                    }
+            try {
+                const response = await fetch('{{ route("login.check-lock") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ employee_id: employeeId })
+                });
+
+                const data = await response.json();
+
+                if (data.locked) {
+                    startCountdown(data.remaining_time);
                 }
+            } catch (error) {
+                console.error('Error checking lock status:', error);
             }
         }
 
@@ -116,9 +123,34 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', checkLockStatus);
+        // Store employee ID on input
+        document.querySelector('input[name="employee_id"]').addEventListener('input', (e) => {
+            if (e.target.value) {
+                localStorage.setItem('lastEmployeeId', e.target.value);
+            }
+        });
+
+        // Check lock status on page load and when employee ID changes
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLockStatus();
+            
+            // Auto-fill last employee ID
+            const lastEmployeeId = localStorage.getItem('lastEmployeeId');
+            if (lastEmployeeId) {
+                document.querySelector('input[name="employee_id"]').value = lastEmployeeId;
+            }
+        });
+
+        document.querySelector('input[name="employee_id"]').addEventListener('blur', checkLockStatus);
+
         document.getElementById('loginForm').addEventListener('submit', e => {
-            if (isLocked) e.preventDefault();
+            if (isLocked) {
+                e.preventDefault();
+            } else {
+                // Store employee ID before submitting
+                const employeeId = document.querySelector('input[name="employee_id"]').value;
+                localStorage.setItem('lastEmployeeId', employeeId);
+            }
         });
     </script>
 @endsection

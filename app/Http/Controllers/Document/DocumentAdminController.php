@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Document;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentReview;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DocumentAdminController extends Controller
 {
@@ -17,96 +19,58 @@ class DocumentAdminController extends Controller
             abort(403, 'Only administrators can access document tracking.');
         }
 
-        $query = DocumentReview::with(['creator', 'reviewer', 'currentDepartment', 'originalDepartment']);
+        $sortField = $request->get('sort', 'name');
+        $sortDirection = $request->get('direction', 'asc');
 
-        $this->applyFilters($query, $request);
+        $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'asc';
 
-        $documents = $query->orderBy('created_at', 'desc')->paginate(15);
+        $departments = Department::withCount([
+            'documentReviews as total_created',
+            'documentReviews as pending_count' => function ($query) {
+                $query->where('status', 'pending');
+            },
+            'documentReviews as completed_count' => function ($query) {
+                $query->where('status', 'approved')->whereNotNull('downloaded_at');
+            },
+            'documentReviews as rejected_count' => function ($query) {
+                $query->where('status', 'rejected');
+            },
+            'documentReviews as canceled_count' => function ($query) {
+                $query->where('status', 'canceled');
+            },
+            'documentReviews as approved_count' => function ($query) {
+                $query->where('status', 'approved')->whereNull('downloaded_at');
+            }
+        ]);
 
-        $documents->getCollection()->transform(function ($review) {
-            $review->journey_steps = count($review->forwarding_chain ?? []);
-            $review->processing_time = $review->submitted_at && $review->downloaded_at
-                ? $review->submitted_at->diffInMinutes($review->downloaded_at)
-                : null;
-            $review->is_overdue = $review->due_at && now()->greaterThan($review->due_at) && ! $review->downloaded_at;
+        switch ($sortField) {
+            case 'department':
+                $departments->orderBy('name', $sortDirection);
+                break;
+            case 'total_created':
+            case 'pending_count':
+            case 'approved_count':
+            case 'completed_count':
+            case 'rejected_count':
+            case 'canceled_count':
+                $departments->orderBy($sortField, $sortDirection);
+                break;
+            default:
+                $departments->orderBy('name', 'asc');
+        }
 
-            return $review;
-        });
+        $departments = $departments->paginate(15)->appends([
+            'sort' => $sortField,
+            'direction' => $sortDirection
+        ]);
 
-        $filterOptions = $this->getFilterOptions();
         $stats = $this->getStatistics();
 
         return view('documents.admin.track', compact(
-            'documents',
+            'departments',
             'user',
-            'filterOptions',
             'stats'
-        ) + $filterOptions);
-    }
-
-    private function applyFilters($query, Request $request): void
-    {
-        if ($request->filled('search')) {
-            $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('document_id', 'LIKE', "%{$search}%")
-                    ->orWhere('client_name', 'LIKE', "%{$search}%")
-                    ->orWhere('document_type', 'LIKE', "%{$search}%")
-                    ->orWhereHas('creator', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'LIKE', "%{$search}%")
-                            ->orWhere('employee_id', 'LIKE', "%{$search}%");
-                    })
-                    ->orWhereHas('reviewer', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'LIKE', "%{$search}%")
-                            ->orWhere('employee_id', 'LIKE', "%{$search}%");
-                    });
-            });
-        }
-
-        if ($request->filled('department')) {
-            $departmentId = $request->get('department');
-            $query->where(function ($q) use ($departmentId) {
-                $q->where('original_department_id', $departmentId)
-                    ->orWhere('current_department_id', $departmentId);
-            });
-        }
-
-        if ($request->filled('user_type')) {
-            $userType = $request->get('user_type');
-            $query->whereHas('creator', function ($userQuery) use ($userType) {
-                $userQuery->where('type', $userType);
-            });
-        }
-
-        if ($request->filled('document_type')) {
-            $query->where('document_type', $request->get('document_type'));
-        }
-
-        if ($request->filled('status')) {
-            $status = $request->get('status');
-            if ($status === 'completed') {
-                $query->where('status', 'approved')->whereNotNull('downloaded_at');
-            } else {
-                $query->where('status', $status);
-            }
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->get('date_from'));
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->get('date_to'));
-        }
-    }
-
-    private function getFilterOptions(): array
-    {
-        return [
-            'departments' => \App\Models\Department::all(),
-            'documentTypes' => DocumentReview::select('document_type')->distinct()->pluck('document_type'),
-            'userTypes' => ['Head', 'Staff'],
-        ];
+        ));
     }
 
     private function getStatistics(): array

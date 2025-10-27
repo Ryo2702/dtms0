@@ -81,4 +81,24 @@ class LoginController extends Controller
             'attempts' => RateLimiter::attempts($key)
         ]);
     }
+
+    public function checkLock(Request $request)  {
+        $request->validate([
+            'employee_id' => 'required'
+        ]);
+
+        $key = strtolower($request->input('employee_id')) . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            return response()->json([
+                'locked' => true,
+                'remaining_time' => RateLimiter::availableIn($key)
+            ]);
+        }
+
+        return response()->json([
+            'locked' => false,
+            'attemps' => RateLimiter::attempts($key)
+        ]);
+    }
 }

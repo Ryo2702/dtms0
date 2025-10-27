@@ -338,11 +338,11 @@ class DocumentReviewController extends Controller
         if ($request->action === 'forward') {
             $rules['forward_to'] = 'required|exists:users,id';
             $rules['forward_notes'] = 'required|string|max:1000';
-            $rules['forward_time_value'] = 'required|integer|min:1'; // Fixed
-            $rules['forward_time_unit'] = 'required|in:minutes,days,weeks'; // Fixed
+            $rules['forward_time_value'] = 'required|integer|min:1';
+            $rules['forward_time_unit'] = 'required|in:minutes,days,weeks';
             $rules['forward_assigned_staff'] = 'nullable|string|max:255';
         }
-
+        
         if ($request->action === 'reject') {
             $rules['rejection_reason'] = 'required|string|max:1000';
         }
@@ -396,7 +396,6 @@ class DocumentReviewController extends Controller
             case 'canceled':
                 $query->where('status', 'canceled');
                 break;
-            case 'approved':
             case 'completed':
             case 'closed':
                 if ($user->type === 'Head') {

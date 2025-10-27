@@ -128,10 +128,8 @@ class DocumentPrintService
         }
     }
 
-    // Added to satisfy controller call
     public function generateDocument(DocumentReview $review)
     {
-        // Delegate to the existing print logic. Adjust return type if you want a different behavior.
         return $this->printReceipt($review);
     }
 }

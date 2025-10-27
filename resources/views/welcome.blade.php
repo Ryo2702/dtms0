@@ -4,7 +4,7 @@
     <div class="min-h-screen flex items-center justify-end bg-cover bg-center">
 
         <div
-            class="w-full max-w-md h-auto lg:h-screen flex flex-col items-center justify-center card glass bg-white/20 backdrop-blur-md shadow-xl p-8 mr-8">
+            class="w-full max-w-md h-auto lg:h-screen flex flex-col items-center justify-center card bg-white/20 shadow-xl p-8 mr-8">
 
             <div class="avatar mb-6">
                 <div

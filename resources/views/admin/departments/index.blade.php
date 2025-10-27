@@ -7,11 +7,9 @@
 
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
             <x-stat-card bgColor="bg-stat-primary" title="Total Departments" :value="$totalDepartments ?? 0" />
             <x-stat-card bgColor="bg-stat-secondary" title="Active Departments" :value="$activeDepartments ?? 0" />
-            <x-stat-card bgColor="bg-stat-accent" title="Departments With Heads" :value="$departmentsWithHeads ?? 0" />
-            <x-stat-card bgColor="bg-stat-danger" title="Inactive Departments" :value="$inactiveDepartments ?? 0" />
         </div>
 
         {{-- Filters --}}

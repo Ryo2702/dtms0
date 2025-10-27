@@ -10,7 +10,6 @@
                     <div class="card-body">
                         <h2 class="mb-6 card-title">Document Review: {{ $review->document_id }}</h2>
 
-                        <!-- Status Alert -->
                         @if ($review->status === 'approved')
                             <div class="mb-6 alert alert-success">
                                 <i data-lucide="check" class="w-6 h-6 stroke-current shrink-0" fill="none" stroke></i>
@@ -29,7 +28,6 @@
                                 <p><strong>Difficulty:</strong> 
                                     @php
                                         $difficulty = $review->difficulty ?? 'normal';
-                                        // Turn green if approved,
                                         $badgeClass = $review->status === 'approved' ? 'badge badge-success' : match($difficulty) {
                                             'normal' => 'badge badge-success',
                                             'important' => 'badge badge-warning', 
@@ -127,7 +125,6 @@
                                             <option value="">Select Action</option>
                                             <option value="forward">Forward</option>
                                             <option value="complete">Complete</option>
-                                            <option value="approve">Approve</option>
                                             <option value="reject">Reject</option>
                                             <option value="cancel">Cancel</option>
                                         </select>
@@ -237,16 +234,13 @@
                                             
                                             <div class="mt-4 form-control">
                                                 <label class="label">
-                                                    <span class="font-semibold label-text">Final Staff Assignment</span>
+                                                    <span class="font-semibold label-text">Final Completion</span>
                                                 </label>
-                                                <select name="final_assigned_staff" class="select select-bordered">
-                                                    <option value="">Keep current assignment ({{ $review->assigned_staff ?? 'None' }})</option>
-                                                    @foreach($assignedStaff as $staff)
-                                                        <option value="{{ $staff['full_name'] }}" 
-                                                            {{ $review->assigned_staff === $staff['full_name'] ? 'selected' : '' }}>
-                                                            {{ $staff['full_name'] }} - {{ $staff['position'] }}
-                                                        </option>
-                                                    @endforeach
+                                              <select name="approve_select" class="select select-bordered">
+                                                    <option value="">Select approve</option>
+                                                    <option value="completed_signature">Completed With Signature</option>
+                                                    <option value="without_signature">Without Signature</option>
+                                                    <option value="other">Other (specify in notes)</option>
                                                 </select>
                                                 <label class="label">
                                                     <span class="label-text-alt">Staff responsible for final document preparation</span>

@@ -8,6 +8,7 @@ Route::get('/', function () {
 });
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.store');
+Route::post('/login/check-lock', [LoginController::class, 'checkLock'])->name('login.check-lock');
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';

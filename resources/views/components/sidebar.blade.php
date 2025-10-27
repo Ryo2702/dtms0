@@ -79,7 +79,7 @@
                         <a href="{{ route('documents.index') }}"
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.index' ? 'bg-white/20' : '' }}">
                             <i data-lucide="file-text" class="w-5 h-5"></i>
-                            <span>Documents</span>
+                            <span>Document Request</span>
                         </a>
                     </li>
 

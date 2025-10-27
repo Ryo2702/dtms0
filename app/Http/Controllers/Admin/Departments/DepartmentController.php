@@ -58,8 +58,6 @@ class DepartmentController extends Controller
 
         $totalDepartments = Department::count();
         $activeDepartments = Department::active()->count();
-        $inactiveDepartments = Department::where('status', 0)->count();
-        $departmentsWithHeads = Department::active()->whereHas('head')->count();
 
         $departments = $query->paginate(10)->withQueryString();
 
@@ -67,8 +65,6 @@ class DepartmentController extends Controller
             'departments',
             'totalDepartments',
             'activeDepartments',
-            'inactiveDepartments',
-            'departmentsWithHeads'
         ));
     }
 
@@ -171,7 +167,6 @@ class DepartmentController extends Controller
 
             // Handle logo upload
             if ($request->hasFile('logo')) {
-                // Delete old logo if exists
                 if ($department->logo && Storage::disk('public')->exists($department->logo)) {
                     Storage::disk('public')->delete($department->logo);
                 }
