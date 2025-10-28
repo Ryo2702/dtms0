@@ -506,8 +506,6 @@ public function markDone($id)
         try {
             $timing = $this->timingService->calculateDocumentTiming($review);
             
-
-            
             return response()->json([
                 'success' => true,
                 'remaining_minutes' => $timing['remaining_minutes'],

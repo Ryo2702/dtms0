@@ -98,7 +98,7 @@
                         @endif
 
                         @if (auth()->user()->type === 'Head' && $review->assigned_to === auth()->id() && $review->status === 'pending')
-                            <div class="divider">Review Actions (Department Head Only)</div>
+                            <div class="divider">Review Actions</div>
 
                             <form action="{{ route('documents.reviews.update', $review->id) }}" method="POST">
                                 @csrf
@@ -160,7 +160,15 @@
                                                 </label>
                                                 <select name="forward_to" class="select select-bordered">
                                                     <option value="">Select Department Head</option>
-                                                    @foreach (\App\Models\User::with('department')->where('type', 'Head')->where('id', '!=', auth()->id())->get()->groupBy('department.name') as $deptName => $users)
+                                                    @foreach (\App\Models\User::with('department')
+                                                        ->where('type', 'Head')
+                                                        ->where('id', '!=', auth()->id())
+                                                        ->whereHas('department', function($q) use ($review) {
+                                                            $q->where('id', '!=', $review->current_department_id)
+                                                              ->where('id', '!=', $review->original_department_id);
+                                                        })
+                                                        ->get()
+                                                        ->groupBy('department.name') as $deptName => $users)
                                                         <optgroup label="{{ $deptName ?? 'No Department' }}">
                                                             @foreach ($users as $user)
                                                                 <option value="{{ $user->id }}">{{ $user->name }}</option>

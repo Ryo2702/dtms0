@@ -50,7 +50,6 @@ class DocumentController extends Controller
         $user = auth()->user();
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
             'document_type' => 'required|string|max:255',
             'client_name' => 'required|string|max:255',
             'reviewer_id' => 'required|exists:users,id',
@@ -71,7 +70,6 @@ class DocumentController extends Controller
         $processTimeInMinutes = $this->convertTimeToMinutes($validated['process_time'], $validated['time_unit']);
 
         $documentData = [
-            'title' => $validated['title'],
             'document_type' => $validated['document_type'],
             'client_name' => $validated['client_name'],
             'reviewer_id' => $validated['reviewer_id'],
@@ -82,15 +80,14 @@ class DocumentController extends Controller
             'assigned_staff' => $validated['assigned_staff'],
             'attachment_path' => $attachmentPath,
             'initial_notes' => 'Document request form submitted for review',
-
         ];
 
         $docInfo = [
-            'title' => $validated['document_type'],
+            'title' => $validated['document_type']
         ];
 
         try {
-            $review = $this->workflowService->sendForReview($documentData, $docInfo, $documentId);
+            $review = $this->workflowService->sendForReview($documentData, $docInfo,$documentId);
 
             $this->printService->printReceipt($review);
             $printMessage = ' Receipt printed successfully.';
@@ -99,14 +96,14 @@ class DocumentController extends Controller
         }
 
         return redirect()->route('documents.index')
-            ->with('success', "Document '{$validated['title']}' has been created and sent for review. Document ID: {$documentId}." . $printMessage);
+            ->with('success', "Document '{$validated['document_type']}' has been created and sent for review. Document ID: {$documentId}." . $printMessage);
     }
 
     public function getDocumentTypes($departmentId)
     {
         $documentTypes = DocumentType::active()
             ->byDepartment($departmentId)
-            ->pluck('name')
+            ->pluck('title', 'id')
             ->toArray();
 
         return response()->json($documentTypes);

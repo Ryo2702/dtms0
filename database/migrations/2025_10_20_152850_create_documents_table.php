@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
             $table->string('document_id')->unique();
+            $table->string('document_type');
             $table->string('client_name');
-            $table->string('title');
             $table->unsignedBigInteger('reviewer_id');
             $table->integer('process_time');
             $table->enum('time_unit', ['minutes', 'days', 'weeks']);

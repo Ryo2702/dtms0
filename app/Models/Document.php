@@ -8,8 +8,8 @@ class Document extends Model
 {
     protected $fillable = [
         'document_id',
+        'document_type',
         'client_name',
-        'title',
         'reviewer_id',
         'process_time',
         'time_unit',
@@ -39,6 +39,9 @@ class Document extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function documentType() {
+        return $this->belongsTo(DocumentType::class, 'document_type', 'title');
+    }
     public function scopeDepartment($query, $departmentId) {
         return $query->where('department_id', $departmentId);
     }

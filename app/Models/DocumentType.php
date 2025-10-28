@@ -22,6 +22,10 @@ class DocumentType extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function documents()  {
+        return $this->hasMany(Document::class, 'document_type', 'title');
+    }
+
     public function scopeActive($query){
         return $query->where('is_active', true);
     }
