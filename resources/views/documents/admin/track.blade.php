@@ -23,7 +23,6 @@
             'department' => 'Department',
             'total_created' => 'Total Created',
             'pending_count' => 'Pending',
-            'approved_count' => 'Approved',
             'completed_count' => 'Completed',
             'rejected_count' => 'Rejected',
             'canceled_count' => 'Canceled',
@@ -35,7 +34,7 @@
                     <!-- Department Name -->
                     <td class="px-6 py-4">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0">
+                            <div class="shrink-0">
                                 <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                                     @if ($department->logo)
                                         <img src="{{ Storage::url($department->logo) }}" alt="{{ $department->name }} Logo"
@@ -69,17 +68,7 @@
                         </div>
                     </td>
 
-                    <!-- Approved (Not Downloaded) -->
-                    <td class="px-6 py-4">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-2xl font-bold">{{ $department->approved_count }}</span>
-                            @if($department->approved_count > 0)
-                                <x-status-badge status="approved" />
-                            @endif
-                        </div>
-                    </td>
-
-                    <!-- Completed (Downloaded) -->
+                    <!-- Completed -->
                     <td class="px-6 py-4">
                         <div class="flex items-center space-x-2">
                             <span class="text-2xl font-bold">{{ $department->completed_count }}</span>

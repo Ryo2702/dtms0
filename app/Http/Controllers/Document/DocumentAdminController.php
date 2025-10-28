@@ -4,16 +4,15 @@ namespace App\Http\Controllers\Document;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentReview;
-use App\Models\Department;
+use App\Services\Track\TrackServices;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+
 
 class DocumentAdminController extends Controller
 {
     public function track(Request $request)
     {
-        $user = Auth::user();
+        $user = auth()->user();
 
         if ($user->type !== 'Admin') {
             abort(403, 'Only administrators can access document tracking.');
@@ -21,50 +20,19 @@ class DocumentAdminController extends Controller
 
         $sortField = $request->get('sort', 'name');
         $sortDirection = $request->get('direction', 'asc');
-
         $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'asc';
 
-        $departments = Department::withCount([
-            'documentReviews as total_created',
-            'documentReviews as pending_count' => function ($query) {
-                $query->where('status', 'pending');
-            },
-            'documentReviews as completed_count' => function ($query) {
-                $query->where('status', 'approved')->whereNotNull('downloaded_at');
-            },
-            'documentReviews as rejected_count' => function ($query) {
-                $query->where('status', 'rejected');
-            },
-            'documentReviews as canceled_count' => function ($query) {
-                $query->where('status', 'canceled');
-            },
-            'documentReviews as approved_count' => function ($query) {
-                $query->where('status', 'approved')->whereNull('downloaded_at');
-            }
-        ]);
 
-        switch ($sortField) {
-            case 'department':
-                $departments->orderBy('name', $sortDirection);
-                break;
-            case 'total_created':
-            case 'pending_count':
-            case 'approved_count':
-            case 'completed_count':
-            case 'rejected_count':
-            case 'canceled_count':
-                $departments->orderBy($sortField, $sortDirection);
-                break;
-            default:
-                $departments->orderBy('name', 'asc');
-        }
-
-        $departments = $departments->paginate(15)->appends([
+        $departments = TrackServices::getDepartmentWithDocumentCounts([
+            'exclude_admin_heads' => true,
+            'sort_by' => $sortField,
+            'sort_direction' => $sortDirection,
+        ])->paginate(10)->appends([
             'sort' => $sortField,
-            'direction' => $sortDirection
+            'direction' => $sortDirection 
         ]);
 
-        $stats = $this->getStatistics();
+        $stats = TrackServices::getDocumentStatistics(['exclude_admin_heads' => true]);
 
         return view('documents.admin.track', compact(
             'departments',

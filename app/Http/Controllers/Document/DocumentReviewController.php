@@ -170,14 +170,7 @@ class DocumentReviewController extends Controller
                     $originalCreator = User::find($review->created_by);
                     $message = "Document review completed and returned to {$originalCreator->name}. Document is completed.";
                     break;
-
-                case 'approve':
-                    $notes = $this->buildCompletionNotes($request);
-                    $this->workflowService->completeReview($review, $user, $notes);
-                    $originalCreator = User::find($review->created_by);
-                    $message = "Document review approved and returned to {$originalCreator->name}. Document is approved.";
-                    break;
-
+                    
                 case 'reject':
                     $notes = $this->buildRejectionNotes($request);
                     $this->workflowService->rejectReview($review, $user, $notes);
