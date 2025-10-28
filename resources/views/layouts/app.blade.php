@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Municipal System')</title>
+    <title>@yield('title', 'DTMS System')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -18,12 +18,11 @@
     <nav class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside id="mobile-sidebar"
-            class="fixed top-0 left-0 z-50 w-64 h-screen text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary lg:translate-x-0 lg:static lg:flex-shrink-0">
+            class="fixed top-0 left-0 z-50 w-64 h-screen text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary lg:translate-x-0 lg:static lg:shrink-0">
             <x-sidebar />
         </aside>
 
 
-        <!-- Main Content Area -->
         <div class="flex flex-col flex-1 overflow-hidden">
             @php
                 $user = Auth::user();
@@ -47,61 +46,68 @@
 
                         <div class="items-center">
                             @if ($isAdmin)
-                                <span class="hidden sm:inline">DOCTRAMS</span>
+                                <span class="hidden sm:inline">System Administrator</span>
                                 <span class="sm:hidden">Admin</span>
                             @else
-                                <span class="hidden md:inline">{{ $user->department->name ?? 'DOCTRAMS' }}</span>
-                                <span class="md:hidden">{{ Str::limit($user->department->name ?? 'DOCTRAMS', 8) }}</span>
+                                <span class="hidden md:inline">{{ $user->department->name ?? 'System Administrator' }}</span>
+                                <span class="md:hidden">{{ Str::limit($user->department->name ?? 'System Administrator', 8) }}</span>
                             @endif
                         </div>
 
                     </h1>
                 </div>
-                <div class="navbar-center hidden md:flex">
-                    <form id="document-search-form" class="join">
-                        <input id="document-search" name="document_id" type="text" placeholder="Search Document"
-                            class="input input-bordered join-item text-sm" />
-                        <button type="submit" class="btn btn-square join-item" aria-label="Search">
-                            <i data-lucide="search" class="h-4 w-4"></i>
-                        </button>
-                    </form>
-                </div>
 
-                <div class="navbar-end gap-3">
-                    <!-- Notification bell -->
-                    <div class="relative z-[100]">
-                        <button id="notification-bell" class="btn btn-ghost btn-circle text-white">
-                            <div class="indicator">
-                                <i data-lucide="bell" fill="none" class="h-6 w-6 text-white"></i>
-                                <span id="notification-badge"
-                                    class="badge badge-xs badge-error indicator-item hidden"></span>
-                            </div>
-                        </button>
 
-                        <!-- Notification Dropdown -->
-                        <div id="notification-dropdown"
-                            class="hidden absolute right-0 mt-3 w-80 max-h-96 overflow-y-auto bg-white text-black rounded-box shadow-xl border border-base-300 z-[100]">
-                            <div class="p-4 border-b border-base-300 bg-base-200">
-                                <h3 class="font-bold text-lg">Notifications</h3>
-                                <p class="text-sm opacity-70">Recent updates</p>
-                            </div>
+                @if ($user->type !== 'Admin')
 
-                            <div id="notification-list" class="divide-y divide-base-300">
-                                <div class="p-4 text-center text-sm opacity-50">
-                                    Loading notifications...
+                    <div class="navbar-center hidden md:flex">
+                        <form id="document-search-form" class="join">
+                            <input id="document-search" name="document_id" type="text" placeholder="Search Document"
+                                class="input input-bordered join-item text-sm" />
+                            <button type="submit" class="btn btn-square join-item" aria-label="Search">
+                                <i data-lucide="search" class="h-4 w-4"></i>
+                            </button>
+                        </form>
+                    </div>
+
+
+                    <div class="navbar-end gap-3">
+                        <!-- Notification bell -->
+                        <div class="relative z-100">
+                            <button id="notification-bell" class="btn btn-ghost btn-circle text-white">
+                                <div class="indicator">
+                                    <i data-lucide="bell" fill="none" class="h-6 w-6 text-white"></i>
+                                    <span id="notification-badge"
+                                        class="badge badge-xs badge-error indicator-item hidden"></span>
                                 </div>
-                            </div>
+                            </button>
 
-                            <div class="p-3 border-t border-base-300 bg-base-200 text-center">
-                                <button id="mark-all-read" class="btn btn-sm btn-ghost">
-                                    Mark all as read
-                                </button>
+                            <!-- Notification Dropdown -->
+                            <div id="notification-dropdown"
+                                class="hidden absolute right-0 mt-3 w-80 max-h-96 overflow-y-auto bg-white text-black rounded-box shadow-xl border border-base-300 z-100">
+                                <div class="p-4 border-b border-base-300 bg-base-200">
+                                    <h3 class="font-bold text-lg">Notifications</h3>
+                                    <p class="text-sm opacity-70">Recent updates</p>
+                                </div>
+
+                                <div id="notification-list" class="divide-y divide-base-300">
+                                    <div class="p-4 text-center text-sm opacity-50">
+                                        Loading notifications...
+                                    </div>
+                                </div>
+
+                                <div class="p-3 border-t border-base-300 bg-base-200 text-center">
+                                    <button id="mark-all-read" class="btn btn-sm btn-ghost">
+                                        Mark all as read
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
+
             </div>
-          
+
             <!-- Main Content Area -->
             <main class="flex-1 p-6 overflow-y-auto bg-dtms-bg">
                 @yield('content')
@@ -109,12 +115,11 @@
         </div>
     </nav>
 
-            {{-- Flash Messages --}}
-            <x-toast :message="session('success')" type="success" title="Success" :timeout="5000"
-                position="bottom-right" />
-            <x-toast :message="session('error')" type="error" title="Error" :timeout="6000" position="bottom-right" />
-            <x-toast :messages="$errors->all()" type="warning" title="Validation Failed" :timeout="8000"
-                position="bottom-right" />
+    {{-- Flash Messages --}}
+    <x-toast :message="session('success')" type="success" title="Success" :timeout="5000" position="bottom-right" />
+    <x-toast :message="session('error')" type="error" title="Error" :timeout="6000" position="bottom-right" />
+    <x-toast :messages="$errors->all()" type="warning" title="Validation Failed" :timeout="8000"
+        position="bottom-right" />
     @stack('scripts')
 
     <script>
@@ -299,11 +304,11 @@
         }
 
         // Click outside to close
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             if (notificationBell && notificationDropdown) {
                 const isClickInsideBell = notificationBell.contains(event.target);
                 const isClickInsideDropdown = notificationDropdown.contains(event.target);
-                
+
                 if (!isClickInsideBell && !isClickInsideDropdown) {
                     closeNotificationDropdown();
                 }
@@ -332,7 +337,6 @@
                 });
         }
 
-        // Render notifications in dropdown
         function renderNotifications(notifications) {
             if (!notifications || notifications.length === 0) {
                 notificationList.innerHTML = `
@@ -386,7 +390,7 @@
                     const type = this.dataset.type;
 
                     markAsRead(notificationId);
-                    
+
                     // Close the dropdown
                     closeNotificationDropdown();
 
@@ -518,11 +522,9 @@
             toggleNotificationDropdown();
         });
 
-        // Initial load - only fetch count, not full list
         fetchUnreadCount();
-        setInterval(fetchUnreadCount, 30000); // Update count every 30 seconds
+        setInterval(fetchUnreadCount, 30000);
 
-        // Update when page becomes visible
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {
                 fetchUnreadCount();

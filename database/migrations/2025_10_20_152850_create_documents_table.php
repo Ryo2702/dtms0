@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('process_time');
             $table->enum('time_unit', ['minutes', 'days', 'weeks']);
             $table->integer('time_value');
-            $table->enum('difficulty', ['normal', 'important', 'urgent', 'immediate']);
+            $table->enum('priority', ['low','normal', 'medium', 'high', 'urgent']);
             $table->string('assigned_staff');
             $table->string('attachment_path')->nullable();
             $table->string('created_via');

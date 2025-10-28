@@ -14,7 +14,7 @@ class Document extends Model
         'process_time',
         'time_unit',
         'time_value',
-        'difficulty',
+        'priority',
         'assigned_staff',
         'attachment_path',
         'created_via',
@@ -25,7 +25,7 @@ class Document extends Model
     protected $casts = [
         'process_time' => 'integer',
         'time_value' => 'integer',
-        'difficulty' => 'string',
+        'priority' => 'string',
         'time_unit' => 'string',
         'created_via' => 'string',
         'status' => 'string'
@@ -47,20 +47,21 @@ class Document extends Model
         return $query->where('status', $status);
     }
 
-    public function scopeByDifficulty($query, $difficulty)  {
-        return $query->where('difficulty', $difficulty);
+    public function scopeByPriority($query, $priority)  {
+        return $query->where('priority', $priority);
     }
 
     public function getFormattedProcessTimeAttribute() {
         return $this->time_value . ' ' . $this->time_unit;
     }
 
-    public function getDifficultyColorAttribute() {
-        return match ($this->difficulty) {
+    public function getPriorityBadgeClassAttribute() {
+        return match ($this->attributes['priority'] ?? 'low') {
+            'low' => 'secondary',
             'normal' => 'success',
-            'important' => 'info',
+            'medium' => 'info',
+            'high' => 'danger',
             'urgent' => 'danger',
-            'immediate' => 'danger',
             default => 'secondary'
         };
     }

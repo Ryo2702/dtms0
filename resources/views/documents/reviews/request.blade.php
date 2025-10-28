@@ -50,7 +50,7 @@
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
-                                            <div class="flex-shrink-0">
+                                            <div class="shrink-0">
                                                 <div
                                                     class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                                                     <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24"

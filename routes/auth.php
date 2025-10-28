@@ -46,7 +46,7 @@ Route::middleware(['auth'])->group(function () {
         });
 
         Route::prefix('status')->name('status.')->group(function () {
-            Route::get('/pending', [DocumentReviewController::class, 'index'])->name('pending');
+            Route::get('/pending', [DocumentReviewController::class, 'pending'])->name('pending');
             Route::get('/closed', [DocumentReviewController::class, 'closed'])->name('closed');
             Route::get('/rejected', [DocumentReviewController::class, 'rejected'])->name('rejected');
             Route::get('/canceled', [DocumentReviewController::class, 'canceled'])->name('canceled');

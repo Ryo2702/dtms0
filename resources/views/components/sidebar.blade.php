@@ -70,7 +70,7 @@
                         </a>
                     </li>
               
-                @else ($user->type === 'Head')
+                @else 
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Document Management</span>
                     </li>

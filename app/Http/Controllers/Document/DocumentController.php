@@ -5,10 +5,8 @@ namespace App\Http\Controllers\Document;
 use App\Http\Controllers\Controller;
 use App\Models\AssignStaff;
 use App\Models\Department;
-use App\Models\DocumentReview;
 use App\Models\User;
 use App\Models\DocumentType;
-use App\Models\Document; // Add this import
 use App\Services\Document\DocumentIdGenerator;
 use App\Services\Document\DocumentPrintService;
 use App\Services\Document\DocumentWorkflowService;
@@ -58,7 +56,7 @@ class DocumentController extends Controller
             'reviewer_id' => 'required|exists:users,id',
             'process_time' => 'required|integer|min:1',
             'time_unit' => 'required|in:minutes,days,weeks',
-            'difficulty' => 'required|in:low,normal,medium,high,urgent',
+            'priority' => 'required|in:low,normal,medium,high,urgent',
             'assigned_staff' => 'required|string|max:255',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
         ]);
@@ -80,7 +78,7 @@ class DocumentController extends Controller
             'process_time' => $processTimeInMinutes,
             'time_value' => $validated['process_time'],
             'time_unit' => $validated['time_unit'],
-            'difficulty' => $validated['difficulty'],
+            'priority' => $validated['priority'],
             'assigned_staff' => $validated['assigned_staff'],
             'attachment_path' => $attachmentPath,
             'initial_notes' => 'Document request form submitted for review',

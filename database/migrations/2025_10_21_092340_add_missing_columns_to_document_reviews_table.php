@@ -11,8 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('document_reviews', function (Blueprint $table) {
-            if (!Schema::hasColumn('document_reviews', 'difficulty')) {
-                $table->string('difficulty')->default('normal')->after('client_name');
+            if (!Schema::hasColumn('document_reviews', 'priority')) {
+                $table->string('priority')->after('client_name');
             }
             if (!Schema::hasColumn('document_reviews', 'time_value')) {
                 $table->integer('time_value')->nullable()->after('process_time_minutes');

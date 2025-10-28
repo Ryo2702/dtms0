@@ -13,7 +13,7 @@ class DocumentWorkflowService
     {
         $user = Auth::user();
 
-        if (! in_array($user->type, ['Staff', 'Head'])) {
+        if ($user->type !== 'Head') {
             throw new \Exception('You do not have permission to send documents for review.');
         }
 
@@ -40,7 +40,7 @@ class DocumentWorkflowService
             'process_time_minutes' => $processTime,
             'submitted_at' => now(),
             'due_at' => now()->addMinutes($processTime),
-            'difficulty' => $data['difficulty'] ?? 'normal',
+            'priority' => $data['priority'] ?? 'low',
             'time_value' => $data['time_value'] ?? null,
             'time_unit' => $data['time_unit'] ?? 'minutes',
             'attachment_path' => $data['attachment_path'] ?? null,

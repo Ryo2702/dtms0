@@ -21,7 +21,7 @@ class DocumentReviewController extends Controller
     ) {
     }
 
-    public function index(Request $request)
+    public function pending(Request $request)
     {
         $user = Auth::user();
         $status = $request->get('status');
@@ -35,7 +35,6 @@ class DocumentReviewController extends Controller
                     ->orWhere('current_department_id', $user->department_id);
             });
         } else {
-            // For regular users, show documents assigned to them OR documents they created that are approved and ready for download
             $query->where(function ($q) use ($user) {
                 $q->where('assigned_to', $user->id)
                     ->orWhere(function ($subQ) use ($user) {
@@ -49,7 +48,6 @@ class DocumentReviewController extends Controller
         if ($status) {
             $this->applyStatusFilter($query, $status, $user);
         } else {
-            // Show pending documents OR approved documents waiting for download
             $query->where(function ($q) {
                 $q->where('status', 'pending')
                     ->orWhere(function ($subQ) {
@@ -170,7 +168,7 @@ class DocumentReviewController extends Controller
                     $originalCreator = User::find($review->created_by);
                     $message = "Document review completed and returned to {$originalCreator->name}. Document is completed.";
                     break;
-                    
+
                 case 'reject':
                     $notes = $this->buildRejectionNotes($request);
                     $this->workflowService->rejectReview($review, $user, $notes);

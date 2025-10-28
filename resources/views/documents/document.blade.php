@@ -153,22 +153,22 @@
                                 @enderror
                             </div>
 
-                            <!-- Difficulty -->
+                            <!-- Priority -->
                             <div class="form-control">
                                 <label class="label">
-                                    <span class="label-text font-medium">Difficulty Level *</span>
+                                    <span class="label-text font-medium">Priority Level *</span>
                                 </label>
-                                <select name="difficulty" required 
-                                    class="select select-bordered w-full @error('difficulty') select-error @enderror"
-                                    onchange="updateDifficultyColor(this)">
+                                <select name="priority" required 
+                                    class="select select-bordered w-full @error('priority') select-error @enderror"
+                                    onchange="updatePriority(this)">
                                     <option value="">Select Priority</option>
-                                    <option value="low" {{ old('difficulty') == 'low' ? 'selected' : '' }}>Low</option>
-                                    <option value="normal" {{ old('difficulty') == 'normal' ? 'selected' : '' }}>Normal</option>
-                                    <option value="medium"  {{ old('difficulty') == 'medium' ? 'selected' : '' }}>Medium</option>
-                                    <option value="high"  {{ old('difficulty') == 'high' ? 'selected' : '' }}>High</option>
-                                    <option value="urgent" {{ old('difficulty') == 'urgent' ? 'selected' : '' }}>Urgent</option>
+                                    <option value="low" {{ old('priority') == 'low' ? 'selected' : '' }}>Low</option>
+                                    <option value="normal" {{ old('priority') == 'normal' ? 'selected' : '' }}>Normal</option>
+                                    <option value="medium"  {{ old('priority') == 'medium' ? 'selected' : '' }}>Medium</option>
+                                    <option value="high"  {{ old('priority') == 'high' ? 'selected' : '' }}>High</option>
+                                    <option value="urgent" {{ old('priority') == 'urgent' ? 'selected' : '' }}>Urgent</option>
                                 </select>
-                                @error('difficulty')
+                                @error('priority')
                                     <label class="label">
                                         <span class="label-text-alt text-error">{{ $message }}</span>
                                     </label>
@@ -254,13 +254,14 @@
             }
         }
 
-        function updateDifficultyColor(select) {
+        function updatePriority(select) {
             const value = select.value;
             const colors = {
+                'low': '',
                 'normal': '#10b981',
-                'important': '#f59e0b', 
-                'urgent': '#ef4444',
-                'immediate': '#7c2d12'
+                'medium': '#f59e0b', 
+                'high': '#ef4444',
+                'urgent': '#7c2d12'
             };
             
             if (colors[value]) {

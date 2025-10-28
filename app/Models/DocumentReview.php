@@ -28,8 +28,8 @@ class DocumentReview extends Model
         'due_at',
         'forwarding_chain',
         'is_final_review',
-        'completed_on_time',
-        'difficulty', 
+        'completed_on_time', 
+        'priority',
         'time_value', 
         'time_unit',
         'attachment_path',
@@ -46,6 +46,7 @@ class DocumentReview extends Model
         'due_at' => 'datetime',
         'is_final_review' => 'boolean',
         'completed_on_time' => 'boolean',
+        'priority' => 'string',
         'process_time_minutes' => 'integer',
     ];
 
@@ -69,8 +70,6 @@ class DocumentReview extends Model
     {
         return $this->belongsTo(Department::class, 'original_department_id');
     }
-
-    // Helper methods
     public function isExpired()
     {
         return $this->due_at && now()->gt($this->due_at);
@@ -242,5 +241,22 @@ class DocumentReview extends Model
     public function scopeCreatedBy($query, $userId)
     {
         return $query->where('created_by', $userId);
+    }
+
+    public function getPriorityBadgeClassAttribute()
+    {
+        return match ($this->priority ?? 'low') {
+            'low' => 'secondary',
+            'normal' => 'success',
+            'medium' => 'info',
+            'high' => 'danger',
+            'urgent' => 'danger',
+            default => 'secondary'
+        };
+    }
+
+    public function getDisplayPriorityAttribute()
+    {
+        return $this->priority ?? 'low';
     }
 }
