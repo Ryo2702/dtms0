@@ -1,7 +1,7 @@
 
 
 {{-- Document Processing Section --}}
-<div class="border border-green-200 card bg-gradient-to-r from-green-50 to-blue-50">
+<div class="border border-green-200 card bg-linear-to-r from-green-50 to-blue-50">
     <div class="card-body">
         <div class="relative flex justify-between">
             <h3 class="flex mb-4 text-lg text-green-800 card-title">
@@ -25,7 +25,7 @@
                     <span class="label-text-alt">Choose the first department to review</span>
                 </label>
                 <select name="reviewer_id" class="select select-bordered" required>
-                    <option value="">Select department for initial review</option>
+                    <option value="">Select department for initial reviews</option>
                     @foreach (\App\Models\User::with('department')->where('type', 'Head')->where('id', '!=', auth()->id())->get()->groupBy('department.name') as $deptName => $users)
                         <optgroup label="{{ $deptName ?? 'No Department' }}">
                             @foreach ($users as $user)
