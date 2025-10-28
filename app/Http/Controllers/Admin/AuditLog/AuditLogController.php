@@ -6,6 +6,7 @@ use App\Exports\AuditLogsExport;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\Department\DepartmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -17,8 +18,10 @@ class AuditLogController extends Controller
      */
     public function index(Request $request)
     {
-        $query = AuditLog::with('user')->latest();
-
+        $query = DepartmentService::getFilteredDepartments([
+            'with_relations' => ['head'],
+            'exclude_admin_heads' => true
+        ]);
         // Apply filters
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);

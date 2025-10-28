@@ -53,6 +53,7 @@
                 $totalUsers = \App\Models\User::count();
                 $totalDepartments = \App\Models\Department::count();
                 $totalDocuments = \App\Models\DocumentReview::count();
+                $totalStaff = \App\Models\AssignStaff::count();
                 $pendingReviews = \App\Models\DocumentReview::where('status', 'pending')->count();
                 $completedToday = \App\Models\DocumentReview::where('status', 'approved')
                     ->whereDate('reviewed_at', today())->count();
@@ -111,6 +112,12 @@
                     title="Total Documents" 
                     :value="$totalDocuments"
                     iconName="file-text"
+                />
+
+                <x-stat-card 
+                    title="Total Staff" 
+                    :value="$totalStaff"
+                    iconName="users-round"
                 />
                 
                 <x-stat-card 

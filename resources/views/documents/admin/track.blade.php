@@ -19,7 +19,6 @@
             <x-stat-card bgColor="bg-stat-info" title="Avg. Processing" :value="$stats['avg_processing_time'] ? number_format($stats['avg_processing_time']) . 'm' : 'N/A'" />
         </div>
 
-        {{-- Department Statistics Table --}}
         <x-data-table :headers="[
             'department' => 'Department',
             'total_created' => 'Total Created',
@@ -28,8 +27,7 @@
             'completed_count' => 'Completed',
             'rejected_count' => 'Rejected',
             'canceled_count' => 'Canceled',
-        ]" :paginator="$departments"
-            :sortableFields="['department', 'total_created', 'pending_count', 'approved_count', 'completed_count', 'rejected_count', 'canceled_count']"
+        ]" :paginator="$departments" :sortableFields="['department', 'total_created', 'pending_count', 'approved_count', 'completed_count', 'rejected_count', 'canceled_count']"
             emptyMessage="No departments found.">
 
             @foreach ($departments as $department)
@@ -39,7 +37,12 @@
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
                                 <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <i data-lucide="building" class="h-5 w-5 text-blue-600"></i>
+                                    @if ($department->logo)
+                                        <img src="{{ Storage::url($department->logo) }}" alt="{{ $department->name }} Logo"
+                                            class="w-12 h-12 object-cover rounded" />
+                                    @else
+                                        <span>—</span>
+                                    @endif
                                 </div>
                             </div>
                             <div class="ml-4">

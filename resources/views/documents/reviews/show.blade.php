@@ -61,7 +61,6 @@
                                     </span>
                                 </p>
                                 
-                                <!-- Time Information -->
                                 <p><strong>Allocated Time:</strong> 
                                     @if($review->time_value && $review->time_unit)
                                         {{ formatTime($review->time_value, $review->time_unit) }}

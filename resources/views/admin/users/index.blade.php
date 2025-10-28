@@ -15,16 +15,18 @@
             :statuses="['active' => 'Active', 'inactive' => 'Inactive']" containerId="filter-results" />
 
         <div id="filter-results">
-            <x-data-table :headers="['ID', 'Employee ID', 'Name', 'Email', 'Type', 'Department', 'Status', 'Online', 'Actions']" :paginator="$users" :sortableFields="['id', 'employee_id', 'name', 'email', 'type']" emptyMessage="No users found.">
+            <x-data-table :headers="['ID', 'Employee ID', 'Name', 'Department','Type','Email', 'Status', 'Online', 'Actions']" :paginator="$users" :sortableFields="['id', 'employee_id', 'name', 'email', 'type']" emptyMessage="No users found.">
 
                 @foreach ($users as $user)
                     <tr>
-                        <td class="px-4 py-3">{{ $user->id }}</td>
+                        <td class="px-4 py-3">{{ $users->firstItem() + $loop->index }}</td>
                         <td class="px-4 py-3 font-mono text-xs">{{ $user->employee_id }}</td>
                         <td class="px-4 py-3 font-medium">{{ $user->name }}</td>
+                          <td class="px-4 py-3">{{ $user->department?->name ?? '—' }}</td>
+                           <td class="px-4 py-3">{{ $user->type }}</td>
                         <td class="px-4 py-3">{{ $user->email }}</td>
-                        <td class="px-4 py-3">{{ $user->type }}</td>
-                        <td class="px-4 py-3">{{ $user->department?->name ?? '—' }}</td>
+                       
+                      
                         <td class="px-4 py-3">
                             <x-status-badge :status="$user->status ? 'active' : 'inactive'" />
                         </td>
