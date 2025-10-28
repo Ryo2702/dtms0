@@ -58,7 +58,7 @@ class DocumentController extends Controller
             'reviewer_id' => 'required|exists:users,id',
             'process_time' => 'required|integer|min:1',
             'time_unit' => 'required|in:minutes,days,weeks',
-            'difficulty' => 'required|in:normal,important,urgent,immediate',
+            'difficulty' => 'required|in:low,normal,medium,high,urgent',
             'assigned_staff' => 'required|string|max:255',
             'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
         ]);

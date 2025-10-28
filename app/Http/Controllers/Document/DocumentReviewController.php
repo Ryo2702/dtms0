@@ -61,14 +61,12 @@ class DocumentReviewController extends Controller
 
         $reviews = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        // Efficiently calculate timing for all reviews at once
         $this->timingService->calculateMultipleDocumentsTiming($reviews->getCollection());
 
         $reviews->getCollection()->transform(function ($review) {
             $review->is_overdue = $review->calculated_is_overdue ?? $review->is_overdue;
             $review->due_status = $this->getDueStatus($review);
             
-            // Ensure submitted_at exists - use created_at if submitted_at is null
             if (!$review->submitted_at) {
                 $review->submitted_at = $review->created_at;
             }
@@ -86,7 +84,6 @@ class DocumentReviewController extends Controller
 
         $user = Auth::user();
 
-        $this->calculateTimeProperties($review);
 
         $assignedStaff = AssignStaff::where('is_active', true)
             ->where('department_id', $user->department_id)

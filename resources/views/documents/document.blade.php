@@ -161,11 +161,12 @@
                                 <select name="difficulty" required 
                                     class="select select-bordered w-full @error('difficulty') select-error @enderror"
                                     onchange="updateDifficultyColor(this)">
-                                    <option value="">Select Difficulty</option>
-                                    <option value="normal" style="background-color: #10b981; color: white;" {{ old('difficulty') == 'normal' ? 'selected' : '' }}>Normal</option>
-                                    <option value="important" style="background-color: #f59e0b; color: white;" {{ old('difficulty') == 'important' ? 'selected' : '' }}>Important</option>
-                                    <option value="urgent" style="background-color: #ef4444; color: white;" {{ old('difficulty') == 'urgent' ? 'selected' : '' }}>Urgent</option>
-                                    <option value="immediate" style="background-color: #7c2d12; color: white;" {{ old('difficulty') == 'immediate' ? 'selected' : '' }}>Immediate</option>
+                                    <option value="">Select Priority</option>
+                                    <option value="low" {{ old('difficulty') == 'low' ? 'selected' : '' }}>Low</option>
+                                    <option value="normal" {{ old('difficulty') == 'normal' ? 'selected' : '' }}>Normal</option>
+                                    <option value="medium"  {{ old('difficulty') == 'medium' ? 'selected' : '' }}>Medium</option>
+                                    <option value="high"  {{ old('difficulty') == 'high' ? 'selected' : '' }}>High</option>
+                                    <option value="urgent" {{ old('difficulty') == 'urgent' ? 'selected' : '' }}>Urgent</option>
                                 </select>
                                 @error('difficulty')
                                     <label class="label">

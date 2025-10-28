@@ -27,12 +27,13 @@
                                 <p><strong>Client:</strong> {{ $review->client_name }}</p>
                                 <p><strong>Difficulty:</strong> 
                                     @php
-                                        $difficulty = $review->difficulty ?? 'normal';
+                                        $difficulty = $review->difficulty ?? 'low';
                                         $badgeClass = $review->status === 'approved' ? 'badge badge-success' : match($difficulty) {
+                                            'low' => 'badge badge-ghost',
                                             'normal' => 'badge badge-success',
-                                            'important' => 'badge badge-warning', 
+                                            'medium' => 'badge badge-warning', 
+                                            'high' => 'badge badge-error',
                                             'urgent' => 'badge badge-error',
-                                            'immediate' => 'badge badge-error',
                                             default => 'badge badge-neutral',
                                         };
                                     @endphp
@@ -86,7 +87,7 @@
                         <div class="mb-6">
                             <div class="p-4 space-y-2 rounded bg-base-200">
                                 @foreach ($review->document_data as $key => $value)
-                                    @if (!in_array($key, ['action', 'reviewer_id', 'initial_notes']))
+                                    @if (!in_array($key, ['action', 'reviewer_id', 'initial_notes', 'time_unit', 'time_value']))
                                         <p><strong>{{ ucfirst(str_replace('_', ' ', $key)) }}:</strong>
                                             {{ $value }}</p>
                                     @endif
@@ -202,19 +203,6 @@
                                                         <option value="minutes">Minutes</option>
                                                         <option value="days">Days</option>
                                                         <option value="weeks">Weeks</option>
-                                                    </select>
-                                                </div>
-                                                <div class="form-control">
-                                                    <label class="label">
-                                                        <span class="font-semibold label-text">Assign Staff for Next Dept</span>
-                                                    </label>
-                                                    <select name="forward_assigned_staff" class="select select-bordered">
-                                                        <option value="">Auto-assign</option>
-                                                        @foreach($assignedStaff as $staff)
-                                                            <option value="{{ $staff['full_name'] }}">
-                                                                {{ $staff['full_name'] }} - {{ $staff['position'] }}
-                                                            </option>
-                                                        @endforeach
                                                     </select>
                                                 </div>
                                             </div>
@@ -407,10 +395,9 @@
 
                                             <!-- Step-specific countdown/status - hide overdue warnings if approved -->
                                             @if ($isPendingStep && $review->status !== 'approved')
-                                                @if ($stepIsOverdue && $stepRemainingTime !== null)
+                                                @if ($stepIsOverdue)
                                                     <div class="p-2 mt-2 border border-red-300 rounded bg-red-50">
                                                         <p class="text-sm font-bold text-red-700">
-                                                            <i class="mr-1">⚠️</i>
                                                             <strong>{{ $toDepartment ?? $fromDepartment }}</strong> is OVERDUE by 
                                                             <span class="step-countdown-timer" 
                                                                   data-remaining-minutes="{{ round(abs($stepRemainingTime)) }}"
@@ -419,7 +406,7 @@
                                                                 {{ formatRemainingTime(round(abs($stepRemainingTime))) }}
                                                             </span>
                                                         </p>
-                                                        <p class="text-xs text-red-600">This department is delaying the process!</p>
+
                                                     </div>
                                                 @elseif (!$stepIsOverdue && $stepRemainingTime !== null && $stepRemainingTime > 0)
                                                     <div class="p-2 mt-2 border border-yellow-300 rounded bg-yellow-50">
@@ -572,7 +559,6 @@
                                             @if ($review->is_overdue)
                                                 <div class="p-2 mt-2 border border-red-300 rounded bg-red-50">
                                                     <p class="text-sm font-bold text-red-700">
-                                                        <i class="mr-1">⚠️</i>
                                                         <strong>{{ $review->reviewer->department->name ?? 'This Department' }}</strong> is OVERDUE by
                                                         <span class="overall-countdown-timer" 
                                                               data-remaining-minutes="{{ round(abs($review->remaining_time_minutes)) }}"
@@ -600,7 +586,6 @@
                                         @elseif ($review->status === 'approved')
                                             <div class="p-2 mt-2 border border-green-300 rounded bg-green-50">
                                                 <p class="text-sm font-bold text-green-700">
-                                                    <i class="mr-1">✅</i>
                                                     Document successfully approved and completed!
                                                 </p>
                                                 <p class="text-xs text-green-600">Ready for final processing.</p>

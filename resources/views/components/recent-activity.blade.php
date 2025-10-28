@@ -21,11 +21,24 @@
         @if (count($activities) > 0)
             <div class="space-y-4 max-h-96 overflow-y-auto">
                 @foreach ($activities->take($maxItems) as $activity)
-                    <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-primary/5 transition-colors 
-                        @if(isset($activity['difficulty']) && $activity['difficulty'] === 'immediate') border-l-4 border-red-900 @endif
-                        @if(isset($activity['difficulty']) && $activity['difficulty'] === 'urgent') border-l-4 border-red-500 @endif
-                        @if(isset($activity['difficulty']) && $activity['difficulty'] === 'important') border-l-4 border-orange-500 @endif">
-                        <div class="flex-shrink-0">
+                    @php
+                        $borderClass = '';
+                        if (isset($activity['difficulty'])) {
+                            if ($activity['difficulty'] === 'urgent') {
+                                $borderClass = 'border-l-4 border-red-900';
+                            } elseif ($activity['difficulty'] === 'high') {
+                                $borderClass = 'border-l-4 border-red-500';
+                            } elseif ($activity['difficulty'] === 'medium') {
+                                $borderClass = 'border-l-4 border-orange-500';
+                            } elseif ($activity['difficulty'] === 'normal') {
+                                $borderClass = 'border-l-4 border-green-500';
+                            } elseif ($activity['difficulty'] === 'low') {
+                                $borderClass = 'border-l-4 border-orange-500';
+                            }
+                        }
+                    @endphp
+                    <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-primary/5 transition-colors {{ $borderClass }}">
+                        <div class="shrink-0">
                             @if ($activity['type'] === 'document_submitted')
                                 <div class="p-2 rounded-full" style="background-color: rgba(39, 84, 138, 0.1); color: #27548A;">
                                     <x-dynamic-component component="lucide-file-plus" class="w-4 h-4" />
@@ -77,10 +90,11 @@
                                             @if (isset($activity['metadata']['difficulty']))
                                                 @php
                                                     $difficultyColors = [
-                                                        'immediate' => 'background-color: #7c2d12; color: white;',
-                                                        'urgent' => 'background-color: #ef4444; color: white;',
-                                                        'important' => 'background-color: #f59e0b; color: white;',
+                                                        'urgent' => 'background-color: #7c2d12; color: white;',
+                                                        'high' => 'background-color: #ef4444; color: white;',
+                                                        'medium' => 'background-color: #f59e0b; color: white;',
                                                         'normal' => 'background-color: #10b981; color: white;',
+                                                        'low' => 'background-color: #10b921; color: white;',
                                                     ];
                                                     $difficultyStyle = $difficultyColors[$activity['metadata']['difficulty']] ?? '';
                                                 @endphp
@@ -91,7 +105,7 @@
                                         </div>
                                     @endif
                                 </div>
-                                <div class="flex-shrink-0 text-right">
+                                <div class="shrink-0 text-right">
                                     <p class="text-xs text-base-content/60">
                                         {{ $activity['time_ago'] }}
                                     </p>
