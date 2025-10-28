@@ -22,29 +22,19 @@
 
                         <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
                             <div>
-                                <h3 class="mb-2 text-lg font-semibold">Document Information</h3>
+                            <h3 class="mb-2 text-lg font-semibold">Document Information</h3>
                                 <p><strong>Type:</strong> {{ $review->document_type }}</p>
                                 <p><strong>Client:</strong> {{ $review->client_name }}</p>
-                                <p><strong>Difficulty:</strong> 
-                                    @php
-                                        $difficulty = $review->difficulty ?? 'low';
-                                        $badgeClass = $review->status === 'approved' ? 'badge badge-success' : match($difficulty) {
-                                            'low' => 'badge badge-ghost',
-                                            'normal' => 'badge badge-success',
-                                            'medium' => 'badge badge-warning', 
-                                            'high' => 'badge badge-error',
-                                            'urgent' => 'badge badge-error',
-                                            default => 'badge badge-neutral',
-                                        };
-                                    @endphp
-                                    <span class="{{ $badgeClass }}">
-                                        {{ ucfirst($difficulty) }}
+                                <p><strong>Priority:</strong> 
+                                    <span class="badge {{ $review->priority_badge_class }}">
+                                        {{ ucfirst($review->display_priority) }}
                                     </span>
                                 </p>
                                 <p><strong>Assigned Staff:</strong> {{ $review->assigned_staff ?? 'Not assigned' }}</p>
                                 <p><strong>Current Reviewer:</strong> {{ $review->reviewer?->name }}
                                     ({{ $review->reviewer?->department?->name }})</p>
                                 <p><strong>Submitted:</strong> {{ $review->submitted_at->format('M d, Y H:i') }}</p>
+                            
                             </div>
 
                             <div>

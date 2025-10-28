@@ -31,6 +31,7 @@
                         'document_id' => 'Document ID',
                         'document_type' => 'Type',
                         'client_name' => 'Client',
+                        'priority' => 'Priority',
                         'status' => 'Status',
                         'created_by' => 'Created By',
                         'reviewed_by' => 'Reviewed By',
@@ -50,6 +51,11 @@
                                 <div class="font-semibold">{{ $review->document_type }}</div>
                             </td>
                             <td class="px-4 py-3">{{ $review->client_name }}</td>
+                               <td class="px-4 py-3">
+                                <span class="badge badge-{{ $review->priority_badge_class }}">
+                                    {{ ucfirst($review->display_priority) }}
+                                </span>
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="badge badge-error">
                                     {{ ucfirst($review->status) }}

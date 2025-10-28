@@ -58,22 +58,7 @@
                                 <span class="label-text-alt" id="document_description"></span>
                             </label>
                         </div>
-
-                        <!-- Document Title (Auto-filled) -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium">Document Title *</span>
-                            </label>
-                            <input type="text" name="title" id="document_title" required 
-                                class="input input-bordered w-full @error('title') input-error @enderror" 
-                                placeholder="Auto-filled based on document type" value="{{ old('title') }}" readonly>
-                            @error('title')
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ $message }}</span>
-                                </label>
-                            @enderror
-                        </div>
-
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Client Name -->
                             <div class="form-control">
