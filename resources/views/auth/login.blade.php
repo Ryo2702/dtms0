@@ -40,6 +40,9 @@
                         <input type="password" name="password" class="input input-bordered" required>
                     </label>
 
+                     <div class="mt-2 text-center">
+                        <a href="/" class="text-sm link link-primary">Forgot password</a>
+                    </div>
                     <button type="submit" class="btn btn-primary mt-6 w-full" id="loginButton">
                         <span id="buttonText">Login</span>
                     </button>

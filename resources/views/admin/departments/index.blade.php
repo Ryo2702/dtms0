@@ -6,12 +6,6 @@
             icon="plus" />
 
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-            <x-stat-card bgColor="bg-stat-primary" title="Total Departments" :value="$totalDepartments ?? 0" />
-            <x-stat-card bgColor="bg-stat-secondary" title="Active Departments" :value="$activeDepartments ?? 0" />
-        </div>
-
         {{-- Filters --}}
         <x-form.filter :action="route('admin.departments.index')" searchPlaceholder="Search by name, code, or description" :sortFields="['id' => 'ID', 'name' => 'Name', 'created_at' => 'Created At']"
             :statuses="['active' => 'Active', 'inactive' => 'Inactive']" containerId="filter-results" />

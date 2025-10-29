@@ -26,6 +26,19 @@ class DepartmentService {
             )->count(),
             'has_head' => $department->hasHead(),
             'has_non_admin_head' => $department->head && $department->head->type !== 'Admin',
+
+
+             'total_users_including_admin' => UserService::applyUserFilters(
+                $department->users(), ['include_admin' => true]
+            )->count(),
+            'active_users_including_admin' => UserService::applyUserFilters(
+                $department->users()->where('status', 1),
+                ['include_admin' => true]
+            )->count(),
+            'has_admin_head' => $department->head && $department->head->type === 'Admin',
+     
+        
+        
         ];
     }
 

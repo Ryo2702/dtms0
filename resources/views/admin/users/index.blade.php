@@ -4,12 +4,6 @@
     <div class="p-4 sm:p-6">
         <x-page-header title="Heads Account" :canCreate="['ability' => 'create', 'model' => \App\Models\User::class]" :route="route('admin.departments.create')" buttonLabel="Add Heads Account" icon="plus" />
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
-            <x-stat-card bgColor="bg-stat-secondary" title="Active Admins" :value="$activeHeadCount" />
-            <x-stat-card bgColor="bg-stat-danger" title="Inactive Users" :value="$inactiveUsersCount" />
-        </div>
-
         {{-- Filters --}}
         <x-form.filter :action="route('admin.users.index')" searchPlaceholder="Search by name, email, or employee ID" :sortFields="['id' => 'ID', 'name' => 'Name', 'email' => 'Email', 'created_at' => 'Created At']"
             :statuses="['active' => 'Active', 'inactive' => 'Inactive']" containerId="filter-results" />
