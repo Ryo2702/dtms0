@@ -45,7 +45,7 @@
                                 @foreach ($documentTypes as $type)
                                     <option value="{{$type->title}}"
                                         data-description="{{$type->description}}">
-                                        {{$type->title}}
+                                        {{$type->title ?? 'create your own document'}}
                                     </option>
                                 @endforeach
                             </select>
@@ -184,22 +184,22 @@
                         </div>
 
                         <!-- File Attachment -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text font-medium">Attachment</span>
-                            </label>
-                            <input type="file" name="attachment" 
-                                class="file-input file-input-bordered w-full @error('attachment') file-input-error @enderror"
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                            <label class="label">
-                                <span class="label-text-alt">Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 10MB)</span>
-                            </label>
-                            @error('attachment')
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ $message }}</span>
-                                </label>
-                            @enderror
-                        </div>
+                     <div class="form-control border border-gray-200 rounded-lg p-4">
+    <label class="label">
+        <span class="label-text font-medium">Attachment</span>
+    </label>
+    <input type="file" name="attachment" 
+        class="file-input file-input-bordered w-full @error('attachment') file-input-error @enderror"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+    <label class="label">
+        <span class="label-text-alt">Supported formats: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 10MB)</span>
+    </label>
+    @error('attachment')
+        <label class="label">
+            <span class="label-text-alt text-error">{{ $message }}</span>
+        </label>
+    @enderror
+</div>
 
                         <!-- Submit Button -->
                         <div class="flex justify-end pt-4">
