@@ -14,6 +14,39 @@ class NotificationController extends Controller
     /**
      * Get notifications list for the authenticated user
      */
+
+      public function getCounts(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $unreadCount = Notification::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->count();
+
+            $unreadCounts = Notification::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->selectRaw('type, count(*) as count')
+                ->groupBy('type')
+                ->pluck('count', 'type')
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'unread_count' => $unreadCount,
+                'unread_counts' => $unreadCounts,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching notification counts: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error fetching counts'], 500);
+        }
+    }
+
     public function getNotifications(Request $request): JsonResponse
     {
         $user = Auth::user();
@@ -45,10 +78,19 @@ class NotificationController extends Controller
                 ->where('is_read', false)
                 ->count();
 
+            //unread counts
+            $unreadCounts = Notification::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->selectRaw('type, count(*) as count')
+                ->groupBy('type')
+                ->pluck('count', 'type')
+                ->toArray(); 
+
             return response()->json([
                 'success' => true,
                 'notifications' => $notifications,
                 'unread_count' => $unreadCount,
+                'unread_counts' => $unreadCounts
             ]);
 
         } catch (\Exception $e) {

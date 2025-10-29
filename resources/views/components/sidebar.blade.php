@@ -1,4 +1,3 @@
-<!-- Sidebar Content -->
 @auth
     <div class="flex flex-col h-full bg-primary">
         <!-- Header -->
@@ -11,7 +10,7 @@
             </div>
 
             <!-- Mobile Close Button -->
-            <button id="close-btn" class="btn btn-ghost btn-sm lg:!hidden">
+            <button id="close-btn" class="btn btn-ghost btn-sm lg:hidden!">
                 <i data-lucide="x" class="w-5 h-5 text-white"></i>
             </button>
         </div>
@@ -69,8 +68,8 @@
                             <span>Audit Logs</span>
                         </a>
                     </li>
-              
-                @else 
+
+                @else
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Document Management</span>
                     </li>
@@ -86,7 +85,26 @@
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Workflow</span>
                     </li>
+                    @php
+                        $user = Auth::user();
+                        // Server-side counts fallback so badges show immediately even if JS fetch fails
+                        $notificationClass = \App\Models\Notification::class;
+                        $typeMap = [
+                            'received' => ['received', 'request'],
+                            'pending' => ['pending'],
+                            'completed' => ['completed', 'closed'],
+                            'rejected' => ['rejected'],
+                            'canceled' => ['canceled'],
+                        ];
 
+                        $sidebarCounts = [];
+                        foreach ($typeMap as $key => $types) {
+                            $sidebarCounts[$key] = $notificationClass::where('user_id', $user->id)
+                                ->whereIn('type', $types)
+                                ->where('is_read', false)
+                                ->count();
+                        }
+                    @endphp
                     <li class="mb-1" data-notification-type="received">
                         <a href="{{ route('documents.reviews.received') }}"
                             class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.reviews.received' ? 'bg-white/20' : '' }}">
@@ -94,7 +112,8 @@
                                 <i data-lucide="inbox" class="w-5 h-5"></i>
                                 <span>Request</span>
                             </div>
-
+                            <span class="badge badge-sm badge-error text-white" id="badge-received"
+                                style="display: none;">0</span>
                         </a>
                     </li>
 
@@ -109,6 +128,8 @@
                                 <i data-lucide="clock" class="w-5 h-5"></i>
                                 <span>Pending</span>
                             </div>
+                            <span class="badge badge-sm badge-warning text-white" id="badge-pending"
+                                style="display: none;">0</span>
                         </a>
                     </li>
 
@@ -119,6 +140,8 @@
                                 <i data-lucide="circle-check-big" class="w-5 h-5"></i>
                                 <span>Closed</span>
                             </div>
+                            <span class="badge badge-sm badge-success text-white" id="badge-completed"
+                                style="display: none;">0</span>
                         </a>
                     </li>
 
@@ -129,6 +152,8 @@
                                 <i data-lucide="x-circle" class="w-5 h-5"></i>
                                 <span>Rejected</span>
                             </div>
+                            <span class="badge badge-sm badge-error text-white" id="badge-rejected"
+                                style="display: none;">0</span>
                         </a>
                     </li>
 
@@ -139,6 +164,8 @@
                                 <i data-lucide="ban" class="w-5 h-5"></i>
                                 <span>Canceled</span>
                             </div>
+                            <span class="badge badge-sm badge-neutral text-white" id="badge-canceled"
+                                style="display: none;">0</span>
                         </a>
                     </li>
 
@@ -204,3 +231,39 @@
     </div>
 
 @endauth
+
+<script>
+    ddocument.addEventListener('DOMContentLoaded', function () {
+        fetchNotifications();
+
+        function fetchNotifications() {
+            fetch('/api/notifications/counts', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update all badges found in the DOM by matching id "badge-<key>"
+                        document.querySelectorAll('[id^="badge-"]').forEach(badge => {
+                            const key = badge.id.replace('badge-', '');
+                            // try direct key, then title-cased key fallback, then 0
+                            let raw = (data.unread_counts && (data.unread_counts[key] ?? data.unread_counts[key.charAt(0).toUpperCase() + key.slice(1)])) ?? 0;
+                            const val = parseInt(raw, 10) || 0;
+                            badge.textContent = val;
+                            badge.style.display = val > 0 ? 'inline' : 'none';
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching notification counts:', error);
+                });
+        }
+
+        setInterval(fetchNotifications, 3000);
+    });
+</script>

@@ -262,11 +262,9 @@
                         });
                 }
 
-                // Initial load and periodic update
                 updateNotificationBadge();
                 setInterval(updateNotificationBadge, 30000);
 
-                // Update when page becomes visible
                 document.addEventListener('visibilitychange', function () {
                     if (!document.hidden) {
                         updateNotificationBadge();
@@ -274,7 +272,7 @@
                 });
             @endif
         });
-        // Notification bell functionality
+
         const notificationBell = document.getElementById('notification-bell');
         const notificationBadge = document.getElementById('notification-badge');
         const notificationList = document.getElementById('notification-list');
@@ -396,7 +394,7 @@
 
                     // Navigate to document
                     if (documentId) {
-                        window.location.href = `/document/${documentId}`;
+                        window.location.href = `/documents/reviews/${documentId}`;
                     }
                 });
             });
