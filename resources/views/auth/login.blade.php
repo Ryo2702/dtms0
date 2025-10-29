@@ -9,7 +9,7 @@
 
             <!-- Logo -->
             <div class="avatar mb-6">
-                <div class="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 shadow-2xl overflow-hidden bg-gradient-to-br from-primary to-secondary">
+                <div class="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 shadow-2xl overflow-hidden from-primary to-secondary">
                     <img src="{{ asset('images/logo.jpg') }}" alt="DOCTRAMS Logo" class="object-cover w-full h-full" />
                 </div>
             </div>

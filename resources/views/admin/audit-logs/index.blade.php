@@ -18,7 +18,7 @@
                             Export Filtered
                             <i data-lucide="chevron-down" class="w-4 h-4 ml-1"></i>
                         </div>
-                        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                        <ul tabindex="0" class="dropdown-content z-1 menu p-2 shadow bg-base-100 rounded-box w-52">
                             <li><a
                                     href="{{ route('admin.audit-logs.export', array_merge(request()->query(), ['format' => 'csv'])) }}">
                                     <i data-lucide="file-text" class="w-4 h-4"></i> Export as CSV
