@@ -18,10 +18,8 @@ class AuditLogController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DepartmentService::getFilteredDepartments([
-            'with_relations' => ['head'],
-            'exclude_admin_heads' => true
-        ]);
+        $query = AuditLog::with('user')->latest();
+
         // Apply filters
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);

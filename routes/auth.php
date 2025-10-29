@@ -5,6 +5,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Document\DocumentController;
 use App\Http\Controllers\Document\DocumentReviewController;
 use App\Http\Controllers\Document\DocumentTypeController;
+use App\Http\Controllers\History\HistoryController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Staff\StaffController;
@@ -65,4 +66,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/create', [StaffController::class,'store'])->name('store');
         Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
     });
+
+    Route::get('/document-history', [HistoryController::class, 'index'])->name('document-history.index');
+    Route::get('/document-history/{document}', [HistoryController::class, 'show'])->name('document-history.show');
+
 });

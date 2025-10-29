@@ -188,6 +188,13 @@
                             <span>Document Types</span>
                         </a>
                     </li>
+                    {{-- <li class="mb-1">
+                        <a href="{{ route('document-history.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'document-types') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="folder-open" class="w-5 h-5"></i>
+                            <span>Document Types</span>
+                        </a>
+                    </li> --}}
                 @endif
 
                 <!-- Settings -->
