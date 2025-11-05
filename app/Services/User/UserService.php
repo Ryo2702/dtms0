@@ -11,7 +11,7 @@ class UserService{
         return $query->where('type', '!=', 'Admin');
     }
 
-    public static function applyUserFilters(Builder $query, array $options = [])  {
+    public static function applyUserFilters(Builder|HasMany $query, array $options = [])  {
         if ($query instanceof HasMany) {
             $query = $query->getQuery();
         }

@@ -3,219 +3,97 @@
 namespace App\Http\Controllers\Admin\Departments;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Department\DepartmentRequest;
-use App\Models\AssignStaff;
+use App\Http\Requests\Department\DepartmentRequest;
 use App\Models\Department;
-use App\Models\User;
-use App\Services\Department\DepartmentService;
-use App\Services\User\UserService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
 
 class DepartmentController extends Controller
 {
     use AuthorizesRequests;
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
-    {
-        $query = DepartmentService::getFilteredDepartments([
-            'with_relations' => ['head'],
-            'exclude_admin_heads' => true
-        ]);
-
-        // Status filtering
-        $status = $request->get('status');
-        if ($status === 'active') {
-            $query->active();
-        } elseif ($status === 'inactive') {
-            $query->where('status', 0);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        // Sorting
-        $sort = $request->get('sort', 'id');
-        $direction = $request->get('direction', 'asc');
-
-        if (in_array($sort, ['id', 'name', 'created_at'])) {
-            $query->orderBy($sort, $direction);
-        }
-
-        $totalDepartments = Department::count();
-        $activeDepartments = Department::active()->count();
-
-        $departments = $query->paginate(10)->withQueryString();
-
-        return view('admin.departments.index', compact(
-            'departments',
-            'totalDepartments',
-            'activeDepartments',
-        ));
+    public function index(){
+        $departments = Department::paginate(8);
+        return view('admin.departments.index', compact('departments'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $this->authorize('create', Department::class);
+    public function store(DepartmentRequest $request) {
+        try{
 
-        return view('admin.departments.create');
-    }
+            $code = $this->generateCodeTitle($request->input('title'));
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(DepartmentRequest $request)
-    {
-        try {
-            $this->authorize('create', Department::class);
+            $data = [
+                'name' => $request->input('title'),
+                'code' => $code,
+                'description' => $request->input('description'),
+                'status' => $request->has('status') ? 1 : 0
+            ];
 
-            $data = $request->validated();
-
-
-            DB::transaction(function () use ($request, $data) {
-                if ($request->hasFile('logo')) {
-                    $logo = $request->file('logo');
-                    $filename = time().'_'.$logo->getClientOriginalName();
-                    $data['logo'] = $logo->storeAs('departments', $filename, 'public');
-                }
-
-                $data['status'] = $data['status'] ?? 1;
-
-
-                $department = Department::create($data);
-
-                if ($request->filled('head_email')) {
-                    $head = User::create([
-                        'name' => $request->input('head_name'),
-                        'email' => $request->input('head_email'),
-                        'password' => Hash::make($request->input('head_password')),
-                        'department_id' => $department->id,
-                        'type' => 'Head',
-                        'status' => 1,
-                    ]);
-
-                    Role::firstOrCreate(
-                        ['name' => 'Head', 'guard_name' => 'web']
-                    );
-                    $head->assignRole($head->type);
-                }
-            });
-
-            return redirect()->route('admin.departments.index')
-                ->with('success', 'Department and Head created successfully!');
-        } catch (\Exception $e) {
-            Log::error('Department creation with head failed:', [
-                'error' => $e->getMessage(),
-                'data' => $request->all(),
-            ]);
-
-            return back()->with('error', 'Failed to create department and head. Please try again.')
-                ->withInput();
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Department $department)
-    {
-        $user = auth()->user();
-
-        $department->load(['head']);
-
-        $stats = DepartmentService::getDepartmentStats($department);
-
-        return view('admin.departments.show', compact('department', 'stats'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Department $department)
-    {
-        $this->authorize('update', $department);
-
-        return view('admin.departments.edit', compact('department'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(DepartmentRequest $request, Department $department)
-    {
-        try {
-            $this->authorize('update', $department);
-
-            $data = $request->validated();
-
-            // Handle logo upload
             if ($request->hasFile('logo')) {
-                if ($department->logo && Storage::disk('public')->exists($department->logo)) {
-                    Storage::disk('public')->delete($department->logo);
-                }
-
-                $logo = $request->file('logo');
-                $filename = time().'_'.$logo->getClientOriginalName();
-                $data['logo'] = $logo->storeAs('departments', $filename, 'public');
+                $logoPath = $request->file('logo')->store('departments/logos', 'public');
+                $data['logo'] = $logoPath;
             }
 
-            $originalCode = $department->code;
+            Department::create($data);
 
-            $department->update($data);
-
-            // If code changed, regenerate municipal IDs for all users in this department
-            if ($originalCode !== $department->code) {
-                $this->regenerateMunicipalIds($department);
-            }
-
-            return redirect()->route('admin.departments.index')
-                ->with('success', "Department '{$department->name}' updated successfully!");
-        } catch (\Exception $e) {
-            Log::error('Department update failed:', [
-                'error' => $e->getMessage(),
-                'department_id' => $department->id,
-                'data' => $request->all(),
-            ]);
-
-            return back()->with('error', 'Failed to update department. Please try again.')
-                ->withInput();
+            return redirect()
+                ->route('admin.departments.index')
+                ->with('success', 'Department created successfully.');
+        }catch(\Exception $e){
+            Log::error('Department creation failed: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Department creation failed.');
         }
     }
 
-    /**
-     * Regenerate municipal IDs for all users in department
-     */
-    private function regenerateMunicipalIds(Department $department)
+    public function edit($id) {
+        $department = Department::findOrFail($id);
+        return response()->json($department);
+    }
+
+    public function update(DepartmentRequest $request, $id) {
+        try{
+            $department = Department::findOrFail($id);
+
+            $code = $this->generateCodeTitle($request->input('title'));
+            $data = [
+                'name' => $request->input('title'),
+                'code' => $code,
+                'description' => $request->input('description'),
+                'status' => $request->has('status') ? 1 : 0
+            ];
+
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('departments/logos', 'public');
+                $data['logo'] = $logoPath;
+            }
+
+            $department->update();
+
+            return redirect()
+                ->route('admin.departments.index')
+                ->with('success', 'Department updated successfully');
+        }catch(\Exception $e){
+            Log::error('Department update failed' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Department update failed');
+        }
+    }
+
+    private function generateCodeTitle(string $title): string
     {
-        $users = UserService::applyUserFilters(
-            $department->users(), ['include_admin' => false]
-        )->get();
+        $words = explode(' ', $title);
+        $code = '';
 
-        foreach ($users as $user) {
-            $user->municipal_id = $department->generateMunicipalId($user->type);
-            $user->save();
+        foreach ($words as $word) {
+           if (!empty($word)) {
+             $code .= strtoupper(substr($word, 0, 1));
+           }
         }
 
-        Log::info("Regenerated municipal IDs for department {$department->name}", [
-            'department_id' => $department->id,
-            'users_updated' => $users->count(),
-        ]);
+        return $code ?: 'DEPT';
     }
+
 }

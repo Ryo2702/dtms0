@@ -39,7 +39,7 @@ A Laravel-based Document Tracking Management System for handling document review
    ```
 
 5. **Database Setup**
-   - Create a new database in your MySQL server (e.g., `dtms_v2`)
+   - Create a new database in your MySQL server (e.g., `database management system`)
    - Update your `.env` file with database credentials:
      ```env
      DB_CONNECTION=mysql

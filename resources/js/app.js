@@ -39,6 +39,7 @@ import {
     UsersRound,
     FolderOpen,
     UserRound,
+    ImageOff,
 } from "lucide";
 
 createIcons({
@@ -78,6 +79,7 @@ createIcons({
         UsersRound,
         FolderOpen,
         UserRound,
+        ImageOff
     },
 });
 

@@ -15,6 +15,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('departments', DepartmentController::class)->parameters(['departments' => 'department']);
         Route::post('departments/{department}/assign-head', [DepartmentController::class, 'assignHead'])->name('departments.assign-head');
         Route::delete('departments/{department}/remove-head', [DepartmentController::class, 'removeHead'])->name('departments.remove-head');
+        Route::put('/departments/{id}', [DepartmentController::class, 'update'])->name('admin.departments.update');
+        Route::get('departments/{id}/edit', [DepartmentController::class, 'edit'])->name('admin.departments.edit');
 
         Route::prefix('documents')->name('documents.')->group(function () {
             Route::get('/track', [DocumentAdminController::class, 'track'])->name('track');
