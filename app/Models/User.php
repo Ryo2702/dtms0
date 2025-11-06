@@ -50,39 +50,7 @@ class User extends Authenticatable
     protected $attributes = [
         'status' => 1,
     ];
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($user) {
-            if (is_null($user->status)) {
-                $user->status = 1;
-            }
-            // Only generate employee_id if it's not already set and we have the required fields
-            if (empty($user->employee_id) && $user->department_id && $user->type) {
-                $department = Department::find($user->department_id);
-                if ($department) {
-                    $user->employee_id = $department->generateEmployeeId($user->type);
-                }
-            }
-        });
-
-        static::updating(function ($user) {
-            // Regenerate employee_id if department_id or type has changed
-            $original = $user->getOriginal();
-            $departmentChanged = $user->department_id !== $original['department_id'];
-            $typeChanged = $user->type !== $original['type'];
-
-            if (($departmentChanged || $typeChanged) && $user->department_id && $user->type) {
-                $department = Department::find($user->department_id);
-                if ($department) {
-                    $user->employee_id = $department->generateEmployeeId($user->type);
-                }
-            }
-        });
-    }
-
+    
     public function isOnline(): bool
     {
         return $this->last_activity && $this->last_activity->gt(now()->subMinutes(1));
@@ -191,18 +159,6 @@ class User extends Authenticatable
             : '<span class="badge badge-error">Inactive</span>';
     }
 
-    /**
-     * Get the user's avatar URL or default avatar.
-     */
-    public function getAvatarUrlAttribute(): string
-    {
-        if ($this->avatar && Storage::exists('public/'.$this->avatar)) {
-            return Storage::url($this->avatar);
-        }
-
-        // Return default avatar (you can use a service like Gravatar or a default image)
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
-    }
 
     /**
      * Check if user has a valid municipal_id format

@@ -477,7 +477,7 @@ class DocumentReviewController extends Controller
 public function markDone($id)
     {
         $review = DocumentReview::findOrFail($id);
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($review->created_by !== $user->id) {
             abort(403, 'You can only mark your own documents as done.');

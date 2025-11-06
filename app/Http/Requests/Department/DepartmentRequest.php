@@ -4,6 +4,7 @@ namespace App\Http\Requests\Department;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class DepartmentRequest extends FormRequest
 {
@@ -22,8 +23,14 @@ class DepartmentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $departmentId = $this->route('department');
         return [
-            'title' => ['required', 'string', 'max:255', 'unique:departments,name'],
+            'title' => [
+                'required', 
+                'string', 
+                'max:255', 
+                Rule::unique('departments', 'name')->ignore($departmentId)
+            ],
             'logo' => ['nullable', 'image', 'max:2048'],
             'status' => ['required', 'boolean'],
         ];
