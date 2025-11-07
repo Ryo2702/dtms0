@@ -1,39 +1,82 @@
 <?php
+
 namespace App\Services\User;
 
+use App\Models\Department;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
+class UserService
+{
+    /**
+     * Generate employee ID in format: DEPTCODE+TYPE-YEAR-NUMBER
+     * Example: ADMA-2025-000
+     *
+     * @param Department|null $department
+     * @param string $type
+     * @return string
+     */
 
-class UserService{
-    public static function getNonAdminUsers(Builder $query)  {
-        return $query->where('type', '!=', 'Admin');
+    public function generate(?Department $department, string $type)
+    {
+        $deptCode = $department ? $department->code : 'UKN';
+
+        // Get type initial (first letter of type)
+        $typeInitial = strtoupper(substr($type, 0, 1));
+
+        $year = now()->year;
+
+        $query = User::where('type', $type);
+
+        if ($department) {
+            $query->where('department_id', $department->id);
+        } else {
+            $query->whereNull('department_id');
+        }
+
+        $lastUser = $query->orderBy('id', 'desc')->first();
+
+        $nextNumber = $lastUser ? intval(substr($lastUser->employee_id, -3)) + 1 : 1;
+        $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+
+        return "{$deptCode}{$typeInitial}-{$year}-{$paddedNumber}";
     }
+    /**
+     * Validate employee ID format
+     *
+     * @param string $employeeId
+     * @return bool
+     */
 
-    public static function applyUserFilters(Builder|HasMany $query, array $options = [])  {
-        if ($query instanceof HasMany) {
-            $query = $query->getQuery();
-        }
-        //Default
-        if (!isset($options['include_admin']) || !$options['include_admin'] ) {
-            $query = self::getNonAdminUsers($query);
-        }
-
-        if (isset($options['only_active']) && $options['only_active']) {
-            $query->where('status', 1);
-        }
-
-        if (isset($options['types']) && is_array($options['types'])) {
-            $query->whereIn('type', $options['types']);
-        }
-
-        return $query;
+    public function validate(string $employeeId)
+    {
+        // Format: CODE+TYPE-YEAR-NUMBER (e.g., ADMA-2025-000)
+        return preg_match('/^[A-Z]{2,5}[A-Z]-\d{4}-\d{3}$/', $employeeId) === 1;
     }
+    /**
+     * Parse employee ID into components
+     *
+     * @param string $employeeId
+     * @return array|null
+     */
 
-    public static function getFilteredUsers(array $options = []){
-        $query = User::query();
+    public function parse(string $employeeId)
+    {
+        if (!$this->validate($employeeId)) {
+            return null;
+        }
 
-        return self::applyUserFilters($query, $options);
+        preg_match('/^([A-Z]{2,5})([A-Z])-(\d{4})-(\d{3})$/', $employeeId, $matches);
+
+        if (count($matches) !== 5) {
+            return null;
+        }
+
+
+        return[
+            'department_code' => $matches[1],
+            'type_initial' => $matches[2],
+            'year' => $matches[3],
+            'sequence' => $matches[4]
+        ];
     }
 }

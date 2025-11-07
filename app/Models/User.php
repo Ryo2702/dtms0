@@ -145,7 +145,7 @@ class User extends Authenticatable
         return match ($this->type) {
             'Admin' => '<span class="badge badge-error">Admin</span>',
             'Head' => '<span class="badge badge-warning">Head</span>',
-            default => '<span class="badge badge-outline">'.$this->type.'</span>'
+            default => '<span class="badge badge-warning">'.$this->type.'</span>'
         };
     }
 

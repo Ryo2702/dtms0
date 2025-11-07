@@ -18,8 +18,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('avatar')->nullable();
             $table->unsignedBigInteger('department_id')->nullable();
-            $table->enum('type', ['Head']);
+            $table->enum('type', ['Head', 'Admin'])->default('Head');
             $table->timestamp('last_activity')->nullable();
             $table->boolean('status')->default(1);
             $table->rememberToken();
