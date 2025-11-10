@@ -31,6 +31,9 @@ class DepartmentController extends Controller
         return view('admin.departments.index', compact('departments'));
     }
 
+    /**
+     * @param DepartmentRequest|\Illuminate\Http\Request $request
+     */
     public function store(DepartmentRequest $request)
     {
         try {
@@ -80,6 +83,9 @@ class DepartmentController extends Controller
             'update_at' => $department->updated_at
         ]);
     }
+    /**
+ * @param DepartmentRequest|\Illuminate\Http\Request $request
+ */
 
     public function update(DepartmentRequest $request, $id)
     {

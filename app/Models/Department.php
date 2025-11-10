@@ -126,7 +126,7 @@ class Department extends Model
             }
         }
 
-        return $prefix.str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        return $prefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -155,15 +155,15 @@ class Department extends Model
      */
     public function getActiveUsersCount(): int
     {
-        return UserService::applyUserFilters(
-            $this->users()->where('status', 1),
-            ['include_admin' => false]
-        )->count();
+        return
+            $this->users()
+            ->where('status', 1)
+            ->count();
     }
 
     public function getLogoUrl(): ?string
     {
-        return $this->logo ? asset('storage/'.$this->logo) : null;
+        return $this->logo ? asset('storage/' . $this->logo) : null;
     }
 
     /**
@@ -200,12 +200,5 @@ class Department extends Model
     public function scopeByCode($query, $code)
     {
         return $query->where('code', strtoupper($code));
-    }
-
-    public function nonAdminUsers()  {
-        return UserService::applyUserFilters(
-            $this->users(),
-            ['include_admin' => false]
-        );
     }
 }
