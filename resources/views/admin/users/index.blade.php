@@ -261,10 +261,11 @@
                     'focus:ring-blue-500',
                 ])>
                     <option value="">Select a department</option>
-                    @foreach (\App\Models\Department::where('status', 1)->get() as $dept)
+                    @foreach ($availableDepartments as $dept)
                         <option value="{{ $dept->id }}">{{ $dept->name }} ({{ $dept->code }})</option>
                     @endforeach
                 </select>
+                <p @class(['text-gray-500', 'text-xs', 'mt-1'])>Only departments without assigned users are shown</p>
                 @error('department_id')
                     <p @class(['text-red-500', 'text-sm', 'mt-1'])>{{ $message }}</p>
                 @enderror
@@ -436,10 +437,9 @@
                     'focus:ring-blue-500',
                 ])>
                     <option value="">Select a department</option>
-                    @foreach (\App\Models\Department::where('status', 1)->get() as $dept)
-                        <option value="{{ $dept->id }}">{{ $dept->name }} ({{ $dept->code }})</option>
-                    @endforeach
+                    {{-- Options will be populated dynamically via JavaScript --}}
                 </select>
+                <p @class(['text-gray-500', 'text-xs', 'mt-1'])>Only available departments are shown</p>
             </div>
 
             {{-- Password Field --}}
@@ -686,8 +686,23 @@
                     document.getElementById('edit_user_id').value = data.id;
                     document.getElementById('edit_name').value = data.name;
                     document.getElementById('edit_email').value = data.email;
-                    document.getElementById('edit_department_id').value = data.department_id || '';
                     document.getElementById('edit_status').checked = data.status == 1;
+
+                    // Populate available departments
+                    const deptSelect = document.getElementById('edit_department_id');
+                    deptSelect.innerHTML = '<option value="">Select a department</option>';
+                    
+                    if (data.available_departments && data.available_departments.length > 0) {
+                        data.available_departments.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.id;
+                            option.textContent = `${dept.name} (${dept.code})`;
+                            if (dept.id == data.department_id) {
+                                option.selected = true;
+                            }
+                            deptSelect.appendChild(option);
+                        });
+                    }
 
                     // Update form action
                     document.getElementById('editUserForm').action = `/admin/users/${id}`;
@@ -724,18 +739,33 @@
 
                     // Set department
                     const deptElement = document.getElementById('details_department');
-                    if (data.department) {
-                        deptElement.innerHTML = `<span @class([
-                            'inline-flex',
-                            'items-center',
-                            'px-3',
-                            'py-1',
-                            'rounded-full',
-                            'text-sm',
-                            'font-medium',
-                            'bg-purple-100',
-                            'text-purple-800',
-                        ])>${data.department.code}</span>`;
+                    if (data.department_id && data.available_departments) {
+                        const dept = data.available_departments.find(d => d.id == data.department_id);
+                        if (dept) {
+                            deptElement.innerHTML = `<span @class([
+                                'inline-flex',
+                                'items-center',
+                                'px-3',
+                                'py-1',
+                                'rounded-full',
+                                'text-sm',
+                                'font-medium',
+                                'bg-purple-100',
+                                'text-purple-800',
+                            ])>${dept.code}</span>`;
+                        } else {
+                            deptElement.innerHTML = `<span @class([
+                                'inline-flex',
+                                'items-center',
+                                'px-3',
+                                'py-1',
+                                'rounded-full',
+                                'text-sm',
+                                'font-medium',
+                                'bg-gray-100',
+                                'text-gray-500',
+                            ])>UKN</span>`;
+                        }
                     } else {
                         deptElement.innerHTML = `<span @class([
                             'inline-flex',
@@ -807,7 +837,7 @@
                     }
 
                     // Set dates
-                    document.getElementById('details_last_activity').textContent = data.last_activity || 'Never';
+                    document.getElementById('details_last_activity').textContent = data.last_seen || 'Never';
                     document.getElementById('details_created_at').textContent = formatDate(data.created_at);
                     document.getElementById('details_updated_at').textContent = formatDate(data.updated_at);
 

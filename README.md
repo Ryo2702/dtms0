@@ -5,7 +5,7 @@ A Laravel-based Document Tracking Management System for handling document review
 ## Installation & Setup
 
 ### Prerequisites
-- PHP >= 8.1
+- PHP >= 8.2
 - Composer
 - Node.js & npm
 - MySQL/MariaDB
@@ -16,7 +16,7 @@ A Laravel-based Document Tracking Management System for handling document review
 1. **Clone the repository**
    ```bash
    git clone https://github.com/Ryo2702/DTMS-V2.git
-   cd DTMS-V2
+   cd dtms0
    ```
 
 2. **Install PHP dependencies**

@@ -7,11 +7,9 @@ use App\Http\Requests\User\UserRequest;
 use App\Models\Department;
 use App\Models\User;
 use App\Services\User\UserService;
-
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use PhpParser\Node\Stmt\Return_;
 
 class UserController extends Controller
 {
@@ -46,7 +44,10 @@ class UserController extends Controller
             ->paginate(8)
             ->appends(['sort' => $sort, 'direction' => $direction, 'type' => $type]);
 
-        return view('admin.users.index', compact('users'));
+
+        $availableDepartments = $this->getAvailableDepartments();
+
+        return view('admin.users.index', compact('users', 'availableDepartments'));
     }
 
     /**
@@ -57,7 +58,7 @@ class UserController extends Controller
         try {
             $validated = $request->validated();
 
-            $department = $validated['department_id']
+            $department = $validated['department_id' ?? null]
                 ? Department::findOrFail($validated['department_id'])
                 : null;
 
@@ -95,6 +96,9 @@ class UserController extends Controller
     public function edit($id)
     {
         $user = User::with('department')->findOrFail($id);
+
+        $availableDepartments = $this->getAvailableDepartments($id);
+
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
@@ -109,11 +113,38 @@ class UserController extends Controller
             'is_online' => $user->isOnline(),
             'last_seen' => $user->last_seen,
             'created_at' => $user->created_at,
-            'updated_at' => $user->updated_at
+            'updated_at' => $user->updated_at,
+            'available_departments' => $availableDepartments
         ]);
+    }
+
+    public function getAvailableDepartments($excludeUserId = null)
+    {
+        $query  = Department::where('status', 1)
+            ->where('name', 'not like', '%Admin%');
+
+        if ($excludeUserId) {
+            $user = User::find($excludeUserId);
+
+            $query->where(function ($q) use ($user) {
+                $q->whereDoesntHave('users')
+                    ->orWhere(function ($subQ) use ($user) {
+                        if ($user && $user->department_id) {
+                            $subQ->where('id', $user->department_id)
+                                ->whereHas('users', function ($userQ) use ($user) {
+                                    $userQ->where('id', $user->id);
+                                });
+                        }
+                    });
+            });
+        } else {
+            $query->whereDoesntHave('users');
+        }
+        return $query->select('id', 'name', 'code')->get();
     }
     /**
      * @param UserRequest|\Illuminate\Http\Request $request
+     * @param int $id
      */
     public function update(UserRequest $request, $id)
     {
@@ -155,20 +186,16 @@ class UserController extends Controller
                 $avatarPath = $request->file('avatar')->store('users/avatar', 'public');
 
                 $data['avatar'] = $avatarPath;
-
-
-                $user->update($data);
-
-                return redirect()->route('admin.users.index')->with('success', 'User Updated Successfully');
-
             }
 
+            $user->update($data);
 
+            return redirect()->route('admin.users.index')->with('success', 'User Updated Successfully');
         } catch (\Exception $e) {
 
             Log::error("User update Failed: " . $e->getMessage());
 
-            return back()->withInput()->with('error', 'User update failed'. $e->getMessage());
+            return back()->withInput()->with('error', 'User update failed' . $e->getMessage());
         }
     }
 }

@@ -33,9 +33,15 @@ class UserService
             $query->whereNull('department_id');
         }
 
-        $lastUser = $query->orderBy('id', 'desc')->first();
+        $lastUser = User::orderBy('id', 'desc')->first();
 
-        $nextNumber = $lastUser ? intval(substr($lastUser->employee_id, -3)) + 1 : 1;
+        if ($lastUser) {
+            $parsed = $this->parse($lastUser->employee_id);
+            $nextNumber = $parsed ? intval($parsed['sequence']) + 1 : 1;
+        }else{
+            $nextNumber = 1;
+        }
+
         $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         return "{$deptCode}{$typeInitial}-{$year}-{$paddedNumber}";

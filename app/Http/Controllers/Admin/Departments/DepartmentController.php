@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin\Departments;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Department\DepartmentRequest;
 use App\Models\Department;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
 
 class DepartmentController extends Controller
@@ -84,8 +86,8 @@ class DepartmentController extends Controller
         ]);
     }
     /**
- * @param DepartmentRequest|\Illuminate\Http\Request $request
- */
+     * @param DepartmentRequest|\Illuminate\Http\Request $request
+     */
 
     public function update(DepartmentRequest $request, $id)
     {
@@ -139,5 +141,52 @@ class DepartmentController extends Controller
         }
 
         return $code ?: 'DEPT';
+    }
+
+    public function users($id)
+    {
+        $department = Department::findOrFail($id);
+        $users = $department->users()->paginate(10);
+        $availableUsers = User::whereNull('department_id')
+            ->orWhere('department_id', '!=', $id)
+            ->get();
+
+
+        return response()->json([
+            'department' => [
+                'id' => $department->id,
+                'name'  => $department->name,
+                'code' => $department->code
+            ],
+            'users' => $users,
+            'available_users' => $availableUsers
+        ]);
+    }
+
+
+    public function assignUser(Request $request, $id)
+    {
+        $request->validate(
+            [
+                'user_id' => 'required|exists:users,id'
+            ]
+        );
+
+        try{
+            $department = Department::findOrFail($id);
+            $user = User::findOrFail($request->user_id);
+
+            if ($user->department_id && $user->department_id != $id) {
+               return back()->with('error', 'User is already assigned to another department.');
+            }
+
+            $user->department_id = $id;
+            $user->save();
+
+            return back()->with('success', 'User assigned successfully.');
+            
+        }catch(\Exception $e){
+
+        }
     }
 }
