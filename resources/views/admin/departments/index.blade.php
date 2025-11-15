@@ -76,6 +76,9 @@
                         <button onclick="editDepartment({{ $department->id }})" @class(['text-indigo-600', 'hover:text-indigo-900'])>
                             Edit
                         </button>
+                        <button onclick="manageDepartmentUsers({{ $department->id}})" @class(['text-indigo-600', 'hover:text-indigo-900'])>
+                            Manage Users
+                        </button>
                     </td>
                 </tr>
             @endforeach
@@ -302,6 +305,48 @@
         @endslot
     </x-modal>
 
+     <x-modal id="manageUsersModal" title="Manage Department Users" size="xl">
+        <div @class(['space-y-4'])>
+            {{-- Department Info --}}
+            <div @class(['bg-gray-50', 'p-4', 'rounded-lg'])>
+                <h3 @class(['text-lg', 'font-semibold', 'text-gray-900'])>
+                    <span id="manage_dept_name"></span>
+                    <span id="manage_dept_code" @class(['ml-2', 'inline-flex', 'items-center', 'px-2', 'py-1', 'rounded-full', 'text-xs', 'font-medium', 'bg-blue-100', 'text-blue-800'])></span>
+                </h3>
+            </div>
+
+            {{-- Assign User Section --}}
+            <div @class(['border-b', 'pb-4'])>
+                <h4 @class(['text-md', 'font-medium', 'text-gray-900', 'mb-3'])>Assign New User</h4>
+                <form id="assignUserForm" method="POST" @class(['flex', 'gap-2'])>
+                    @csrf
+                    <select id="assign_user_id" name="user_id" @class(['flex-1', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-lg', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'])>
+                        <option value="">Select a user...</option>
+                    </select>
+                    <button type="submit" @class(['px-4', 'py-2', 'bg-blue-600', 'text-white', 'rounded-lg', 'hover:bg-blue-700', 'whitespace-nowrap'])>
+                        Assign User
+                    </button>
+                </form>
+            </div>
+
+            {{-- Current Users List --}}
+            <div>
+                <h4 @class(['text-md', 'font-medium', 'text-gray-900', 'mb-3'])>Current Members</h4>
+                <div id="current_users_list" @class(['space-y-2', 'max-h-96', 'overflow-y-auto'])>
+                    {{-- Users will be loaded here --}}
+                </div>
+            </div>
+        </div>
+
+        @slot('actions')
+            <button type="button" 
+                    @class(['px-4', 'py-2', 'text-gray-700', 'border', 'border-gray-300', 'rounded-lg', 'hover:bg-gray-50'])
+                    onclick="manageUsersModal.close()">
+                Close
+            </button>
+        @endslot
+    </x-modal>
+
 
     <script>
         // Handle form submission
@@ -410,6 +455,83 @@
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
+            });
+        }
+
+
+         function manageDepartmentUsers(id) {
+            fetch(`/admin/departments/${id}/users`)
+                .then(response => response.json())
+                .then(data => {
+                    // Set department info
+                    document.getElementById('manage_dept_name').textContent = data.department.name;
+                    document.getElementById('manage_dept_code').textContent = data.department.code;
+
+                    // Populate available users dropdown
+                    const userSelect = document.getElementById('assign_user_id');
+                    userSelect.innerHTML = '<option value="">Select a user...</option>';
+                    data.available_users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = `${user.name} (${user.email})`;
+                        userSelect.appendChild(option);
+                    });
+
+                    // Set form action
+                    document.getElementById('assignUserForm').action = `/admin/departments/${id}/assign-user`;
+
+                    // Display current users
+                    const usersList = document.getElementById('current_users_list');
+                    usersList.innerHTML = '';
+
+                    if (data.users.data.length === 0) {
+                        usersList.innerHTML = '<p @class(['text-gray-500', 'text-center', 'py-4'])>No users assigned yet.</p>';
+                    } else {
+                        data.users.data.forEach(user => {
+                            const userDiv = document.createElement('div');
+                            userDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100';
+                            userDiv.innerHTML = `
+                                <div class="flex items-center gap-3">
+                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold">
+                                        ${user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900">${user.name}</p>
+                                        <p class="text-sm text-gray-500">${user.email}</p>
+                                    </div>
+                                </div>
+                                <form method="POST" action="/admin/departments/${id}/remove-user" class="inline">
+                                    <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <input type="hidden" name="user_id" value="${user.id}">
+                                    <button type="submit" 
+                                            onclick="return confirm('Remove this user from the department?')"
+                                            class="px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
+                                        Remove
+                                    </button>
+                                </form>
+                            `;
+                            usersList.appendChild(userDiv);
+                        });
+                    }
+
+                    manageUsersModal.showModal();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to load department users');
+                });
+        }
+
+        // Handle assign user form submission
+        const assignUserForm = document.getElementById('assignUserForm');
+        if (assignUserForm) {
+            assignUserForm.addEventListener('submit', function(e) {
+                const userId = document.getElementById('assign_user_id').value;
+                if (!userId) {
+                    e.preventDefault();
+                    alert('Please select a user to assign');
+                }
             });
         }
     </script>

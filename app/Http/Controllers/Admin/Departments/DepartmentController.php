@@ -7,8 +7,8 @@ use App\Http\Requests\Department\DepartmentRequest;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
 
 class DepartmentController extends Controller
@@ -148,6 +148,7 @@ class DepartmentController extends Controller
         $department = Department::findOrFail($id);
         $users = $department->users()->paginate(10);
         $availableUsers = User::whereNull('department_id')
+            ->where('name', 'not like', '%Admin%')
             ->orWhere('department_id', '!=', $id)
             ->get();
 
@@ -189,4 +190,28 @@ class DepartmentController extends Controller
 
         }
     }
+    public function removeUser(Request $request, $id)
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id'
+    ]);
+
+    try {
+        $department = Department::findOrFail($id);
+        $user = User::findOrFail($request->user_id);
+
+        if ($user->department_id != $id) {
+            return back()->with('error', 'User is not in this department.');
+        }
+
+        $user->department_id = null;
+        $user->save();
+
+        return back()->with('success', 'User removed successfully.');
+        
+    } catch (\Exception $e) {
+        Log::error('User removal failed: ' . $e->getMessage());
+        return back()->with('error', 'Failed to remove user.');
+    }
+}
 }
