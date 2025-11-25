@@ -29,45 +29,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/remove-avatar', [ProfileController::class, 'removeAvatar'])->name('remove-avatar');
     });
 
-    Route::prefix('documents')->name('documents.')->group(function () {
-        Route::get('/', [DocumentController::class, 'index'])->name('index');
-        Route::get('/create', [DocumentController::class, 'create'])->name('create');
-        Route::post('/store', [DocumentController::class, 'store'])->name('store');
-        Route::get('/{file}/fill', [DocumentController::class, 'form'])->name('form');
-
-        Route::prefix('reviews')->name('reviews.')->group(function () {
-            Route::get('/', [DocumentReviewController::class, 'index'])->name('index');
-            Route::get('/received', [DocumentReviewController::class, 'received'])->name('received');
-            Route::get('/completed', [DocumentReviewController::class, 'completed'])->name('completed');
-            Route::get('/{id}', [DocumentReviewController::class, 'show'])->name('show');
-            Route::put('/{id}', [DocumentReviewController::class, 'update'])->name('update');
-            Route::get('/{id}/print', [DocumentReviewController::class, 'print'])->name('print');
-            Route::patch('/{id}/mark-done', [DocumentReviewController::class, 'markDone'])->name('markDone');
-            Route::get('/{review}/remaining-time', [DocumentReviewController::class, 'getRemainingTime'])->name('remaining-time');   
-        });
-
-        Route::prefix('status')->name('status.')->group(function () {
-            Route::get('/pending', [DocumentReviewController::class, 'pending'])->name('pending');
-            Route::get('/closed', [DocumentReviewController::class, 'closed'])->name('closed');
-            Route::get('/rejected', [DocumentReviewController::class, 'rejected'])->name('rejected');
-            Route::get('/canceled', [DocumentReviewController::class, 'canceled'])->name('canceled');
-        });
-
-    });
-
-    Route::prefix('document-types')->name('document-types.')->group(function () {
-        Route::get('/', [DocumentTypeController::class, 'index'])->name('index');
-        Route::post('/', [DocumentTypeController::class, 'store'])->name('store');
-        Route::put('/{documentType}', [DocumentTypeController::class, 'update'])->name('update');
-    });
-    
     Route::prefix('staff')->name('staff.')->group(function () {
         Route::get('/', [StaffController::class,'index'])->name('index');
         Route::post('/create', [StaffController::class,'store'])->name('store');
         Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
     });
-
-    Route::get('/document-history', [HistoryController::class, 'index'])->name('document-history.index');
-    Route::get('/document-history/{document}', [HistoryController::class, 'show'])->name('document-history.show');
 
 });

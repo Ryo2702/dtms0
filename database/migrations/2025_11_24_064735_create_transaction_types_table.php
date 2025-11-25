@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('document_reviews', function (Blueprint $table) {
-            $table->timestamp('downloaded_at')->nullable()->after('reviewed_at');
+        Schema::create('transaction_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->text('description')->nullable();
+            $table->boolean('status')->default(1);
+            $table->timestamps();
         });
     }
 
@@ -21,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('document_reviews', function (Blueprint $table) {
-            $table->dropColumn('downloaded_at');
-        });
+        Schema::dropIfExists('transaction_types');
     }
 };

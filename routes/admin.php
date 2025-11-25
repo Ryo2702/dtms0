@@ -22,10 +22,6 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/{id}/remove-user', [DepartmentController::class, 'removeUser'])->name('remove-user');
         });
 
-        Route::prefix('documents')->name('documents.')->group(function () {
-            Route::get('/track', [DocumentAdminController::class, 'track'])->name('track');
-        });
-
         Route::prefix('audit-logs')->name('audit-logs.')->group(function () {
             Route::get('/', [AuditLogController::class, 'index'])->name('index');
             Route::get('/export', [AuditLogController::class, 'export'])->name('export');

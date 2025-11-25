@@ -121,53 +121,6 @@
                         <span>Status</span>
                     </li>
 
-                    <li class="mb-1" data-notification-type="pending">
-                        <a href="{{ route('documents.status.pending') }}"
-                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ in_array(request()->route()->getName(), ['documents.reviews.index', 'documents.status.pending']) ? 'bg-white/20' : '' }}">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="clock" class="w-5 h-5"></i>
-                                <span>Pending</span>
-                            </div>
-                            <span class="badge badge-sm badge-warning text-white" id="badge-pending"
-                                style="display: none;">0</span>
-                        </a>
-                    </li>
-
-                    <li class="mb-1" data-notification-type="completed">
-                        <a href="{{ route('documents.status.closed') }}"
-                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.status.closed' ? 'bg-white/20' : '' }}">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="circle-check-big" class="w-5 h-5"></i>
-                                <span>Closed</span>
-                            </div>
-                            <span class="badge badge-sm badge-success text-white" id="badge-completed"
-                                style="display: none;">0</span>
-                        </a>
-                    </li>
-
-                    <li class="mb-1" data-notification-type="rejected">
-                        <a href="{{ route('documents.status.rejected') }}"
-                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.status.rejected' ? 'bg-white/20' : '' }}">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="x-circle" class="w-5 h-5"></i>
-                                <span>Rejected</span>
-                            </div>
-                            <span class="badge badge-sm badge-error text-white" id="badge-rejected"
-                                style="display: none;">0</span>
-                        </a>
-                    </li>
-
-                    <li class="mb-1" data-notification-type="canceled">
-                        <a href="{{ route('documents.status.canceled') }}"
-                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.status.canceled' ? 'bg-white/20' : '' }}">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="ban" class="w-5 h-5"></i>
-                                <span>Canceled</span>
-                            </div>
-                            <span class="badge badge-sm badge-neutral text-white" id="badge-canceled"
-                                style="display: none;">0</span>
-                        </a>
-                    </li>
 
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Department</span>
@@ -180,21 +133,6 @@
                             <span>Staff Management</span>
                         </a>
                     </li>
-
-                    <li class="mb-1">
-                        <a href="{{ route('document-types.index') }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'document-types') ? 'bg-white/20' : '' }}">
-                            <i data-lucide="folder-open" class="w-5 h-5"></i>
-                            <span>Document Types</span>
-                        </a>
-                    </li>
-                    {{-- <li class="mb-1">
-                        <a href="{{ route('document-history.index') }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'document-types') ? 'bg-white/20' : '' }}">
-                            <i data-lucide="folder-open" class="w-5 h-5"></i>
-                            <span>Document Types</span>
-                        </a>
-                    </li> --}}
                 @endif
 
                 <!-- Settings -->
