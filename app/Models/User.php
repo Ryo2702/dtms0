@@ -100,6 +100,15 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
+    public function assignTransactions()  {
+        return $this->hasMany(Transaction::class, 'assign_staff_id');
+    }
+
+    public function reviews()  {
+        return $this->hasMany(TransactionReviewer::class, 'reviewer_id');
+    }
+
+    
     /**
      * Check if user is head
      */
@@ -188,4 +197,6 @@ class User extends Authenticatable
 
         return $this->save();
     }
+
+    
 }

@@ -50,34 +50,23 @@ class Department extends Model
         return $this->hasOne(User::class)->where('type', 'Admin');
     }
 
-    // Get document types for this department
-    public function documentTypes(): HasMany
-    {
-        return $this->hasMany(DocumentType::class);
+    // Get transaction types for this department
+
+    public function transactionTypes(): HasMany{
+        return $this->hasMany(TransactionType::class);
     }
 
-    // Get active document types for this department
-    public function activeDocumentTypes(): HasMany
-    {
-        return $this->documentTypes()->where('status', true);
+    public function transaction(){
+        return $this->hasMany(Transaction::class);
     }
 
-    // Get document reviews where this department is the current department
-    public function currentDocumentReviews(): HasMany
+    public function transactionWorflows() 
     {
-        return $this->hasMany(DocumentReview::class, 'current_department_id');
+        return $this->hasMany(TransactionWorkflow::class);
     }
 
-    // Get document reviews where this department is the original department
-    public function originalDocumentReviews(): HasMany
-    {
-        return $this->hasMany(DocumentReview::class, 'original_department_id');
-    }
-
-    // Get all document reviews related to this department (current or original)
-    public function documentReviews(): HasMany
-    {
-        return $this->hasMany(DocumentReview::class, 'current_department_id');
+    public function transactionReviews() {
+        return $this->hasMany(TransactionReviewer::class);
     }
 
     public function activeUsers(): HasMany
