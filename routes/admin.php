@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLog\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Document\DocumentAdminController;
+use App\Http\Controllers\Transaction\TransactionTypeController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
@@ -30,4 +31,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{auditLog}', [AuditLogController::class, 'show'])->name('show');
         });
     });
+
+        Route::resource('transaction-types' ,TransactionTypeController::class);
+
 });

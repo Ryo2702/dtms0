@@ -2,21 +2,15 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\DashboardController;
-use App\Http\Controllers\Document\DocumentController;
-use App\Http\Controllers\Document\DocumentReviewController;
-use App\Http\Controllers\Document\DocumentTypeController;
-use App\Http\Controllers\History\HistoryController;
-use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Transaction\TransactionWorkflowController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/document/{documentId}', [DocumentReviewController::class, 'showByDocumentId'])->name('documents.show-by-id');
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/documents/types/{departmentId}', [DocumentController::class, 'getDocumentTypes']);
-   
+
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
    
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -34,5 +28,26 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/create', [StaffController::class,'store'])->name('store');
         Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
     });
+
+    Route::prefix('workflow-routing')->name('workflow.')->middleware('auth')->group(function () {
+    // Head-only routes
+    Route::middleware('head.only')->group(function () {
+        Route::post('/route-transaction', [TransactionWorkflowController::class, 'routeTransaction'])->name('route-transaction');
+        Route::post('/create-workflow', [TransactionWorkflowController::class, 'createWorkflow'])->name('create-workflow');
+        Route::get('/pending-transactions', [TransactionWorkflowController::class, 'getPendingTransactions'])->name('pending');
+        Route::get('/stats', [TransactionWorkflowController::class, 'getWorkflowStats'])->name('stats');
+    });
+
+    // Admin-only routes
+    Route::middleware('admin.only')->group(function () {
+        Route::post('/configure-cycle', [TransactionWorkflowController::class, 'configureWorkflowCycle'])->name('configure-cycle');
+    });
+
+    // Public routes (for data retrieval)
+    Route::get('/by-type', [TransactionWorkflowController::class, 'getWorkflowsByType'])->name('by-type');
+    Route::get('/active', [TransactionWorkflowController::class, 'getActiveWorkflows'])->name('active');
+    Route::get('/chain', [TransactionWorkflowController::class, 'getWorkflowChain'])->name('chain');
+    Route::get('/next-reviewers', [TransactionWorkflowController::class, 'getNextReviewers'])->name('next-reviewers');
+});
 
 });

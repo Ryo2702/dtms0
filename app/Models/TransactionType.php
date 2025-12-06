@@ -9,7 +9,7 @@ class TransactionType extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name',
+        'document_name',
         'description',
         'status',
     ];

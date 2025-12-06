@@ -53,13 +53,6 @@
                         </a>
                     </li>
 
-                    <li class="mb-1">
-                        <a href="{{ route('admin.documents.track') }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.reviews.admin.track' ? 'bg-white/20' : '' }}">
-                            <i data-lucide="map-pin" class="w-5 h-5"></i>
-                            <span>Document Track</span>
-                        </a>
-                    </li>
 
                     <li class="mb-1">
                         <a href="{{ route('admin.audit-logs.index') }}"
@@ -69,53 +62,19 @@
                         </a>
                     </li>
 
-                @else
-                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                        <span>Document Management</span>
-                    </li>
-
-                    <li class="mb-1">
-                        <a href="{{ route('documents.index') }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.index' ? 'bg-white/20' : '' }}">
-                            <i data-lucide="file-text" class="w-5 h-5"></i>
-                            <span>Document Request</span>
-                        </a>
-                    </li>
-
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Workflow</span>
                     </li>
-                    @php
-                        $user = Auth::user();
-                        // Server-side counts fallback so badges show immediately even if JS fetch fails
-                        $notificationClass = \App\Models\Notification::class;
-                        $typeMap = [
-                            'received' => ['received', 'request'],
-                            'pending' => ['pending'],
-                            'completed' => ['completed', 'closed'],
-                            'rejected' => ['rejected'],
-                            'canceled' => ['canceled'],
-                        ];
 
-                        $sidebarCounts = [];
-                        foreach ($typeMap as $key => $types) {
-                            $sidebarCounts[$key] = $notificationClass::where('user_id', $user->id)
-                                ->whereIn('type', $types)
-                                ->where('is_read', false)
-                                ->count();
-                        }
-                    @endphp
-                    <li class="mb-1" data-notification-type="received">
-                        <a href="{{ route('documents.reviews.received') }}"
-                            class="flex items-center justify-between p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'documents.reviews.received' ? 'bg-white/20' : '' }}">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="inbox" class="w-5 h-5"></i>
-                                <span>Request</span>
-                            </div>
-                            <span class="badge badge-sm badge-error text-white" id="badge-received"
-                                style="display: none;">0</span>
+                    <li class="mb-1">
+                        <a href="{{ route('transaction-types.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transaction-types') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="file-stack" class="w-5 h-5"></i>
+                            <span>Transaction Types</span>
                         </a>
                     </li>
+
+                @else
 
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Status</span>
