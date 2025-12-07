@@ -23,8 +23,10 @@ return new class extends Migration
             $table->integer('current_workflow_step')->default(1);
             $table->timestamp('submitted_at')->useCurrent();
             $table->timestamp('completed_at')->nullable();
-            $table->timestamps();
             
+            $table->json('workflow_history')->nullable();
+            $table->timestamps();
+
             $table->index(['department_id', 'transaction_status']);
             $table->index(['transaction_type_id', 'transaction_status']);
             $table->index('submitted_at');

@@ -34,8 +34,12 @@ class TransactionType extends Model
         return $this->where('status', 0);
     }
 
-    public function workflows() 
+    public function primaryWorkflow() 
     {
-        return $this->hasMany(TransactionWorkflow::class);    
+        return $this->hasOne(TransactionWorkflow::class)->where('is_originating', true);    
+    }
+
+    public function allWorkflow(){
+        return $this->hasMany(TransactionWorkflow::class)->orderBy('sequence_order');
     }
 }

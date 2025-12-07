@@ -13,20 +13,19 @@
         </div>
 
         {{-- Departments Table --}}
-        <x-data-table 
-            :headers="['Logo', 'Name', 'Code', 'Members', 'Status', 'Actions']"
-            :paginator="$departments"
-            :sortableFields="['name', 'code', 'status']"
-            emptyMessage="No departments found.">
+        <x-data-table :headers="['Logo', 'Name', 'Code', 'Members', 'Status', 'Actions']" :paginator="$departments"
+            :sortableFields="['name', 'code', 'status']" emptyMessage="No departments found.">
             @foreach($departments as $department)
                 <tr class="hover">
                     <td class="px-6 py-4 whitespace-nowrap">
                         @if($department->getLogoUrl())
-                            <img src="{{ $department->getLogoUrl() }}" alt="{{ $department->name }}" class="h-10 w-10 rounded-full object-cover">
+                            <img src="{{ $department->getLogoUrl() }}" alt="{{ $department->name }}"
+                                class="h-10 w-10 rounded-full object-cover">
                         @else
                             <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                                 <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                                 </svg>
                             </div>
                         @endif
@@ -66,28 +65,54 @@
 
     {{-- Create Department Modal --}}
     <x-modal id="departmentModal" title="Create Department" size="lg">
-        <form id="departmentForm" action="{{ route('admin.departments.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form id="departmentForm" action="{{ route('admin.departments.store') }}" method="POST"
+            enctype="multipart/form-data" class="space-y-4">
             @csrf
+
 
             {{-- Name Field --}}
             <div class="form-control">
                 <label class="label">
                     <span class="label-text font-medium">Department Name</span>
                 </label>
-                <input type="text" id="name" name="title" required placeholder="e.g., Human Resources" class="input input-bordered" />
+                <select id="name" name="title" required class="select select-bordered">
+                    <option value="">Select a department...</option>
+                    <option value="Tourism Office">Tourism Office</option>
+                    <option value="Civil Security">Civil Security</option>
+                    <option value="Office of the Municipal Accounting">Office of the Municipal Accounting</option>
+                    <option value="Office of the Municipal Agriculture">Office of the Municipal Agriculture</option>
+                    <option value="Office of the Municipal Mayor">Office of the Municipal Mayor</option>
+                    <option value="Budget and Management Office">Budget and Management Office</option>
+                    <option value="Office of the Municipal Civil Engineering">Office of the Municipal Civil Engineering
+                    </option>
+                    <option value="Office of Health and Welfare">Office of Health and Welfare</option>
+                    <option value="Human Resources Management Office">Human Resources Management Office</option>
+                    <option value="Office of the Municipal Treasurer">Office of the Municipal Treasurer</option>
+                    <option value="Public Employment Service Office">Public Employment Service Office</option>
+                    <option value="Municipal Planning and Development Office">Municipal Planning and Development Office
+                    </option>
+                    <option value="Territorial Integrity Sanggui">Territorial Integrity Sanggui</option>
+                    <option value="Provincial Welfare and Development">Provincial Welfare and Development</option>
+                    <option value="Information Office Municipal">Information Office Municipal</option>
+                    <option value="Banasud Office">Banasud Office</option>
+                    <option value="General Services Office">General Services Office</option>
+                    <option value="Community Development Office">Community Development Office</option>
+                    <option value="Legal and Compliance Office">Legal and Compliance Office</option>
+                </select>
                 @error('title')
                     <label class="label">
                         <span class="label-text-alt text-error">{{ $message }}</span>
                     </label>
                 @enderror
             </div>
-            
+
             {{-- Description Field --}}
             <div class="form-control">
                 <label class="label">
                     <span class="label-text font-medium">Description</span>
                 </label>
-                <textarea id="description" name="description" rows="3" placeholder="Enter department description" class="textarea textarea-bordered"></textarea>
+                <textarea id="description" name="description" rows="3" placeholder="Enter department description"
+                    class="textarea textarea-bordered"></textarea>
                 @error('description')
                     <label class="label">
                         <span class="label-text-alt text-error">{{ $message }}</span>
@@ -121,12 +146,12 @@
         </form>
 
         @slot('actions')
-            <button type="button" class="btn btn-ghost" onclick="departmentModal.close()">
-                Cancel
-            </button>
-            <button type="submit" form="departmentForm" class="btn btn-primary" id="submitBtn">
-                Create Department
-            </button>
+        <button type="button" class="btn btn-ghost" onclick="departmentModal.close()">
+            Cancel
+        </button>
+        <button type="submit" form="departmentForm" class="btn btn-primary" id="submitBtn">
+            Create Department
+        </button>
         @endslot
     </x-modal>
 
@@ -142,7 +167,8 @@
                 <label class="label">
                     <span class="label-text font-medium">Department Name</span>
                 </label>
-                <input type="text" id="edit_name" name="title" required placeholder="e.g., Human Resources" class="input input-bordered" />
+                <input type="text" id="edit_name" name="title" required placeholder="e.g., Human Resources"
+                    class="input input-bordered" />
             </div>
 
             {{-- Description Field --}}
@@ -150,7 +176,8 @@
                 <label class="label">
                     <span class="label-text font-medium">Description</span>
                 </label>
-                <textarea id="edit_description" name="description" rows="3" placeholder="Enter department description" class="textarea textarea-bordered"></textarea>
+                <textarea id="edit_description" name="description" rows="3" placeholder="Enter department description"
+                    class="textarea textarea-bordered"></textarea>
             </div>
 
             {{-- Logo Field --}}
@@ -160,7 +187,8 @@
                 </label>
                 <input type="file" id="edit_logo" name="logo" accept="image/*" class="file-input file-input-bordered" />
                 <label class="label">
-                    <span class="label-text-alt">Leave empty to keep current logo. Accepted formats: JPG, PNG, GIF (Max 2MB)</span>
+                    <span class="label-text-alt">Leave empty to keep current logo. Accepted formats: JPG, PNG, GIF (Max
+                        2MB)</span>
                 </label>
             </div>
 
@@ -174,12 +202,12 @@
         </form>
 
         @slot('actions')
-            <button type="button" class="btn btn-ghost" onclick="editDepartmentModal.close()">
-                Cancel
-            </button>
-            <button type="submit" form="editDepartmentForm" class="btn btn-primary" id="editSubmitBtn">
-                Update Department
-            </button>
+        <button type="button" class="btn btn-ghost" onclick="editDepartmentModal.close()">
+            Cancel
+        </button>
+        <button type="submit" form="editDepartmentForm" class="btn btn-primary" id="editSubmitBtn">
+            Update Department
+        </button>
         @endslot
     </x-modal>
 
@@ -188,10 +216,13 @@
         <div class="space-y-6">
             {{-- Logo Section --}}
             <div class="flex justify-center">
-                <div id="details_logo_container" class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                <div id="details_logo_container"
+                    class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                     <img id="details_logo" src="" alt="Department Logo" class="h-full w-full object-cover hidden">
-                    <svg id="details_logo_placeholder" class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <svg id="details_logo_placeholder" class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                     </svg>
                 </div>
             </div>
@@ -236,12 +267,12 @@
         </div>
 
         @slot('actions')
-            <button type="button" class="btn btn-ghost" onclick="detailsDepartmentModal.close()">
-                Close
-            </button>
-            <button type="button" id="details_edit_btn" class="btn btn-primary">
-                Edit Department
-            </button>
+        <button type="button" class="btn btn-ghost" onclick="detailsDepartmentModal.close()">
+            Close
+        </button>
+        <button type="button" id="details_edit_btn" class="btn btn-primary">
+            Edit Department
+        </button>
         @endslot
     </x-modal>
 
@@ -250,7 +281,11 @@
         <div class="space-y-4">
             {{-- Department Info --}}
             <div class="alert alert-info">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    class="stroke-current shrink-0 w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
                 <span id="manage_dept_info"></span>
             </div>
 
@@ -282,29 +317,29 @@
         </div>
 
         @slot('actions')
-            <button type="button" class="btn btn-ghost" onclick="manageUsersModal.close()">
-                Close
-            </button>
+        <button type="button" class="btn btn-ghost" onclick="manageUsersModal.close()">
+            Close
+        </button>
         @endslot
     </x-modal>
-    
+
     <script>
         // Handle form submission
         const form = document.getElementById('departmentForm');
         const submitBtn = document.getElementById('submitBtn');
-        
+
         if (form) {
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Creating...';
             });
         }
-        
+
         // Reset form when modal is closed
         const modalElement = document.getElementById('departmentModal');
         if (modalElement) {
             const originalShowModal = departmentModal.showModal;
-            departmentModal.showModal = function() {
+            departmentModal.showModal = function () {
                 document.getElementById('departmentForm').reset();
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -322,10 +357,10 @@
                     document.getElementById('edit_name').value = data.name;
                     document.getElementById('edit_description').value = data.description || '';
                     document.getElementById('edit_status').checked = data.status == 1;
-                    
+
                     // Update form action
                     document.getElementById('editDepartmentForm').action = `/admin/departments/${id}`;
-                    
+
                     editDepartmentModal.showModal();
                 })
                 .catch(error => {
@@ -341,7 +376,7 @@
                     // Set logo
                     const logoImg = document.getElementById('details_logo');
                     const logoPlaceholder = document.getElementById('details_logo_placeholder');
-                    
+
                     if (data.logo_url) {
                         logoImg.src = data.logo_url;
                         logoImg.classList.remove('hidden');
@@ -374,7 +409,7 @@
                     document.getElementById('details_updated_at').textContent = formatDate(data.updated_at);
 
                     // Set edit button action
-                    document.getElementById('details_edit_btn').onclick = function() {
+                    document.getElementById('details_edit_btn').onclick = function () {
                         detailsDepartmentModal.close();
                         editDepartment(id);
                     };
@@ -428,28 +463,28 @@
                             const userDiv = document.createElement('div');
                             userDiv.className = 'flex items-center justify-between p-3 bg-base-200 rounded-lg';
                             userDiv.innerHTML = `
-                                <div class="flex items-center gap-3">
-                                    <div class="avatar placeholder">
-                                        <div class="bg-primary text-primary-content rounded-full w-10">
-                                            <span>${user.name.charAt(0).toUpperCase()}</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium text-gray-900">${user.name}</p>
-                                        <p class="text-sm text-gray-500">${user.email}</p>
-                                    </div>
-                                </div>
-                                <form method="POST" action="/admin/departments/${id}/remove-user" class="inline">
-                                    <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    <input type="hidden" name="user_id" value="${user.id}">
-                                    <button type="submit" 
-                                            onclick="return confirm('Remove this user from the department?')"
-                                            class="btn btn-error btn-sm">
-                                        Remove
-                                    </button>
-                                </form>
-                            `;
+                                            <div class="flex items-center gap-3">
+                                                <div class="avatar placeholder">
+                                                    <div class="bg-primary text-primary-content rounded-full w-10">
+                                                        <span>${user.name.charAt(0).toUpperCase()}</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">${user.name}</p>
+                                                    <p class="text-sm text-gray-500">${user.email}</p>
+                                                </div>
+                                            </div>
+                                            <form method="POST" action="/admin/departments/${id}/remove-user" class="inline">
+                                                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
+                                                <input type="hidden" name="_method" value="DELETE">
+                                                <input type="hidden" name="user_id" value="${user.id}">
+                                                <button type="submit" 
+                                                        onclick="return confirm('Remove this user from the department?')"
+                                                        class="btn btn-error btn-sm">
+                                                    Remove
+                                                </button>
+                                            </form>
+                                        `;
                             usersList.appendChild(userDiv);
                         });
                     }
@@ -465,7 +500,7 @@
         // Handle assign user form submission
         const assignUserForm = document.getElementById('assignUserForm');
         if (assignUserForm) {
-            assignUserForm.addEventListener('submit', function(e) {
+            assignUserForm.addEventListener('submit', function (e) {
                 const userId = document.getElementById('assign_user_id').value;
                 if (!userId) {
                     e.preventDefault();

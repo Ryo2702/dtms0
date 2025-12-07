@@ -16,6 +16,7 @@ class Transaction extends Model
         'current_workflow_step',
         'submitted_at',
         'completed_at',
+        'workflow_history'
     ];
 
     protected function casts()  {
@@ -43,7 +44,7 @@ class Transaction extends Model
         return $this->hasMany(TransactionNote::class);
     }
 
-    public function reviewer() 
+    public function reviews() 
     {
         return $this->hasMany(TransactionReviewer::class);    
     }
@@ -79,5 +80,26 @@ class Transaction extends Model
         return $this->transaction_status === 'overdue';
     }
 
+    public function currentWorkflow() {
+        return $this->belongsTo(TransactionWorkflow::class, 'current_workflow_step');
+    }
 
+    public function workflowHistory() {
+        return $this->hasMany(WorkflowHistory::class);
+    }
+
+    public function canCycle() {
+        $currentStep = $this->currentWorkflow;
+        return $currentStep && $currentStep->allow_cycles;
+    }
+
+    public function moveToNextStep($status){
+        $workflow = $this->currentWorkflow;
+
+        if ($status === 'aproved' && $workflow->next_step_on_aprroval_id) {
+            $this->update(['current_workflow_step' => $workflow->next_step_on_approval_id]);
+        }elseif($status === 're_submit' && $workflow->next_step_on_rejection_id){
+            $this->update(['current_workflow_step' => $workflow->next_step_on_rejection_id]);
+        }
+    }
 }

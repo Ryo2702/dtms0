@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\AuditLog\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
 use App\Http\Controllers\Admin\Users\UserController;
-use App\Http\Controllers\Document\DocumentAdminController;
 use App\Http\Controllers\Transaction\TransactionTypeController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +31,5 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
-        Route::resource('transaction-types' ,TransactionTypeController::class);
-
+    Route::resource('transaction-types', TransactionTypeController::class);
 });

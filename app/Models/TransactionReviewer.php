@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class TransactionReviewer extends Model
 {
@@ -18,7 +19,11 @@ class TransactionReviewer extends Model
         'process_time_unit',
         'due_date',
         'is_overdue',
-        'reviewed_at'
+        'reviewed_at',
+        'iteration_number',
+        'rejection_reason',
+        'resubmission_deadline',
+        'previous_reviewer_id'
     ];
 
     protected function casts()
@@ -74,7 +79,25 @@ class TransactionReviewer extends Model
         return $query->where('is_overdue', 1);
     }
 
+    public function previousReviewer() {
+        return $this->belongsTo(User::class, 'previous_reviewer_id');
+    }
 
+    public function workflowStep() {
+        return $this->belongsTo(TransactionWorkflow::class, 'workflow_step_id');
+    }
+
+    public function incrementIteration() {
+        $this->increment('iteration_number');
+    }
+
+    public function reject($reason) {
+        $this->update([
+            'status' => 're_submit',
+            'rejection_reason' => $reason,
+            'resubmission_deadline' => Carbon::now()->addDays(3),
+        ]);
+    }
     //status
     public function isPending(): bool
     {
@@ -87,6 +110,10 @@ class TransactionReviewer extends Model
     public function isApproved(): bool
     {
         return $this->status === 'aprroved';
+    }
+        public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
     }
 
     public function isCancelled(): bool

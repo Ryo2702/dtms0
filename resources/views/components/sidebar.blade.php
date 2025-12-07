@@ -137,37 +137,37 @@
 @endauth
 
 <script>
-    ddocument.addEventListener('DOMContentLoaded', function () {
-        fetchNotifications();
+    // document.addEventListener('DOMContentLoaded', function () {
+    //     fetchNotifications();
 
-        function fetchNotifications() {
-            fetch('/api/notifications/counts', {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update all badges found in the DOM by matching id "badge-<key>"
-                        document.querySelectorAll('[id^="badge-"]').forEach(badge => {
-                            const key = badge.id.replace('badge-', '');
-                            // try direct key, then title-cased key fallback, then 0
-                            let raw = (data.unread_counts && (data.unread_counts[key] ?? data.unread_counts[key.charAt(0).toUpperCase() + key.slice(1)])) ?? 0;
-                            const val = parseInt(raw, 10) || 0;
-                            badge.textContent = val;
-                            badge.style.display = val > 0 ? 'inline' : 'none';
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching notification counts:', error);
-                });
-        }
+    //     function fetchNotifications() {
+    //         fetch('/api/notifications/counts', {
+    //             method: 'GET',
+    //             credentials: 'include',
+    //             headers: {
+    //                 'X-Requested-With': 'XMLHttpRequest',
+    //                 'Accept': 'application/json'
+    //             }
+    //         })
+    //             .then(response => response.json())
+    //             .then(data => {
+    //                 if (data.success) {
+    //                     // Update all badges found in the DOM by matching id "badge-<key>"
+    //                     document.querySelectorAll('[id^="badge-"]').forEach(badge => {
+    //                         const key = badge.id.replace('badge-', '');
+    //                         // try direct key, then title-cased key fallback, then 0
+    //                         let raw = (data.unread_counts && (data.unread_counts[key] ?? data.unread_counts[key.charAt(0).toUpperCase() + key.slice(1)])) ?? 0;
+    //                         const val = parseInt(raw, 10) || 0;
+    //                         badge.textContent = val;
+    //                         badge.style.display = val > 0 ? 'inline' : 'none';
+    //                     });
+    //                 }
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error fetching notification counts:', error);
+    //             });
+    //     }
 
-        setInterval(fetchNotifications, 3000);
-    });
+    //     setInterval(fetchNotifications, 3000);
+    // });
 </script>

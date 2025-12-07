@@ -17,8 +17,15 @@ return new class extends Migration
             $table->foreignId('department_id')->constrained('departments');
             $table->integer('sequence_order');
             $table->boolean('is_originating')->default(0);
+            $table->integer('process_time_value');
+            $table->enum('process_time_unit', ['minutes', 'days', 'weeks'])->default('minutes');
+
+            $table->foreignId('next_step_on_approval')->nullable()->references('id')->on('transaction_workflows');
+            $table->foreignId('next_step_on_rejection')->nullable()->references('id')->on('transaction_workflows');
+            $table->boolean('allow_cycles')->default(0);
+            $table->integer('max_cycle_count')->default(3);
+
             $table->timestamps();
-            
             $table->unique(['transaction_type_id', 'sequence_order']);
         });
     }

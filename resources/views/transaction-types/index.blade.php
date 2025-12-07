@@ -214,5 +214,27 @@
                 editSubmitBtn.textContent = 'Updating...';
             });
         }
+
+        // Collect all steps
+        document.querySelectorAll('[id^="step-"]').forEach((step, index) => {
+            const deptSelect = step.querySelector('select[name*="department_id"]');
+            const seqInput = step.querySelector('input[name*="sequence_order"]');
+            const originCheckbox = step.querySelector('input[name*="is_originating"]');
+
+            if (deptSelect && deptSelect.value) {
+                departments.push({
+                    department_id: parseInt(deptSelect.value),
+                    sequence_order: parseInt(seqInput.value),
+                    is_originating: originCheckbox.checked ? 1 : 0
+                });
+            }
+        });
+
+        if (departments.length === 0) {
+            alert('Please configure at least one workflow step');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Configure Workflow Cycle';
+            return;
+        }
     </script>
 @endsection
