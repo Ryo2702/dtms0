@@ -53,24 +53,92 @@
                     @if($type->hasWorkflowConfigured())
                         @php
                             $steps = $type->getWorkflowSteps();
+                            $totalTime = 0;
+                            $timeUnit = '';
                         @endphp
                         <div class="mb-3">
                             <span class="text-xs font-medium text-gray-500 uppercase">Workflow Steps</span>
-                            <div class="mt-2 flex flex-wrap gap-1">
+                            <div class="mt-2 space-y-2">
                                 @foreach($steps as $index => $step)
-                                    <div class="flex items-center">
-                                        <span class="badge badge-primary badge-sm">{{ $step['department_name'] }}</span>
+                                    <div class="flex items-start gap-2">
+                                        {{-- Step Number --}}
+                                        <span class="badge badge-primary badge-sm flex-shrink-0">{{ $index + 1 }}</span>
+                                        
+                                        <div class="flex-1 min-w-0">
+                                            {{-- Department Name --}}
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="font-medium text-sm text-gray-900">{{ $step['department_name'] }}</span>
+                                                {{-- Process Time Badge --}}
+                                                <span class="badge badge-ghost badge-xs">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    {{ $step['process_time_value'] ?? 3 }} {{ $step['process_time_unit'] ?? 'days' }}
+                                                </span>
+                                            </div>
+                                            
+                                            {{-- Notes (if exists) --}}
+                                            @if(!empty($step['notes']))
+                                                <p class="text-xs text-gray-500 mt-1 line-clamp-1" title="{{ $step['notes'] }}">
+                                                    {{ $step['notes'] }}
+                                                </p>
+                                            @endif
+
+                                            {{-- Return To Info --}}
+                                            @if(!empty($step['can_return_to']))
+                                                <div class="flex items-center gap-1 mt-1">
+                                                    <svg class="w-3 h-3 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                    </svg>
+                                                    <span class="text-xs text-warning">Can return to previous</span>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Arrow to next step --}}
                                         @if($index < count($steps) - 1)
-                                            <svg class="w-4 h-4 mx-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            <svg class="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                                             </svg>
                                         @endif
                                     </div>
                                 @endforeach
                             </div>
                         </div>
-                        <div class="text-xs text-gray-500">
-                            <span class="font-medium">{{ count($steps) }}</span> steps configured
+
+                        {{-- Summary --}}
+                        <div class="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+                            <span>
+                                <span class="font-medium">{{ count($steps) }}</span> steps
+                            </span>
+                            @php
+                                // Calculate total estimated time
+                                $totalHours = 0;
+                                foreach ($steps as $step) {
+                                    $value = $step['process_time_value'] ?? 3;
+                                    $unit = $step['process_time_unit'] ?? 'days';
+                                    $totalHours += match($unit) {
+                                        'hours' => $value,
+                                        'days' => $value * 24,
+                                        'weeks' => $value * 24 * 7,
+                                        default => $value * 24,
+                                    };
+                                }
+                                // Convert back to readable format
+                                if ($totalHours >= 168) {
+                                    $totalDisplay = round($totalHours / 168, 1) . ' weeks';
+                                } elseif ($totalHours >= 24) {
+                                    $totalDisplay = round($totalHours / 24, 1) . ' days';
+                                } else {
+                                    $totalDisplay = $totalHours . ' hours';
+                                }
+                            @endphp
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Est. {{ $totalDisplay }}
+                            </span>
                         </div>
                     @else
                         <div class="flex items-center gap-2 text-warning">

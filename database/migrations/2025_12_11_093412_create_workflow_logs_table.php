@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('workflow_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('transaction_id')->constrained('transactions')->onDelete('cascade');
+            $table->foreignId('transaction_id')->constrained('transactions');
             $table->string('from_state');
             $table->string('to_state');
             $table->string('action'); // approve, reject, resubmit, cancel

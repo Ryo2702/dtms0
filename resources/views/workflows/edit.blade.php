@@ -137,8 +137,8 @@
     const currentConfig = @json($currentConfig);
     let stepIndex = 0;
 
-    // Step template
-    function createStepHtml(index, departmentId = '', canReturnTo = []) {
+    // Step template with time value, time unit, and notes
+    function createStepHtml(index, departmentId = '', canReturnTo = [], processTimeValue = 3, processTimeUnit = 'days', notes = '') {
         const deptOptions = departments.map(d => 
             `<option value="${d.id}" ${departmentId == d.id ? 'selected' : ''}>${d.name}</option>`
         ).join('');
@@ -166,6 +166,7 @@
                     </div>
                 </div>
 
+                {{-- Department Selection --}}
                 <div class="form-control mb-3">
                     <label class="label">
                         <span class="label-text font-medium">Department</span>
@@ -176,6 +177,45 @@
                     </select>
                 </div>
 
+                {{-- Process Time --}}
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Process Time</span>
+                        </label>
+                        <input type="number" 
+                               name="steps[${index}][process_time_value]" 
+                               class="input input-bordered input-sm process-time-value" 
+                               value="${processTimeValue}" 
+                               min="1" 
+                               required
+                               placeholder="e.g., 3">
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Time Unit</span>
+                        </label>
+                        <select name="steps[${index}][process_time_unit]" class="select select-bordered select-sm process-time-unit" required>
+                            <option value="hours" ${processTimeUnit === 'hours' ? 'selected' : ''}>Hours</option>
+                            <option value="days" ${processTimeUnit === 'days' ? 'selected' : ''}>Days</option>
+                            <option value="weeks" ${processTimeUnit === 'weeks' ? 'selected' : ''}>Weeks</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Notes/Instructions --}}
+                <div class="form-control mb-3">
+                    <label class="label">
+                        <span class="label-text font-medium">Instructions/Notes</span>
+                        <span class="label-text-alt text-gray-400">Optional</span>
+                    </label>
+                    <textarea name="steps[${index}][notes]" 
+                              class="textarea textarea-bordered textarea-sm step-notes" 
+                              rows="2" 
+                              placeholder="e.g., Review budget allocation and verify fund availability...">${notes}</textarea>
+                </div>
+
+                {{-- Can Return To --}}
                 <div class="form-control return-to-container" style="display: none;">
                     <label class="label">
                         <span class="label-text font-medium">Can Return To</span>
@@ -198,7 +238,14 @@
             if (noStepsMsg) noStepsMsg.remove();
 
             currentConfig.steps.forEach((step, index) => {
-                container.insertAdjacentHTML('beforeend', createStepHtml(index, step.department_id, step.can_return_to || []));
+                container.insertAdjacentHTML('beforeend', createStepHtml(
+                    index, 
+                    step.department_id, 
+                    step.can_return_to || [],
+                    step.process_time_value || 3,
+                    step.process_time_unit || 'days',
+                    step.notes || ''
+                ));
                 stepIndex = index + 1;
             });
 
@@ -289,6 +336,25 @@
                 updateVisualFlow();
             };
         });
+
+        // Process time and notes change - update preview
+        document.querySelectorAll('.process-time-value, .process-time-unit, .step-notes').forEach(input => {
+            input.onchange = updatePreview;
+            input.oninput = debounce(updatePreview, 500);
+        });
+    }
+
+    // Debounce helper for text inputs
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 
     function updateStepNumbers() {
@@ -296,9 +362,18 @@
             item.querySelector('.step-number').textContent = `Step ${index + 1}`;
             item.dataset.index = index;
             
-            // Update input names
+            // Update all input names
             const select = item.querySelector('.department-select');
             if (select) select.name = `steps[${index}][department_id]`;
+
+            const timeValue = item.querySelector('.process-time-value');
+            if (timeValue) timeValue.name = `steps[${index}][process_time_value]`;
+
+            const timeUnit = item.querySelector('.process-time-unit');
+            if (timeUnit) timeUnit.name = `steps[${index}][process_time_unit]`;
+
+            const notes = item.querySelector('.step-notes');
+            if (notes) notes.name = `steps[${index}][notes]`;
             
             // Update checkbox names
             item.querySelectorAll('.return-to-checkbox').forEach(cb => {
@@ -362,6 +437,9 @@
         const steps = [];
         document.querySelectorAll('.step-item').forEach((item) => {
             const deptId = item.querySelector('.department-select')?.value;
+            const processTimeValue = item.querySelector('.process-time-value')?.value || 3;
+            const processTimeUnit = item.querySelector('.process-time-unit')?.value || 'days';
+            const notes = item.querySelector('.step-notes')?.value || '';
             const canReturnTo = [];
             
             item.querySelectorAll('.return-to-checkbox:checked').forEach(cb => {
@@ -371,6 +449,9 @@
             if (deptId) {
                 steps.push({
                     department_id: parseInt(deptId),
+                    process_time_value: parseInt(processTimeValue),
+                    process_time_unit: processTimeUnit,
+                    notes: notes,
                     can_return_to: canReturnTo
                 });
             }
@@ -422,6 +503,8 @@
         steps.forEach((step, index) => {
             const select = step.querySelector('.department-select');
             const deptName = select?.options[select.selectedIndex]?.text || 'Not selected';
+            const timeValue = step.querySelector('.process-time-value')?.value || '';
+            const timeUnit = step.querySelector('.process-time-unit')?.value || '';
             
             if (deptName !== 'Select Department') {
                 if (index > 0) {
@@ -431,7 +514,12 @@
                         </svg>
                     `;
                 }
-                html += `<span class="badge badge-primary">${deptName}</span>`;
+                html += `
+                    <div class="flex flex-col items-center">
+                        <span class="badge badge-primary">${deptName}</span>
+                        <span class="text-xs text-gray-500 mt-1">${timeValue} ${timeUnit}</span>
+                    </div>
+                `;
             }
         });
 
@@ -453,6 +541,26 @@
         if (steps.length === 0) {
             e.preventDefault();
             alert('Please add at least one workflow step.');
+            return;
+        }
+
+        // Validate all steps have departments selected
+        let valid = true;
+        steps.forEach((step, index) => {
+            const dept = step.querySelector('.department-select')?.value;
+            const timeValue = step.querySelector('.process-time-value')?.value;
+            if (!dept) {
+                alert(`Please select a department for Step ${index + 1}`);
+                valid = false;
+            }
+            if (!timeValue || timeValue < 1) {
+                alert(`Please enter a valid process time for Step ${index + 1}`);
+                valid = false;
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
             return;
         }
 
