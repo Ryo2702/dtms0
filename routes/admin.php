@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLog\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Transaction\TransactionTypeController;
+use App\Http\Controllers\Transaction\WorkflowController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
@@ -29,6 +30,10 @@ Route::middleware(['auth'])->group(function () {
             Route::match(['POST', 'PUT', 'DELETE'], '/test/action', [AuditLogController::class, 'testAction'])->name('test.action');
             Route::get('/{auditLog}', [AuditLogController::class, 'show'])->name('show');
         });
+
+        Route::resource('workflows', WorkflowController::class);
+        Route::get('workflows/chain/{transactionTypeId}', [WorkflowController::class, 'chain'])->name('workflows.chain');
+        Route::get('workflows/api/next-steps/{transactionTypeId}', [WorkflowController::class, 'getNextStep'])->name('workflows.next-steps');
     });
 
     Route::resource('transaction-types', TransactionTypeController::class);
