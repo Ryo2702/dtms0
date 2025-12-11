@@ -53,7 +53,7 @@
 
     {{-- Create Transaction Modal --}}
     <x-modal id="transactionModal" title="Create Transaction Type" size="lg">
-        <form id="transaction-typeForm" action="{{ route('transaction-types.store') }}" method="POST"
+        <form id="transaction-typeForm" action="{{ route('admin.transaction-types.store') }}" method="POST"
             enctype="multipart/form-data" class="space-y-4">
             @csrf
 

@@ -8,38 +8,91 @@ use Illuminate\Database\Eloquent\Model;
 class TransactionType extends Model
 {
     use HasFactory;
+    
     protected $fillable = [
         'document_name',
         'description',
         'status',
+        'workflow_config',
     ];
 
-    protected function casts()
+    protected function casts(): array
     {
         return [
-            'status' => 'boolean'
+            'status' => 'boolean',
+            'workflow_config' => 'array',
         ];
     }
 
     protected $attributes = [
-        'status' => 1
+        'status' => 1,
     ];
 
-    public function scopeActive()
+    public function scopeActive($query)
     {
-        return $this->where('status', 1);
-    }
-    public function scopeInactive()
-    {
-        return $this->where('status', 0);
+        return $query->where('status', 1);
     }
 
-    public function primaryWorkflow() 
+    public function scopeInactive($query)
     {
-        return $this->hasOne(TransactionWorkflow::class)->where('is_originating', true);    
+        return $query->where('status', 0);
     }
 
-    public function allWorkflow(){
-        return $this->hasMany(TransactionWorkflow::class)->orderBy('sequence_order');
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * Get workflow steps from config
+     */
+    public function getWorkflowSteps(): array
+    {
+        return $this->workflow_config['steps'] ?? [];
+    }
+
+    /**
+     * Get transitions map from config
+     */
+    public function getTransitions(): array
+    {
+        return $this->workflow_config['transitions'] ?? [];
+    }
+
+    /**
+     * Get the first department in workflow
+     */
+    public function getOriginatingDepartment(): ?array
+    {
+        $steps = $this->getWorkflowSteps();
+        return $steps[0] ?? null;
+    }
+
+    /**
+     * Get the initial state for new transactions
+     */
+    public function getInitialState(): string
+    {
+        $firstStep = $this->getOriginatingDepartment();
+        if ($firstStep) {
+            return 'pending_' . $this->sanitizeDepartmentName($firstStep['department_name']) . '_review';
+        }
+        return 'pending';
+    }
+
+    /**
+     * Sanitize department name for state string
+     */
+    public function sanitizeDepartmentName(string $name): string
+    {
+        return str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9\s]/', '', $name));
+    }
+
+    /**
+     * Check if workflow is configured
+     */
+    public function hasWorkflowConfigured(): bool
+    {
+        return !empty($this->workflow_config) && !empty($this->workflow_config['steps']);
     }
 }

@@ -82,11 +82,6 @@ class TransactionReviewer extends Model
     public function previousReviewer() {
         return $this->belongsTo(User::class, 'previous_reviewer_id');
     }
-
-    public function workflowStep() {
-        return $this->belongsTo(TransactionWorkflow::class, 'workflow_step_id');
-    }
-
     public function incrementIteration() {
         $this->increment('iteration_number');
     }

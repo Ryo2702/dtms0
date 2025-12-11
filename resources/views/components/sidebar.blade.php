@@ -67,10 +67,17 @@
                     </li>
 
                     <li class="mb-1">
-                        <a href="{{ route('transaction-types.index') }}"
+                        <a href="{{ route('admin.transaction-types.index') }}"
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transaction-types') ? 'bg-white/20' : '' }}">
                             <i data-lucide="file-stack" class="w-5 h-5"></i>
                             <span>Transaction Types</span>
+                        </a>
+                    </li>
+                  <li class="mb-1">
+                        <a href="{{ route('admin.workflows.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'admin.workflows') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="git-branch" class="w-5 h-5"></i>
+                            <span>Workflow Config</span>
                         </a>
                     </li>
 
@@ -137,37 +144,5 @@
 @endauth
 
 <script>
-    // document.addEventListener('DOMContentLoaded', function () {
-    //     fetchNotifications();
 
-    //     function fetchNotifications() {
-    //         fetch('/api/notifications/counts', {
-    //             method: 'GET',
-    //             credentials: 'include',
-    //             headers: {
-    //                 'X-Requested-With': 'XMLHttpRequest',
-    //                 'Accept': 'application/json'
-    //             }
-    //         })
-    //             .then(response => response.json())
-    //             .then(data => {
-    //                 if (data.success) {
-    //                     // Update all badges found in the DOM by matching id "badge-<key>"
-    //                     document.querySelectorAll('[id^="badge-"]').forEach(badge => {
-    //                         const key = badge.id.replace('badge-', '');
-    //                         // try direct key, then title-cased key fallback, then 0
-    //                         let raw = (data.unread_counts && (data.unread_counts[key] ?? data.unread_counts[key.charAt(0).toUpperCase() + key.slice(1)])) ?? 0;
-    //                         const val = parseInt(raw, 10) || 0;
-    //                         badge.textContent = val;
-    //                         badge.style.display = val > 0 ? 'inline' : 'none';
-    //                     });
-    //                 }
-    //             })
-    //             .catch(error => {
-    //                 console.error('Error fetching notification counts:', error);
-    //             });
-    //     }
-
-    //     setInterval(fetchNotifications, 3000);
-    // });
 </script>

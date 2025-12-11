@@ -8,48 +8,59 @@ class Transaction extends Model
 {
     protected $fillable = [
         'transaction_code',
-        'document_name', 
+        'document_name',
         'description',
         'transaction_type_id',
         'assign_staff_id',
         'transaction_status',
-        'current_workflow_step',
+        'current_state',
+        'revision_number',
+        'created_by',
         'submitted_at',
         'completed_at',
-        'workflow_history'
     ];
 
-    protected function casts()  {
+    protected function casts(): array
+    {
         return [
             'submitted_at' => 'datetime',
-            'completed_at' => 'datetime'
+            'completed_at' => 'datetime',
         ];
     }
 
-    public function transactionType()  {
+    public function transactionType()
+    {
         return $this->belongsTo(TransactionType::class);
     }
 
-    public function assignStaff() 
+    public function assignStaff()
     {
         return $this->belongsTo(AssignStaff::class);
     }
 
-    public function department() 
+    public function creator()
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function notes() {
+    public function notes()
+    {
         return $this->hasMany(TransactionNote::class);
     }
 
-    public function reviews() 
+    public function reviews()
     {
-        return $this->hasMany(TransactionReviewer::class);    
+        return $this->hasMany(TransactionReviewer::class);
     }
 
-    public function scopeInProgress($query) {
+    public function workflowLogs()
+    {
+        return $this->hasMany(WorkflowLog::class)->orderBy('created_at', 'desc');
+    }
+
+    // Scopes
+    public function scopeInProgress($query)
+    {
         return $query->where('transaction_status', 'in_progress');
     }
 
@@ -58,48 +69,65 @@ class Transaction extends Model
         return $query->where('transaction_status', 'completed');
     }
 
-    public function scopeOverdue($query) {
+    public function scopeOverdue($query)
+    {
         return $query->where('transaction_status', 'overdue');
     }
 
-    public function scopeDepartment($query, $departmentId) {
-        return $query->where('department_id', $departmentId);
-    }
-
-    public function scopeTransanctionType($query, $transactionTypeId)
+    public function scopeCancelled($query)
     {
-        return $query->where('transaction_type_id', $transactionTypeId);
+        return $query->where('current_state', 'cancelled');
     }
 
-    public function isCompleted() 
+    // State helpers
+    public function isCompleted(): bool
     {
-        return $this->transaction_status === 'completed';
+        return $this->current_state === 'completed';
     }
 
-    public function isOverdue() {
-        return $this->transaction_status === 'overdue';
+    public function isCancelled(): bool
+    {
+        return $this->current_state === 'cancelled';
     }
 
-    public function currentWorkflow() {
-        return $this->belongsTo(TransactionWorkflow::class, 'current_workflow_step');
+    public function isPendingReview(): bool
+    {
+        return str_starts_with($this->current_state, 'pending_');
     }
 
-    public function workflowHistory() {
-        return $this->hasMany(WorkflowHistory::class);
+    public function isReturnedState(): bool
+    {
+        return str_starts_with($this->current_state, 'returned_to_');
     }
 
-    public function canCycle() {
-        $currentStep = $this->currentWorkflow;
-        return $currentStep && $currentStep->allow_cycles;
-    }
-
-    public function moveToNextStep($status){
-        $workflow = $this->currentWorkflow;
-
-        if ($status === 'aproved' && $workflow->next_step_on_aprroval_id) {
-            $this->update(['current_workflow_step' => $workflow->next_step_on_approval_id]);
-        }elseif($status === 're_submit' && $workflow->next_step_on_rejection_id){
-            $this->update(['current_workflow_step' => $workflow->next_step_on_rejection_id]);
+    /**
+     * Get current department from state
+     */
+    public function getCurrentDepartmentFromState(): ?string
+    {
+        if (preg_match('/pending_(.+)_review/', $this->current_state, $matches)) {
+            return str_replace('_', ' ', $matches[1]);
         }
+        if (preg_match('/returned_to_(.+)/', $this->current_state, $matches)) {
+            return str_replace('_', ' ', $matches[1]);
+        }
+        return null;
+    }
+
+    /**
+     * Get available actions for current state
+     */
+    public function getAvailableActions(): array
+    {
+        $transitions = $this->transactionType->getTransitions();
+        return $transitions[$this->current_state] ?? [];
+    }
+
+    /**
+     * Increment revision number
+     */
+    public function incrementRevision(): void
+    {
+        $this->increment('revision_number');
     }
 }

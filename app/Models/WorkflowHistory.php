@@ -10,10 +10,6 @@ class WorkflowHistory extends Model
         return $this->belongsTo(Transaction::class);
     }
 
-    public function workflow(){
-        return $this->belongsTo(TransactionWorkflow::class);
-    }
-
     public function reviewer() {
         return $this->belongsTo(User::class, 'reviewer_id');
     }

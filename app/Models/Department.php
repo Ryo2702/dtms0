@@ -60,10 +60,6 @@ class Department extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    public function transactionWorflows() 
-    {
-        return $this->hasMany(TransactionWorkflow::class);
-    }
 
     public function transactionReviews() {
         return $this->hasMany(TransactionReviewer::class);
