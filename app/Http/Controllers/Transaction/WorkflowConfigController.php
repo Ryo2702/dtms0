@@ -107,4 +107,27 @@ class WorkflowConfigController extends Controller
             'transitions' => $transactionType->getTransitions(),
         ]);
     }
+
+    public function duplicate(Request $request, TransactionType $transactionType) {
+        $request->validate(['target_type_id' => 'required|exists:transaction_types,id|different: ' . $transactionType]);
+
+        try {
+            $targetType = TransactionType::findOrFail($request->input('target_type_id'));
+
+            //copy the workflow
+            $targetType->update([
+                'workflow_config' => $transactionType->workflow_config
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Workflow Duplicated Successfully!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

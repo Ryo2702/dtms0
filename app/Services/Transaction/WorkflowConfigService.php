@@ -37,6 +37,10 @@ class WorkflowConfigService
                 'order' => $index + 1,
                 'department_id' => $deptId,
                 'department_name' => $deptName,
+                'process_time_value' => (int) ($step['process_time_value'] ?? 3),
+                'process_time_unit' => $step['process_time_unit'] ?? 'days',
+                'notes' => $step['notes'] ?? '',
+                'difficulty' => $step['difficulty'] ?? 'normal',
                 'can_return_to' => $step['can_return_to'] ?? [],
             ];
         }

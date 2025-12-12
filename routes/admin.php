@@ -37,6 +37,7 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/{transactionType}', [WorkflowConfigController::class, 'update'])->name('update');
             Route::post('/preview', [WorkflowConfigController::class, 'preview'])->name('preview');
             Route::get('/{transactionType}/steps', [WorkflowConfigController::class, 'getSteps'])->name('steps');
+            Route::post('/{transactionType}/duplicate', [WorkflowConfigController::class, 'duplicate'])->name('duplicate');
         });
 
         Route::resource('transaction-types', TransactionTypeController::class);

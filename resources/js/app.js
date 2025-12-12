@@ -41,6 +41,8 @@ import {
     UserRound,
     ImageOff,
     EllipsisVertical,
+    FileSliders,
+    FileType,
 } from "lucide";
 
 createIcons({
@@ -81,7 +83,9 @@ createIcons({
         FolderOpen,
         UserRound,
         ImageOff,
-        EllipsisVertical
+        EllipsisVertical,
+        FileSliders,
+        FileType
     },
 });
 

@@ -67,12 +67,53 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Step Builder --}}
         <div class="bg-base-100 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Workflow Steps</h3>
-            <p class="text-sm text-gray-500 mb-4">Define the sequence of departments for document approval. The order determines the routing flow.</p>
-
             <form action="{{ route('admin.workflows.update', $transactionType) }}" method="POST" id="workflowForm">
                 @csrf
                 @method('PUT')
+
+                {{-- Workflow Difficulty Level (Global) --}}
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-900">Workflow Complexity</h4>
+                            <p class="text-xs text-gray-500 mt-1">Color coding based on workflow complexity</p>
+                        </div>
+                        <div id="stepCountBadge" class="badge badge-ghost">
+                            <span id="stepCount">0</span> departments
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        @php
+                            $currentDifficulty = $currentConfig['difficulty'] ?? 'normal';
+                        @endphp
+                        <label class="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all difficulty-option {{ $currentDifficulty === 'normal' ? 'border-success bg-success/10' : 'border-gray-200 hover:bg-success/5' }}" data-value="normal">
+                            <input type="radio" name="difficulty" value="normal" class="radio radio-success radio-sm" {{ $currentDifficulty === 'normal' ? 'checked' : '' }}>
+                            <div>
+                                <span class="text-sm font-medium block">Normal</span>
+                                <span class="text-xs text-gray-500">1-2 departments, simple flow</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all difficulty-option {{ $currentDifficulty === 'urgent' ? 'border-warning bg-warning/10' : 'border-gray-200 hover:bg-warning/5' }}" data-value="urgent">
+                            <input type="radio" name="difficulty" value="urgent" class="radio radio-warning radio-sm" {{ $currentDifficulty === 'urgent' ? 'checked' : '' }}>
+                            <div>
+                                <span class="text-sm font-medium block">Urgent</span>
+                                <span class="text-xs text-gray-500">3-4 departments, moderate</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all difficulty-option {{ $currentDifficulty === 'highly_urgent' ? 'border-error bg-error/10' : 'border-gray-200 hover:bg-error/5' }}" data-value="highly_urgent">
+                            <input type="radio" name="difficulty" value="highly_urgent" class="radio radio-error radio-sm" {{ $currentDifficulty === 'highly_urgent' ? 'checked' : '' }}>
+                            <div>
+                                <span class="text-sm font-medium block">Highly Urgent</span>
+                                <span class="text-xs text-gray-500">5+ departments, complex</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {{-- Workflow Steps Section --}}
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Workflow Steps</h3>
+                <p class="text-sm text-gray-500 mb-4">Define the sequence of departments for document approval. The order determines the routing flow.</p>
 
                 <div id="stepsContainer" class="space-y-4">
                     @if(empty($currentConfig['steps']))
@@ -127,6 +168,25 @@
                     <span class="text-gray-400 text-sm">Add steps to see the flow</span>
                 </div>
             </div>
+
+            {{-- Difficulty Legend --}}
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Complexity Level Guide</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="badge badge-success">Normal</span>
+                        <span class="text-xs text-gray-600">Simple workflow with 1-2 departments</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="badge badge-warning">Urgent</span>
+                        <span class="text-xs text-gray-600">Moderate workflow with 3-4 departments</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="badge badge-error">Highly Urgent</span>
+                        <span class="text-xs text-gray-600">Complex workflow with 5+ departments</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -137,7 +197,6 @@
     const currentConfig = @json($currentConfig);
     let stepIndex = 0;
 
-    // Step template with time value, time unit, and notes
     function createStepHtml(index, departmentId = '', canReturnTo = [], processTimeValue = 3, processTimeUnit = 'days', notes = '') {
         const deptOptions = departments.map(d => 
             `<option value="${d.id}" ${departmentId == d.id ? 'selected' : ''}>${d.name}</option>`
@@ -166,7 +225,6 @@
                     </div>
                 </div>
 
-                {{-- Department Selection --}}
                 <div class="form-control mb-3">
                     <label class="label">
                         <span class="label-text font-medium">Department</span>
@@ -177,7 +235,6 @@
                     </select>
                 </div>
 
-                {{-- Process Time --}}
                 <div class="grid grid-cols-2 gap-3 mb-3">
                     <div class="form-control">
                         <label class="label">
@@ -203,7 +260,6 @@
                     </div>
                 </div>
 
-                {{-- Notes/Instructions --}}
                 <div class="form-control mb-3">
                     <label class="label">
                         <span class="label-text font-medium">Instructions/Notes</span>
@@ -215,7 +271,6 @@
                               placeholder="e.g., Review budget allocation and verify fund availability...">${notes}</textarea>
                 </div>
 
-                {{-- Can Return To --}}
                 <div class="form-control return-to-container" style="display: none;">
                     <label class="label">
                         <span class="label-text font-medium">Can Return To</span>
@@ -227,6 +282,26 @@
                 </div>
             </div>
         `;
+    }
+
+    // Update step count and suggest difficulty
+    function updateStepCount() {
+        const count = document.querySelectorAll('.step-item').length;
+        document.getElementById('stepCount').textContent = count;
+        
+        // Update badge color based on count
+        const badge = document.getElementById('stepCountBadge');
+        badge.classList.remove('badge-success', 'badge-warning', 'badge-error', 'badge-ghost');
+        
+        if (count >= 5) {
+            badge.classList.add('badge-error');
+        } else if (count >= 3) {
+            badge.classList.add('badge-warning');
+        } else if (count >= 1) {
+            badge.classList.add('badge-success');
+        } else {
+            badge.classList.add('badge-ghost');
+        }
     }
 
     // Initialize with existing config
@@ -252,7 +327,6 @@
             // Restore can_return_to checkboxes after all steps are added
             setTimeout(() => {
                 updateReturnToOptions();
-                // Now check the boxes based on saved config
                 currentConfig.steps.forEach((step, index) => {
                     if (step.can_return_to && step.can_return_to.length > 0) {
                         const stepEl = container.querySelectorAll('.step-item')[index];
@@ -265,11 +339,42 @@
                     }
                 });
                 updatePreview();
+                updateStepCount();
             }, 100);
         }
 
         attachEventListeners();
+        attachDifficultyListeners();
+        updateStepCount();
     });
+
+    // Difficulty radio button listeners
+    function attachDifficultyListeners() {
+        document.querySelectorAll('input[name="difficulty"]').forEach(radio => {
+            radio.onchange = function() {
+                // Update visual styling
+                document.querySelectorAll('.difficulty-option').forEach(opt => {
+                    opt.classList.remove('border-success', 'bg-success/10', 'border-warning', 'bg-warning/10', 'border-error', 'bg-error/10');
+                    opt.classList.add('border-gray-200');
+                });
+                
+                const selected = this.closest('.difficulty-option');
+                const value = this.value;
+                
+                if (value === 'normal') {
+                    selected.classList.add('border-success', 'bg-success/10');
+                } else if (value === 'urgent') {
+                    selected.classList.add('border-warning', 'bg-warning/10');
+                } else if (value === 'highly_urgent') {
+                    selected.classList.add('border-error', 'bg-error/10');
+                }
+                selected.classList.remove('border-gray-200');
+                
+                updatePreview();
+                updateVisualFlow();
+            };
+        });
+    }
 
     // Add Step button
     document.getElementById('addStepBtn').addEventListener('click', function() {
@@ -284,6 +389,7 @@
         updateReturnToOptions();
         attachEventListeners();
         updatePreview();
+        updateStepCount();
     });
 
     function attachEventListeners() {
@@ -295,6 +401,7 @@
                 updateReturnToOptions();
                 updatePreview();
                 updateVisualFlow();
+                updateStepCount();
             };
         });
 
@@ -337,14 +444,13 @@
             };
         });
 
-        // Process time and notes change - update preview
+        // Process time and notes change
         document.querySelectorAll('.process-time-value, .process-time-unit, .step-notes').forEach(input => {
             input.onchange = updatePreview;
             input.oninput = debounce(updatePreview, 500);
         });
     }
 
-    // Debounce helper for text inputs
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -362,7 +468,6 @@
             item.querySelector('.step-number').textContent = `Step ${index + 1}`;
             item.dataset.index = index;
             
-            // Update all input names
             const select = item.querySelector('.department-select');
             if (select) select.name = `steps[${index}][department_id]`;
 
@@ -375,7 +480,6 @@
             const notes = item.querySelector('.step-notes');
             if (notes) notes.name = `steps[${index}][notes]`;
             
-            // Update checkbox names
             item.querySelectorAll('.return-to-checkbox').forEach(cb => {
                 cb.name = `steps[${index}][can_return_to][]`;
             });
@@ -389,7 +493,6 @@
             const container = step.querySelector('.return-to-container');
             const optionsDiv = step.querySelector('.return-to-options');
             
-            // First step can't return to anything
             if (index === 0) {
                 container.style.display = 'none';
                 return;
@@ -400,7 +503,6 @@
 
             let hasOptions = false;
 
-            // Add checkboxes for all previous steps
             for (let i = 0; i < index; i++) {
                 const prevStep = steps[i];
                 const prevSelect = prevStep.querySelector('.department-select');
@@ -426,7 +528,6 @@
                 optionsDiv.innerHTML = '<span class="text-gray-400 text-sm">Select departments in previous steps first</span>';
             }
 
-            // Attach change listeners to checkboxes
             optionsDiv.querySelectorAll('.return-to-checkbox').forEach(cb => {
                 cb.onchange = updatePreview;
             });
@@ -456,7 +557,11 @@
                 });
             }
         });
-        return { steps };
+        
+        // Get global difficulty
+        const difficulty = document.querySelector('input[name="difficulty"]:checked')?.value || 'normal';
+        
+        return { steps, difficulty };
     }
 
     function updatePreview() {
@@ -464,6 +569,7 @@
         
         if (data.steps.length === 0) {
             document.getElementById('transitionJson').textContent = JSON.stringify({
+                difficulty: data.difficulty,
                 steps: [],
                 transitions: {}
             }, null, 2);
@@ -490,9 +596,19 @@
         });
     }
 
+    function getDifficultyBadgeClass() {
+        const difficulty = document.querySelector('input[name="difficulty"]:checked')?.value || 'normal';
+        switch(difficulty) {
+            case 'urgent': return 'badge-warning';
+            case 'highly_urgent': return 'badge-error';
+            default: return 'badge-success';
+        }
+    }
+
     function updateVisualFlow() {
         const container = document.getElementById('visualFlow');
         const steps = document.querySelectorAll('.step-item');
+        const badgeClass = getDifficultyBadgeClass();
         
         if (steps.length === 0) {
             container.innerHTML = '<span class="text-gray-400 text-sm">Add steps to see the flow</span>';
@@ -516,7 +632,7 @@
                 }
                 html += `
                     <div class="flex flex-col items-center">
-                        <span class="badge badge-primary">${deptName}</span>
+                        <span class="badge ${badgeClass}">${deptName}</span>
                         <span class="text-xs text-gray-500 mt-1">${timeValue} ${timeUnit}</span>
                     </div>
                 `;
@@ -527,7 +643,7 @@
             <svg class="w-6 h-6 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
             </svg>
-            <span class="badge badge-success">Completed</span>
+            <span class="badge badge-neutral">Completed</span>
         `;
 
         container.innerHTML = html || '<span class="text-gray-400 text-sm">Add steps to see the flow</span>';
@@ -544,7 +660,6 @@
             return;
         }
 
-        // Validate all steps have departments selected
         let valid = true;
         steps.forEach((step, index) => {
             const dept = step.querySelector('.department-select')?.value;
