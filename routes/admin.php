@@ -33,11 +33,15 @@ Route::middleware(['auth'])->group(function () {
 
         Route::prefix('workflows')->name('workflows.')->group(function () {
             Route::get('/', [WorkflowConfigController::class, 'index'])->name('index');
-            Route::get('/{transactionType}/edit', [WorkflowConfigController::class, 'edit'])->name('edit');
-            Route::put('/{transactionType}', [WorkflowConfigController::class, 'update'])->name('update');
+            Route::get('/create', [WorkflowConfigController::class, 'create'])->name('create');
+            Route::post('/', [WorkflowConfigController::class, 'store'])->name('store');
+            Route::get('/{workflow}/edit', [WorkflowConfigController::class, 'edit'])->name('edit');
+            Route::put('/{workflow}', [WorkflowConfigController::class, 'update'])->name('update');
+            Route::delete('/{workflow}', [WorkflowConfigController::class, 'destroy'])->name('destroy');
             Route::post('/preview', [WorkflowConfigController::class, 'preview'])->name('preview');
-            Route::get('/{transactionType}/steps', [WorkflowConfigController::class, 'getSteps'])->name('steps');
-            Route::post('/{transactionType}/duplicate', [WorkflowConfigController::class, 'duplicate'])->name('duplicate');
+            Route::post('/{workflow}/duplicate', [WorkflowConfigController::class, 'duplicate'])->name('duplicate');
+            Route::post('/{workflow}/toggle-status', [WorkflowConfigController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{workflow}/set-default', [WorkflowConfigController::class, 'setDefault'])->name('set-default');
         });
 
         Route::resource('transaction-types', TransactionTypeController::class);

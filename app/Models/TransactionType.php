@@ -43,6 +43,18 @@ class TransactionType extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    public function workflows() {
+        return $this->hasMany(Workflow::class);
+    }
+
+    public function defaultWorkflow(){
+        return $this->hasOne(Workflow::class)->where('is_default', true);
+    }
+
+    public function activeWorkflows(){
+        return $this->hasMany(Workflow::class)->where('status', true);
+    }
+
     /**
      * Get workflow steps from config
      */
