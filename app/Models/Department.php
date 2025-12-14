@@ -65,9 +65,17 @@ class Department extends Model
         return $this->hasMany(TransactionReviewer::class);
     }
 
+    public function documentTags() {
+        return $this->hasMany(DocumentTag::class);
+    }
+
     public function activeUsers(): HasMany
     {
         return $this->users()->where('status', 1);
+    }
+
+    public function getActiveDocumentTags()  {
+        return $this->documentTags()->where('status', true);
     }
 
     public function hasHead(): bool
@@ -125,6 +133,13 @@ class Department extends Model
     public function getActiveStaffCount(): int
     {
         return $this->staff()->where('status', 1)->count();
+    }
+
+    public function getWorkflowsWithTags() {
+        
+        return Workflow::whereHas('documentTags', function ($query) {
+            $query->where('department_id', $this->id);
+        });
     }
 
     /**

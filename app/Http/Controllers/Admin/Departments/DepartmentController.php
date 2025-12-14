@@ -173,45 +173,114 @@ class DepartmentController extends Controller
             ]
         );
 
-        try{
+        try {
             $department = Department::findOrFail($id);
             $user = User::findOrFail($request->user_id);
 
             if ($user->department_id && $user->department_id != $id) {
-               return back()->with('error', 'User is already assigned to another department.');
+                return back()->with('error', 'User is already assigned to another department.');
             }
 
             $user->department_id = $id;
             $user->save();
 
             return back()->with('success', 'User assigned successfully.');
-            
-        }catch(\Exception $e){
-
+        } catch (\Exception $e) {
         }
     }
     public function removeUser(Request $request, $id)
-{
-    $request->validate([
-        'user_id' => 'required|exists:users,id'
-    ]);
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
 
-    try {
-        $department = Department::findOrFail($id);
-        $user = User::findOrFail($request->user_id);
+        try {
+            $department = Department::findOrFail($id);
+            $user = User::findOrFail($request->user_id);
 
-        if ($user->department_id != $id) {
-            return back()->with('error', 'User is not in this department.');
+            if ($user->department_id != $id) {
+                return back()->with('error', 'User is not in this department.');
+            }
+
+            $user->department_id = null;
+            $user->save();
+
+            return back()->with('success', 'User removed successfully.');
+        } catch (\Exception $e) {
+            Log::error('User removal failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to remove user.');
         }
-
-        $user->department_id = null;
-        $user->save();
-
-        return back()->with('success', 'User removed successfully.');
-        
-    } catch (\Exception $e) {
-        Log::error('User removal failed: ' . $e->getMessage());
-        return back()->with('error', 'Failed to remove user.');
     }
-}
+
+    public function documentTags($id)
+    {
+        $department = Department::findOrFail($id);
+        $tags = $department->documentTags()
+            ->with('workflows')
+            ->get()
+            ->map(function ($tag) {
+                return [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'slug' => $tag->slug,
+                    'description' => $tag->description,
+                    'status' => $tag->status,
+                    'workflows_count' => $tag->workflows->count(),
+                    'created_at' => $tag->created_at
+                ];
+            });
+
+        return response()->json([
+            'department' => [
+                'id' => $department->id,
+                'name' => $department->code,
+                'code' => $department->code
+            ],
+            'document_tags' => $tags
+        ]);
+    }
+
+    public function workflowWithTags($id)
+    {
+        $department = Department::findOrFail($id);
+        $workflows = $department->getWorkflowsWithTags()
+            ->with(['transactionType', 'documentTags'])
+            ->get()
+            ->map(function ($workflow) use ($department) {
+                return [
+                    'id' => $workflow->id,
+                    'transaction_type' => $workflow->transactionType->document_name,
+                    'description' => $workflow->description,
+                    'difficulty' => $workflow->difficulty,
+                    'status' => $workflow->status,
+                    'tags_from_department' =>  $workflow->documentTags
+                        ->where('department_id', $department->id)
+                        ->values()
+                        ->map(function ($tag) {
+                            return [
+                                'id' => $tag->id,
+                                'name' => $tag->name,
+                                'is_required' => $tag->pivot->is_required
+                            ];
+                        }),
+                ];
+            });
+
+        return response()->json([
+            'department' => [
+                'id' => $department->id,
+                'name' => $department->name
+            ],
+            'workflows' => $workflows
+        ]);
+    }
+
+    public function activeDocumentTags($id)
+    {
+        $department = Department::findOrFail($id);
+        $tags = $department->getActiveDocumentTags()
+            ->get(['id', 'name', 'slug']);
+            
+        return response()->json($tags);
+    }
 }

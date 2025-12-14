@@ -17,7 +17,7 @@
         </div>
 
         {{-- Flash Messages --}}
-        @if(session('success'))
+        @if (session('success'))
             <div class="alert alert-success mb-4">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -26,7 +26,7 @@
             </div>
         @endif
 
-        @if(session('error'))
+        @if (session('error'))
             <div class="alert alert-error mb-4">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -35,15 +35,15 @@
             </div>
         @endif
 
-        @if($errors->has('workflow'))
+        @if ($errors->has('workflow'))
             <div class="alert alert-error mb-4">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 <ul class="list-disc list-inside">
-                    @foreach($errors->get('workflow') as $error)
-                        @if(is_array($error))
-                            @foreach($error as $e)
+                    @foreach ($errors->get('workflow') as $error)
+                        @if (is_array($error))
+                            @foreach ($error as $e)
                                 <li>{{ $e }}</li>
                             @endforeach
                         @else
@@ -54,10 +54,10 @@
             </div>
         @endif
 
-        @if($errors->any() && !$errors->has('workflow'))
+        @if ($errors->any() && !$errors->has('workflow'))
             <div class="alert alert-error mb-4">
                 <ul class="list-disc list-inside">
-                    @foreach($errors->all() as $error)
+                    @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
@@ -71,31 +71,23 @@
                     @csrf
                     @method('PUT')
 
-                    {{-- Workflow Name --}}
-                    <div class="form-control mb-4">
-                        <label class="label">
-                            <span class="label-text font-medium">Workflow Name *</span>
-                        </label>
-                        <input type="text" name="name" class="input input-bordered"
-                               value="{{ old('name', $workflow->name) }}" required>
-                    </div>
-
                     {{-- Auto-calculated Difficulty Display --}}
                     <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h4 class="text-sm font-semibold text-gray-900">Workflow Complexity</h4>
-                                <p class="text-xs text-gray-500 mt-1">Auto-calculated based on number of departments</p>
+                                <p class="text-xs text-gray-500 mt-1">Auto-calculated based on total processing time</p>
                             </div>
                             <div class="flex items-center gap-3">
                                 <div id="stepCountBadge" class="badge badge-ghost">
-                                    <span id="stepCount">0</span> departments
+                                    departments: <span id="stepCount">0</span>
                                 </div>
                                 <span id="difficultyBadge" class="badge badge-ghost">-</span>
                             </div>
                         </div>
                         {{-- Hidden input for difficulty (auto-set by JS) --}}
-                        <input type="hidden" name="difficulty" id="difficultyInput" value="{{ $currentConfig['difficulty'] ?? 'simple' }}">
+                        <input type="hidden" name="difficulty" id="difficultyInput"
+                            value="{{ $currentConfig['difficulty'] ?? 'simple' }}">
                     </div>
 
                     {{-- Workflow Steps Section --}}
@@ -104,7 +96,7 @@
                         order determines the routing flow.</p>
 
                     <div id="stepsContainer" class="space-y-4">
-                        @if(empty($currentConfig['steps']))
+                        @if (empty($currentConfig['steps']))
                             <p class="text-gray-500 text-center py-8" id="noStepsMessage">
                                 No steps configured. Add your first step below.
                             </p>
@@ -134,22 +126,6 @@
             <div class="bg-base-100 rounded-lg shadow-md p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Transition Map Preview</h3>
                 <p class="text-sm text-gray-500 mb-4">Auto-generated state transitions based on your configuration</p>
-
-                <div id="transitionPreview" class="bg-gray-900 rounded-lg p-4 overflow-auto max-h-[500px]">
-                    <pre class="text-green-400 text-sm"><code id="transitionJson">{
-      "steps": [],
-      "transitions": {}
-    }</code></pre>
-                </div>
-
-                <button type="button" id="refreshPreviewBtn" class="btn btn-outline btn-sm mt-4">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh Preview
-                </button>
-
                 {{-- Visual Flow --}}
                 <div class="mt-6">
                     <h4 class="text-sm font-medium text-gray-700 mb-3">Visual Flow</h4>
@@ -164,15 +140,15 @@
                     <div class="space-y-2">
                         <div class="flex items-center gap-3">
                             <span class="badge badge-success">Simple</span>
-                            <span class="text-xs text-gray-600">Simple workflow with 1-2 departments</span>
+                            <span class="text-xs text-gray-600">Simple workflow with 1-7 days</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="badge badge-warning">Simple</span>
-                            <span class="text-xs text-gray-600">Moderate workflow with 3-4 departments</span>
+                            <span class="badge badge-warning">Complex</span>
+                            <span class="text-xs text-gray-600">Complex workflow with 2-4 weeks</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="badge badge-error">Complex</span>
-                            <span class="text-xs text-gray-600">Complex workflow with 5+ departments</span>
+                            <span class="badge badge-error">Highly Technical</span>
+                            <span class="text-xs text-gray-600">Highly Technical workflow with 5-6+ weeks</span>
                         </div>
                     </div>
                 </div>
@@ -186,7 +162,8 @@
             const currentConfig = @json($currentConfig);
             let stepIndex = 0;
 
-            function createStepHtml(index, departmentId = '', canReturnTo = [], processTimeValue = 3, processTimeUnit = 'days', notes = '') {
+            function createStepHtml(index, departmentId = '', canReturnTo = [], processTimeValue = 3, processTimeUnit = 'days',
+                notes = '') {
                 const deptOptions = departments.map(d =>
                     `<option value="${d.id}" ${departmentId == d.id ? 'selected' : ''}>${d.name}</option>`
                 ).join('');
@@ -273,6 +250,78 @@
                 `;
             }
 
+            // Calculate total time in days from all steps
+            function calculateTotalDays() {
+                let totalDays = 0;
+                document.querySelectorAll('.step-item').forEach(item => {
+                    const value = parseFloat(item.querySelector('.process-time-value')?.value) || 0;
+                    const unit = item.querySelector('.process-time-unit')?.value || 'days';
+
+                    if (unit === 'hours') {
+                        totalDays += value / 24;
+                    } else if (unit === 'weeks') {
+                        totalDays += value * 7;
+                    } else {
+                        totalDays += value;
+                    }
+                });
+                return Math.round(totalDays * 10) / 10;
+            }
+
+            function calculateDifficulty(totalDays) {
+                if (totalDays >= 35) return 'highly_technical';
+                if (totalDays >= 14) return 'complex';
+                return 'simple';
+            }
+
+            function getDifficultyLabel(difficulty) {
+                switch (difficulty) {
+                    case 'highly_technical':
+                        return 'Highly Technical';
+                    case 'complex':
+                        return 'Complex';
+                    default:
+                        return 'Simple';
+                }
+            }
+
+            function getDifficultyBadgeClass(difficulty) {
+                switch (difficulty) {
+                    case 'highly_technical':
+                        return 'badge-error';
+                    case 'complex':
+                        return 'badge-warning';
+                    default:
+                        return 'badge-success';
+                }
+            }
+
+            function updateStepCountAndDifficulty() {
+                const count = document.querySelectorAll('.step-item').length;
+                const totalDays = calculateTotalDays();
+
+                document.getElementById('stepCount').textContent = count;
+
+                const difficulty = calculateDifficulty(totalDays);
+                document.getElementById('difficultyInput').value = difficulty;
+
+                const stepBadge = document.getElementById('stepCountBadge');
+                stepBadge.classList.remove('badge-success', 'badge-warning', 'badge-error', 'badge-ghost', 'badge-info');
+
+                const diffBadge = document.getElementById('difficultyBadge');
+                diffBadge.classList.remove('badge-success', 'badge-warning', 'badge-error', 'badge-ghost');
+
+                if (count === 0) {
+                    stepBadge.classList.add('badge-ghost');
+                    diffBadge.classList.add('badge-ghost');
+                    diffBadge.textContent = '-';
+                } else {
+                    stepBadge.classList.add('badge-info');
+                    diffBadge.classList.add(getDifficultyBadgeClass(difficulty));
+                    diffBadge.textContent = `${getDifficultyLabel(difficulty)} (${totalDays} days)`;
+                }
+            }
+
             // Update step count and suggest difficulty
             function updateStepCount() {
                 const count = document.querySelectorAll('.step-item').length;
@@ -298,10 +347,10 @@
 
                 if (count >= 5) {
                     difficultyBadge.classList.add('badge-error');
-                    difficultyBadge.textContent = 'Complex';
+                    difficultyBadge.textContent = 'Highly Technical';
                 } else if (count >= 3) {
                     difficultyBadge.classList.add('badge-warning');
-                    difficultyBadge.textContent = 'Moderate';
+                    difficultyBadge.textContent = 'Complex';
                 } else if (count >= 1) {
                     difficultyBadge.classList.add('badge-success');
                     difficultyBadge.textContent = 'Simple';
@@ -311,11 +360,12 @@
                 }
 
                 // Update hidden difficulty input
-                document.getElementById('difficultyInput').value = count >= 5 ? 'complex' : count >= 3 ? 'moderate' : 'simple';
+                document.getElementById('difficultyInput').value = count >= 5 ? 'highly_technical' : count >= 3 ? 'complex' :
+                    'simple';
             }
 
             // Initialize with existing config
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 const container = document.getElementById('stepsContainer');
 
                 if (currentConfig.steps && currentConfig.steps.length > 0) {
@@ -342,29 +392,31 @@
                                 const stepEl = container.querySelectorAll('.step-item')[index];
                                 if (stepEl) {
                                     step.can_return_to.forEach(deptId => {
-                                        const checkbox = stepEl.querySelector(`.return-to-checkbox[value="${deptId}"]`);
+                                        const checkbox = stepEl.querySelector(
+                                            `.return-to-checkbox[value="${deptId}"]`);
                                         if (checkbox) checkbox.checked = true;
                                     });
                                 }
                             }
                         });
                         updatePreview();
-                        updateStepCount();
+                        updateStepCountAndDifficulty();
                     }, 100);
                 }
 
                 attachEventListeners();
                 attachDifficultyListeners();
-                updateStepCount();
+                updateStepCountAndDifficulty();
             });
 
             // Difficulty radio button listeners
             function attachDifficultyListeners() {
                 document.querySelectorAll('input[name="difficulty"]').forEach(radio => {
-                    radio.onchange = function () {
+                    radio.onchange = function() {
                         // Update visual styling
                         document.querySelectorAll('.difficulty-option').forEach(opt => {
-                            opt.classList.remove('border-success', 'bg-success/10', 'border-warning', 'bg-warning/10', 'border-error', 'bg-error/10');
+                            opt.classList.remove('border-success', 'bg-success/10', 'border-warning',
+                                'bg-warning/10', 'border-error', 'bg-error/10');
                             opt.classList.add('border-gray-200');
                         });
 
@@ -373,9 +425,9 @@
 
                         if (value === 'simple') {
                             selected.classList.add('border-success', 'bg-success/10');
-                        } else if (value === 'moderate') {
-                            selected.classList.add('border-warning', 'bg-warning/10');
                         } else if (value === 'complex') {
+                            selected.classList.add('border-warning', 'bg-warning/10');
+                        } else if (value === 'highly_technical') {
                             selected.classList.add('border-error', 'bg-error/10');
                         }
                         selected.classList.remove('border-gray-200');
@@ -387,7 +439,7 @@
             }
 
             // Add Step button
-            document.getElementById('addStepBtn').addEventListener('click', function () {
+            document.getElementById('addStepBtn').addEventListener('click', function() {
                 const container = document.getElementById('stepsContainer');
                 const noStepsMsg = document.getElementById('noStepsMessage');
                 if (noStepsMsg) noStepsMsg.remove();
@@ -399,25 +451,25 @@
                 updateReturnToOptions();
                 attachEventListeners();
                 updatePreview();
-                updateStepCount();
+                updateStepCountAndDifficulty();
             });
 
             function attachEventListeners() {
                 // Remove step
                 document.querySelectorAll('.remove-step').forEach(btn => {
-                    btn.onclick = function () {
+                    btn.onclick = function() {
                         this.closest('.step-item').remove();
                         updateStepNumbers();
                         updateReturnToOptions();
                         updatePreview();
                         updateVisualFlow();
-                        updateStepCount();
+                        updateStepCountAndDifficulty();
                     };
                 });
 
                 // Move up
                 document.querySelectorAll('.move-up').forEach(btn => {
-                    btn.onclick = function () {
+                    btn.onclick = function() {
                         const item = this.closest('.step-item');
                         const prev = item.previousElementSibling;
                         if (prev && prev.classList.contains('step-item')) {
@@ -432,7 +484,7 @@
 
                 // Move down
                 document.querySelectorAll('.move-down').forEach(btn => {
-                    btn.onclick = function () {
+                    btn.onclick = function() {
                         const item = this.closest('.step-item');
                         const next = item.nextElementSibling;
                         if (next && next.classList.contains('step-item')) {
@@ -447,7 +499,7 @@
 
                 // Department change
                 document.querySelectorAll('.department-select').forEach(select => {
-                    select.onchange = function () {
+                    select.onchange = function() {
                         updateReturnToOptions();
                         updatePreview();
                         updateVisualFlow();
@@ -456,8 +508,14 @@
 
                 // Process time and notes change
                 document.querySelectorAll('.process-time-value, .process-time-unit, .step-notes').forEach(input => {
-                    input.onchange = updatePreview;
-                    input.oninput = debounce(updatePreview, 500);
+                    input.onchange = function() {
+                        updatePreview();
+                        updateStepCountAndDifficulty();
+                    };
+                    input.oninput = debounce(function() {
+                        updatePreview();
+                        updateStepCountAndDifficulty();
+                    }, 500);
                 });
             }
 
@@ -512,6 +570,7 @@
                     optionsDiv.innerHTML = '';
 
                     let hasOptions = false;
+                    let checkboxesHtml = '';
 
                     for (let i = 0; i < index; i++) {
                         const prevStep = steps[i];
@@ -521,7 +580,7 @@
 
                         if (prevDeptId && prevDeptName && prevDeptName !== 'Select Department') {
                             hasOptions = true;
-                            const checkboxHtml = `
+                            checkboxesHtml += `
                                 <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
                                     <input type="checkbox" 
                                            name="steps[${index}][can_return_to][]" 
@@ -530,17 +589,44 @@
                                     <span class="label-text">Allow return to <strong>${prevDeptName}</strong></span>
                                 </label>
                             `;
-                            optionsDiv.insertAdjacentHTML('beforeend', checkboxHtml);
                         }
                     }
 
-                    if (!hasOptions) {
+                    if (hasOptions) {
+                        // Add "Select All" checkbox at the top
+                        optionsDiv.innerHTML = `
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-primary/10 p-1 rounded border-b border-gray-200 pb-2 mb-2">
+                                <input type="checkbox" 
+                                       class="checkbox checkbox-sm checkbox-primary select-all-checkbox">
+                                <span class="label-text font-medium">Select All</span>
+                            </label>
+                            ${checkboxesHtml}
+                        `;
+
+                        // Attach select all functionality
+                        const selectAllCb = optionsDiv.querySelector('.select-all-checkbox');
+                        const returnToCbs = optionsDiv.querySelectorAll('.return-to-checkbox');
+
+                        selectAllCb.onchange = function() {
+                            returnToCbs.forEach(cb => {
+                                cb.checked = this.checked;
+                            });
+                            updatePreview();
+                        };
+
+                        // Update "Select All" state when individual checkboxes change
+                        returnToCbs.forEach(cb => {
+                            cb.onchange = function() {
+                                const allChecked = Array.from(returnToCbs).every(c => c.checked);
+                                const someChecked = Array.from(returnToCbs).some(c => c.checked);
+                                selectAllCb.checked = allChecked;
+                                selectAllCb.indeterminate = someChecked && !allChecked;
+                                updatePreview();
+                            };
+                        });
+                    } else {
                         optionsDiv.innerHTML = '<span class="text-gray-400 text-sm">Select departments in previous steps first</span>';
                     }
-
-                    optionsDiv.querySelectorAll('.return-to-checkbox').forEach(cb => {
-                        cb.onchange = updatePreview;
-                    });
                 });
             }
 
@@ -568,37 +654,34 @@
                     }
                 });
 
-                // Get global difficulty
-                const difficulty = document.querySelector('input[name="difficulty"]:checked')?.value || 'simple';
+                // Get difficulty from hidden input (not radio button)
+                const difficulty = document.getElementById('difficultyInput').value || 'simple';
 
-                return { steps, difficulty };
+                return {
+                    steps,
+                    difficulty
+                };
             }
 
             function updatePreview() {
                 const data = getFormData();
 
                 if (data.steps.length === 0) {
-                    document.getElementById('transitionJson').textContent = JSON.stringify({
-                        difficulty: data.difficulty,
-                        steps: [],
-                        transitions: {}
-                    }, null, 2);
                     updateVisualFlow();
                     return;
                 }
 
-                fetch('{{ route("admin.workflows.preview") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                })
+                fetch('{{ route('admin.workflows.preview') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
                     .then(response => response.json())
                     .then(config => {
-                        document.getElementById('transitionJson').textContent = JSON.stringify(config, null, 2);
                         updateVisualFlow();
                     })
                     .catch(err => {
@@ -607,11 +690,14 @@
             }
 
             function getDifficultyBadgeClass() {
-                const difficulty = document.querySelector('input[name="difficulty"]:checked')?.value || 'simple';
+                const difficulty = document.getElementById('difficultyInput').value || 'simple';
                 switch (difficulty) {
-                    case 'moderate': return 'badge-warning';
-                    case 'complex': return 'badge-error';
-                    default: return 'badge-success';
+                    case 'complex':
+                        return 'badge-warning';
+                    case 'highly_technical':
+                        return 'badge-error';
+                    default:
+                        return 'badge-success';
                 }
             }
 
@@ -662,7 +748,7 @@
             document.getElementById('refreshPreviewBtn').addEventListener('click', updatePreview);
 
             // Form submission
-            document.getElementById('workflowForm').addEventListener('submit', function (e) {
+            document.getElementById('workflowForm').addEventListener('submit', function(e) {
                 const steps = document.querySelectorAll('.step-item');
                 if (steps.length === 0) {
                     e.preventDefault();

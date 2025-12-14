@@ -73,16 +73,21 @@
                             <span>Transaction Types</span>
                         </a>
                     </li>
-                  <li class="mb-1">
+                    <li class="mb-1">
+                        <a href="{{ route('admin.document-tags.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transaction-types') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="file-type" class="w-5 h-5"></i>
+                            <span>Tags</span>
+                        </a>
+                    </li>
+                    <li class="mb-1">
                         <a href="{{ route('admin.workflows.index') }}"
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'admin.workflows') ? 'bg-white/20' : '' }}">
                             <i data-lucide="file-sliders" class="w-5 h-5"></i>
                             <span>Workflow Config</span>
                         </a>
                     </li>
-
                 @else
-
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Status</span>
                     </li>
@@ -143,6 +148,4 @@
 
 @endauth
 
-<script>
-
-</script>
+<script></script>

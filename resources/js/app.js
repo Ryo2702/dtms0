@@ -43,6 +43,9 @@ import {
     EllipsisVertical,
     FileSliders,
     FileType,
+    ChevronUp,
+    ChevronDown,
+    ArrowRight,
 } from "lucide";
 
 createIcons({
@@ -63,6 +66,7 @@ createIcons({
         FileCheck,
         LogOut,
         ArrowLeft,
+        ArrowRight,
         Menu,
         X,
         FileClock,
@@ -85,9 +89,13 @@ createIcons({
         ImageOff,
         EllipsisVertical,
         FileSliders,
-        FileType
+        FileType,
+        ChevronUp,
+        ChevronDown,
+
     },
 });
+
 
 window.$ = window.jQuery = $;
 

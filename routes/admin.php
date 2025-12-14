@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuditLog\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
+use App\Http\Controllers\DocumentTagController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Transaction\TransactionTypeController;
 use App\Http\Controllers\Transaction\WorkflowConfigController;
@@ -21,6 +22,22 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{id}/users', [DepartmentController::class, 'users'])->name('users');
             Route::post('/{id}/assign-user', [DepartmentController::class, 'assignUser'])->name('assign-user');
             Route::delete('/{id}/remove-user', [DepartmentController::class, 'removeUser'])->name('remove-user');
+            Route::get('/{id}/document-tags', [DepartmentController::class, 'documentTags'])->name('document-tags');
+            Route::get('/{id}/workflows-with-tags', [DepartmentController::class, 'workflowsWithTags'])->name('workflows-with-tags');
+            Route::get('/{id}/active-document-tags', [DepartmentController::class, 'activeDocumentTags'])->name('active-document-tags');
+        });
+
+        Route::prefix('document-tags')->name('document-tags.')->group(function () {
+            Route::get('/', [DocumentTagController::class, 'index'])->name('index');
+            Route::get('/create', [DocumentTagController::class, 'create'])->name('create');
+            Route::post('/', [DocumentTagController::class, 'store'])->name('store');
+            Route::get('/{documentTag}', [DocumentTagController::class, 'show'])->name('show');
+            Route::get('/{documentTag}/edit', [DocumentTagController::class, 'edit'])->name('edit');
+            Route::put('/{documentTag}', [DocumentTagController::class, 'update'])->name('update');
+            Route::delete('/{documentTag}', [DocumentTagController::class, 'destroy'])->name('destroy');
+            Route::post('/{documentTag}/toggle-status', [DocumentTagController::class, 'toggleStatus'])->name('toggle-status');
+            Route::get('/department/{department}', [DocumentTagController::class, 'getByDepartment'])->name('by-department');
+            Route::post('/bulk-assign', [DocumentTagController::class, 'bulkAssignToWorkflow'])->name('bulk-assign');
         });
 
         Route::prefix('audit-logs')->name('audit-logs.')->group(function () {
@@ -41,7 +58,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/preview', [WorkflowConfigController::class, 'preview'])->name('preview');
             Route::post('/{workflow}/duplicate', [WorkflowConfigController::class, 'duplicate'])->name('duplicate');
             Route::post('/{workflow}/toggle-status', [WorkflowConfigController::class, 'toggleStatus'])->name('toggle-status');
-            Route::post('/{workflow}/set-default', [WorkflowConfigController::class, 'setDefault'])->name('set-default');
+            Route::get('/{workflow}/document-tags', [WorkflowConfigController::class, 'getDocumentTags'])->name('document-tags');
+            Route::get('/{workflow}/tag-departments', [WorkflowConfigController::class, 'getTagDepartments'])->name('tag-departments');
         });
 
         Route::resource('transaction-types', TransactionTypeController::class);

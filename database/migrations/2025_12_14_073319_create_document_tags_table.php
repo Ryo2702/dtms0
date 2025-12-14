@@ -11,17 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('workflows', function (Blueprint $table) {
+        Schema::create('document_tags', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('transaction_type_id')->constrained();
+            $table->string('name');
+            $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->enum('difficulty', ['simple', 'complex', 'highly_technical'])->default('simple');
-            $table->json('workflow_config')->nullable();
-            $table->boolean('is_default')->default(false);
+            $table->foreignId('department_id')->constrained('departments');
             $table->boolean('status')->default(true);
             $table->timestamps();
 
-            $table->index(['transaction_type_id', 'status']);
+
+            $table->index(['department_id', 'status']);
+            $table->index('slug');
         });
     }
 
@@ -30,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('workflows');
+        Schema::dropIfExists('document_tags');
     }
 };
