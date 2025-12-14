@@ -94,7 +94,15 @@ class WorkflowConfigController extends Controller
             ]);
 
             if ($request->has('document_tags') && !empty($request->input('document_tags'))) {
-                $workflow->syncDocumentTags($request->input('document_tags'));
+                // Filter to only include tags that have an 'id' key (checked checkboxes)
+                $tags = collect($request->input('document_tags'))
+                    ->filter(fn($tag) => isset($tag['id']) && !empty($tag['id']))
+                    ->values()
+                    ->toArray();
+                
+                if (!empty($tags)) {
+                    $workflow->syncDocumentTags($tags);
+                }
             }
 
             DB::commit();
@@ -165,7 +173,13 @@ class WorkflowConfigController extends Controller
             ]);
 
             if ($request->has('document_tags')) {
-                $workflow->syncDocumentTags($request->input('document_tags', []));
+                // Filter to only include tags that have an 'id' key (checked checkboxes)
+                $tags = collect($request->input('document_tags', []))
+                    ->filter(fn($tag) => isset($tag['id']) && !empty($tag['id']))
+                    ->values()
+                    ->toArray();
+                
+                $workflow->syncDocumentTags($tags);
             } else {
                 $workflow->documentTags()->detach();
             }
