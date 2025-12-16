@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class WorkflowLog extends Model
+class TransactionLog extends Model
 {
     protected $fillable = [
         'transaction_id',
@@ -14,7 +14,6 @@ class WorkflowLog extends Model
         'action_by',
         'remarks',
     ];
-
     public function transaction()
     {
         return $this->belongsTo(Transaction::class);
@@ -31,8 +30,8 @@ class WorkflowLog extends Model
     public function getActionDescription(): string
     {
         $actor = $this->actor->name ?? 'Unknown';
-        
-        return match($this->action) {
+
+        return match ($this->action) {
             'approve' => "{$actor} approved and forwarded",
             'reject' => "{$actor} returned for revision",
             'resubmit' => "{$actor} resubmitted",

@@ -71,6 +71,15 @@
                     @csrf
                     @method('PUT')
 
+                    {{-- Description --}}
+                    <div class="form-control mb-6">
+                        <label class="label">
+                            <span class="label-text font-medium">Description</span>
+                            <span class="label-text-alt text-gray-400">Optional</span>
+                        </label>
+                        <textarea name="description" class="textarea textarea-bordered" rows="2" placeholder="Describe this workflow...">{{ old('description', $workflow->description) }}</textarea>
+                    </div>
+
                     {{-- Auto-calculated Difficulty Display --}}
                     <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div class="flex items-center justify-between">

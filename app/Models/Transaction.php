@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use function Symfony\Component\Clock\now;
+
 class Transaction extends Model
 {
     protected $fillable = [
         'transaction_code',
-        'document_name',
-        'description',
+        'level_of_urgency',
+        'document_tags_id',
         'transaction_type_id',
         'assign_staff_id',
         'transaction_status',
@@ -43,19 +45,23 @@ class Transaction extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function notes()
-    {
-        return $this->hasMany(TransactionNote::class);
+    public function documentTags() {
+        return $this->hasMany(DocumentTag::class, 'document_tags_id');
     }
 
-    public function reviews()
-    {
+    public function reviewers()  {
         return $this->hasMany(TransactionReviewer::class);
     }
 
-    public function workflowLogs()
+    public function currentReviewer()  {
+        return $this->hasOne(TransactionReviewer::class)
+            ->where('status', 'pending')
+            ->latest();
+    }
+
+    public function transactionLogs()
     {
-        return $this->hasMany(WorkflowLog::class)->orderBy('created_at', 'desc');
+        return $this->hasMany(TransactionLog::class)->orderBy('created_at', 'desc');
     }
 
     // Scopes
@@ -79,6 +85,18 @@ class Transaction extends Model
         return $query->where('current_state', 'cancelled');
     }
 
+    public function scopeHighlyUrgent($query)  {
+        return $query->where('level_of_urgency', 'highly_urgent');
+    }
+
+    public function scopeUrgent($query){
+        return $query->where('level_of_urgency', 'urgent');
+    }
+
+    public function scopeNormal($query) {
+        return $query->where('level_of_urgency', 'normal');
+    }
+
     // State helpers
     public function isCompleted(): bool
     {
@@ -100,6 +118,13 @@ class Transaction extends Model
         return str_starts_with($this->current_state, 'returned_to_');
     }
 
+    public function isUrgent() {
+        return in_array($this->level_of_urgency, ['urgent', 'highly_urgent']);
+    }
+
+    public function isHighlyUrgent() {
+        return $this->level_of_urgency === 'highly_urgent';
+    }
     /**
      * Get current department from state
      */
@@ -129,5 +154,14 @@ class Transaction extends Model
     public function incrementRevision(): void
     {
         $this->increment('revision_number');
+    }
+
+    //transactionn tracking number
+    public static function generateTransactionCode(string $prefix = 'TTN'){
+        $date = now()->format('Ymd');
+        $random = strtoupper(substr(uniqid(), -4));
+        $count = static::whereDate('created_at', today())->count() + 1;
+
+        return sprintf('%s-%s-%04d-%s', $prefix, $date, $count, $random);
     }
 }

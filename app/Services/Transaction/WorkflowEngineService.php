@@ -3,6 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Models\Transaction;
+use App\Models\TransactionLog;
 use App\Models\TransactionType;
 use App\Models\User;
 use App\Models\WorkflowLog;
@@ -59,7 +60,7 @@ class WorkflowEngineService
             }
 
             // Log the transition
-            WorkflowLog::create([
+            TransactionLog::create([
                 'transaction_id' => $transaction->id,
                 'from_state' => $currentState,
                 'to_state' => $nextState,

@@ -8,11 +8,13 @@
                 <nav class="text-sm breadcrumbs mb-2">
                     <ul>
                         <li><a href="{{ route('admin.workflows.index') }}" class="text-primary">Workflows</a></li>
-                        <li>Configure</li>
+                        <li>Create</li>
                     </ul>
                 </nav>
-                <h1 class="text-2xl font-bold text-gray-900">Edit Workflow: {{ $workflow->name }}</h1>
-                <p class="text-gray-600 mt-1">{{ $workflow->transactionType->document_name }}</p>
+                <h1 class="text-2xl font-bold text-gray-900">Create New Workflow</h1>
+                @if($transactionType)
+                    <p class="text-gray-600 mt-1">{{ $transactionType->document_name }}</p>
+                @endif
             </div>
         </div>
 
@@ -64,12 +66,39 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {{-- Step Builder --}}
-            <div class="lg:col-span-2 bg-base-100 rounded-lg shadow-md p-6">
-                <form action="{{ route('admin.workflows.update', $workflow) }}" method="POST" id="workflowForm">
+            <div class="bg-base-100 rounded-lg shadow-md p-6">
+                <form action="{{ route('admin.workflows.store') }}" method="POST" id="workflowForm">
                     @csrf
-                    @method('PUT')
+
+                    {{-- Transaction Type Selection (hidden if pre-selected) --}}
+                    @if($transactionType)
+                        <input type="hidden" name="transaction_type_id" value="{{ $transactionType->id }}">
+                    @else
+                        <div class="form-control mb-6">
+                            <label class="label">
+                                <span class="label-text font-medium">Transaction Type</span>
+                            </label>
+                            <select name="transaction_type_id" class="select select-bordered" required>
+                                <option value="">Select Transaction Type</option>
+                                @foreach($transactionTypes as $type)
+                                    <option value="{{ $type->id }}" {{ old('transaction_type_id') == $type->id ? 'selected' : '' }}>
+                                        {{ $type->document_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    {{-- Description --}}
+                    <div class="form-control mb-6">
+                        <label class="label">
+                            <span class="label-text font-medium">Description</span>
+                            <span class="label-text-alt text-gray-400">Optional</span>
+                        </label>
+                        <textarea name="description" class="textarea textarea-bordered" rows="2" placeholder="Describe this workflow...">{{ old('description') }}</textarea>
+                    </div>
 
                     {{-- Auto-calculated Difficulty Display --}}
                     <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -96,11 +125,9 @@
                         order determines the routing flow.</p>
 
                     <div id="stepsContainer" class="space-y-4">
-                        @if (empty($currentConfig['steps']))
-                            <p class="text-gray-500 text-center py-8" id="noStepsMessage">
-                                No steps configured. Add your first step below.
-                            </p>
-                        @endif
+                        <p class="text-gray-500 text-center py-8" id="noStepsMessage">
+                            No steps configured. Add your first step below.
+                        </p>
                     </div>
 
                     <button type="button" id="addStepBtn" class="btn btn-outline btn-primary w-full mt-4">
@@ -118,8 +145,6 @@
                         <div id="documentTagsContainer" class="space-y-4">
                             @php
                                 $groupedTags = $documentTags->groupBy('department_id');
-                                $selectedTagIds = collect($selectedTags ?? [])->pluck('id')->toArray();
-                                $requiredTagIds = collect($selectedTags ?? [])->where('is_required', true)->pluck('id')->toArray();
                             @endphp
 
                             @forelse($groupedTags as $departmentId => $tags)
@@ -145,8 +170,7 @@
                                                            name="document_tags[{{ $loop->parent->index }}_{{ $loop->index }}][id]" 
                                                            value="{{ $tag->id }}" 
                                                            class="checkbox checkbox-sm checkbox-primary document-tag-checkbox"
-                                                           data-tag-id="{{ $tag->id }}"
-                                                           {{ in_array($tag->id, $selectedTagIds) ? 'checked' : '' }}>
+                                                           data-tag-id="{{ $tag->id }}">
                                                     <span class="text-sm">{{ $tag->name }}</span>
                                                 </label>
                                                 <label class="flex items-center gap-1 cursor-pointer" title="Mark as required">
@@ -155,8 +179,7 @@
                                                            value="1" 
                                                            class="checkbox checkbox-xs checkbox-warning required-checkbox"
                                                            data-tag-id="{{ $tag->id }}"
-                                                           {{ in_array($tag->id, $requiredTagIds) ? 'checked' : '' }}
-                                                           {{ in_array($tag->id, $selectedTagIds) ? '' : 'disabled' }}>
+                                                           disabled>
                                                     <span class="text-xs text-gray-500">Required</span>
                                                 </label>
                                             </div>
@@ -191,50 +214,47 @@
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            Save Workflow
+                            Create Workflow
                         </button>
                     </div>
                 </form>
             </div>
 
-            {{-- Sidebar: Transition Map Preview & Document Tags Info --}}
-            <div class="space-y-6">
-                {{-- Transition Map Preview --}}
-                <div class="bg-base-100 rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Transition Map Preview</h3>
-                    <p class="text-sm text-gray-500 mb-4">Auto-generated state transitions based on your configuration</p>
-                    {{-- Visual Flow --}}
-                    <div class="mt-6">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Visual Flow</h4>
-                        <div id="visualFlow" class="flex flex-wrap items-center gap-2">
-                            <span class="text-gray-400 text-sm">Add steps to see the flow</span>
-                        </div>
+            {{-- Transition Map Preview --}}
+            <div class="bg-base-100 rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Transition Map Preview</h3>
+                <p class="text-sm text-gray-500 mb-4">Auto-generated state transitions based on your configuration</p>
+                {{-- Visual Flow --}}
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Visual Flow</h4>
+                    <div id="visualFlow" class="flex flex-wrap items-center gap-2">
+                        <span class="text-gray-400 text-sm">Add steps to see the flow</span>
                     </div>
+                </div>
 
-                    {{-- Difficulty Legend --}}
-                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Complexity Level Guide</h4>
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-3">
-                                <span class="badge badge-success">Simple</span>
-                                <span class="text-xs text-gray-600">1-7 days</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="badge badge-warning">Complex</span>
-                                <span class="text-xs text-gray-600">2-4 weeks</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="badge badge-error">Highly Technical</span>
-                                <span class="text-xs text-gray-600">5-6+ weeks</span>
-                            </div>
+                {{-- Difficulty Legend --}}
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Complexity Level Guide</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <span class="badge badge-success">Simple</span>
+                            <span class="text-xs text-gray-600">1-7 days</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="badge badge-warning">Complex</span>
+                            <span class="text-xs text-gray-600">2-4 weeks</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="badge badge-error">Highly Technical</span>
+                            <span class="text-xs text-gray-600">5-6+ weeks</span>
                         </div>
                     </div>
                 </div>
 
                 {{-- Connected Departments via Tags --}}
-                <div class="bg-base-100 rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Connected Departments</h3>
-                    <p class="text-sm text-gray-500 mb-4">Departments linked through selected document tags</p>
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Connected Departments</h4>
+                    <p class="text-xs text-gray-500 mb-2">Departments linked through selected document tags</p>
                     <div id="connectedDepartments" class="space-y-2">
                         <span class="text-gray-400 text-sm">Select document tags to see connected departments</span>
                     </div>
@@ -248,7 +268,6 @@
             const departments = @json($departments);
             const documentTags = @json($documentTags);
             const currentConfig = @json($currentConfig);
-            const selectedTags = @json($selectedTags ?? []);
             let stepIndex = 0;
 
             // Document Tags functionality
@@ -338,7 +357,7 @@
                         );
                         
                         html += `
-                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
                                 <span class="text-sm font-medium">${dept.name}</span>
                                 <span class="badge badge-sm badge-ghost">${selectedInDept.length} tag${selectedInDept.length !== 1 ? 's' : ''}</span>
                             </div>
@@ -517,51 +536,11 @@
                 }
             }
 
-            // Initialize with existing config
+            // Initialize
             document.addEventListener('DOMContentLoaded', function() {
-                const container = document.getElementById('stepsContainer');
-
-                if (currentConfig.steps && currentConfig.steps.length > 0) {
-                    const noStepsMsg = document.getElementById('noStepsMessage');
-                    if (noStepsMsg) noStepsMsg.remove();
-
-                    currentConfig.steps.forEach((step, index) => {
-                        container.insertAdjacentHTML('beforeend', createStepHtml(
-                            index,
-                            step.department_id,
-                            step.can_return_to || [],
-                            step.process_time_value || 3,
-                            step.process_time_unit || 'days',
-                            step.notes || ''
-                        ));
-                        stepIndex = index + 1;
-                    });
-
-                    // Restore can_return_to checkboxes after all steps are added
-                    setTimeout(() => {
-                        updateReturnToOptions();
-                        currentConfig.steps.forEach((step, index) => {
-                            if (step.can_return_to && step.can_return_to.length > 0) {
-                                const stepEl = container.querySelectorAll('.step-item')[index];
-                                if (stepEl) {
-                                    step.can_return_to.forEach(deptId => {
-                                        const checkbox = stepEl.querySelector(
-                                            `.return-to-checkbox[value="${deptId}"]`);
-                                        if (checkbox) checkbox.checked = true;
-                                    });
-                                }
-                            }
-                        });
-                        updatePreview();
-                        updateStepCountAndDifficulty();
-                    }, 100);
-                }
-
+                initDocumentTags();
                 attachEventListeners();
                 updateStepCountAndDifficulty();
-                
-                // Initialize document tags
-                initDocumentTags();
             });
 
             // Add Step button
@@ -719,14 +698,17 @@
                     }
 
                     if (hasOptions) {
+                        // Add "Select All" checkbox at the top
                         optionsDiv.innerHTML = `
                             <label class="flex items-center gap-2 cursor-pointer hover:bg-primary/10 p-1 rounded border-b border-gray-200 pb-2 mb-2">
-                                <input type="checkbox" class="checkbox checkbox-sm checkbox-primary select-all-checkbox">
+                                <input type="checkbox" 
+                                       class="checkbox checkbox-sm checkbox-primary select-all-checkbox">
                                 <span class="label-text font-medium">Select All</span>
                             </label>
                             ${checkboxesHtml}
                         `;
 
+                        // Attach select all functionality
                         const selectAllCb = optionsDiv.querySelector('.select-all-checkbox');
                         const returnToCbs = optionsDiv.querySelectorAll('.return-to-checkbox');
 
@@ -737,6 +719,7 @@
                             updatePreview();
                         };
 
+                        // Update "Select All" state when individual checkboxes change
                         returnToCbs.forEach(cb => {
                             cb.onchange = function() {
                                 const allChecked = Array.from(returnToCbs).every(c => c.checked);
@@ -776,6 +759,7 @@
                     }
                 });
 
+                // Get difficulty from hidden input
                 const difficulty = document.getElementById('difficultyInput').value || 'simple';
 
                 return {
@@ -810,7 +794,7 @@
                     });
             }
 
-            function getDifficultyBadgeClass() {
+            function getDifficultyBadgeClassForFlow() {
                 const difficulty = document.getElementById('difficultyInput').value || 'simple';
                 switch (difficulty) {
                     case 'complex':
@@ -825,7 +809,7 @@
             function updateVisualFlow() {
                 const container = document.getElementById('visualFlow');
                 const steps = document.querySelectorAll('.step-item');
-                const badgeClass = getDifficultyBadgeClass();
+                const badgeClass = getDifficultyBadgeClassForFlow();
 
                 if (steps.length === 0) {
                     container.innerHTML = '<span class="text-gray-400 text-sm">Add steps to see the flow</span>';
@@ -896,7 +880,7 @@
 
                 const saveBtn = document.getElementById('saveBtn');
                 saveBtn.disabled = true;
-                saveBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Saving...';
+                saveBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Creating...';
             });
         </script>
     @endpush

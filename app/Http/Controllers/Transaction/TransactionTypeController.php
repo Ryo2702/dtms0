@@ -24,7 +24,7 @@ class TransactionTypeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'document_name' => 'required|string|max:255|unique:transaction_types',
+            'transaction_name' => 'required|string|max:255|unique:transaction_types',
             'description' => 'nullable|string',
         ]);
 
@@ -47,7 +47,7 @@ class TransactionTypeController extends Controller
     public function update(Request $request, string $id)
     {
         $validated = $request->validate([
-            'document_name' => 'required|string|max:255|unique:transaction_types,document_name,' . $id,
+            'transaction_name' => 'required|string|max:255|unique:transaction_types,transaction_name,' . $id,
             'description' => 'nullable|string',
             'status' => 'nullable|boolean'
         ]);

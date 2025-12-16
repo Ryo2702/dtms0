@@ -22,7 +22,7 @@
             @forelse($transactionTypes as $type)
                 <tr class="hover">
                     <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                        {{ $type->document_name }}
+                        {{ $type->transaction_name }}
                     </td>
                     <td class="px-6 py-4 text-gray-600 max-w-xs truncate">
                         {{ $type->description ?? '-' }}
@@ -115,9 +115,9 @@
                 <label class="label">
                     <span class="label-text font-medium">Document Name</span>
                 </label>
-                <input type="text" id="edit_document_name" name="document_name" required class="input input-bordered"
+                <input type="text" id="edit_transaction_name" name="transaction_name" required class="input input-bordered"
                     placeholder="e.g., Invoice">
-                @error('document_name')
+                @error('transaction_name')
                     <label class="label">
                         <span class="label-text-alt text-error">{{ $message }}</span>
                     </label>
@@ -186,7 +186,7 @@
             fetch(`/transaction-types/${id}/edit`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('edit_document_name').value = data.document_name;
+                    document.getElementById('edit_transaction_name').value = data.transaction_name;
                     document.getElementById('edit_description').value = data.description || '';
                     document.getElementById('edit_status').checked = data.status == 1;
 

@@ -29,7 +29,7 @@ class WorkflowConfigController extends Controller
     public function index()
     {
         $transactionTypes = TransactionType::with(['workflows' => function ($q) {
-            $q->with('documentTags.department')->orderBy('is_default', 'desc');
+            $q->with('documentTags.department');
         }])->get();
 
         return view('workflows.index', compact('transactionTypes'));
@@ -62,7 +62,6 @@ class WorkflowConfigController extends Controller
             'transaction_type_id' => 'required|exists:transaction_types,id',
             'description' => 'nullable|string',
             'difficulty' => 'required|in:simple,complex,highly_technical',
-            'is_default' => 'boolean',
             'steps' => 'required|array|min:1',
             'steps.*.department_id' => 'required|exists:departments,id',
             'document_tags' => 'nullable|array',
@@ -89,7 +88,6 @@ class WorkflowConfigController extends Controller
                 'description' => $request->input('description'),
                 'difficulty' => $request->input('difficulty'),
                 'workflow_config' => $config,
-                'is_default' => $request->boolean('is_default', false),
                 'status' => true,
             ]);
 
@@ -109,7 +107,7 @@ class WorkflowConfigController extends Controller
 
             return redirect()
                 ->route('admin.workflows.index')
-                ->with('success', "Workflow '{$workflow->name}' created successfully!");
+                ->with('success', "Workflow created successfully!");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage())->withInput();
@@ -143,7 +141,6 @@ class WorkflowConfigController extends Controller
         $request->validate([
             'description' => 'nullable|string',
             'difficulty' => 'required|in:simple,complex,highly_technical',
-            'is_default' => 'boolean',
             'steps' => 'required|array|min:1',
             'steps.*.department_id' => 'required|exists:departments,id',
             'document_tags' => 'nullable|array',
@@ -169,7 +166,6 @@ class WorkflowConfigController extends Controller
                 'description' => $request->input('description'),
                 'difficulty' => $request->input('difficulty'),
                 'workflow_config' => $config,
-                'is_default' => $request->boolean('is_default', false),
             ]);
 
             if ($request->has('document_tags')) {

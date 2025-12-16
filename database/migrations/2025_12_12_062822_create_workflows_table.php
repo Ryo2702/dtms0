@@ -17,7 +17,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->enum('difficulty', ['simple', 'complex', 'highly_technical'])->default('simple');
             $table->json('workflow_config')->nullable();
-            $table->boolean('is_default')->default(false);
             $table->boolean('status')->default(true);
             $table->timestamps();
 

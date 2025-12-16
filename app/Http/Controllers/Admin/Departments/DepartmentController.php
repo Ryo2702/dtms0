@@ -249,7 +249,7 @@ class DepartmentController extends Controller
             ->map(function ($workflow) use ($department) {
                 return [
                     'id' => $workflow->id,
-                    'transaction_type' => $workflow->transactionType->document_name,
+                    'transaction_type' => $workflow->transactionType->transaction_name,
                     'description' => $workflow->description,
                     'difficulty' => $workflow->difficulty,
                     'status' => $workflow->status,

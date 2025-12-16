@@ -10,7 +10,7 @@ class TransactionType extends Model
     use HasFactory;
     
     protected $fillable = [
-        'document_name',
+        'transaction_name',
         'description',
         'status',
         'workflow_config',
