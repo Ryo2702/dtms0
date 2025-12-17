@@ -11,8 +11,8 @@
                         <li>Configure</li>
                     </ul>
                 </nav>
-                <h1 class="text-2xl font-bold text-gray-900">Edit Workflow: {{ $workflow->name }}</h1>
-                <p class="text-gray-600 mt-1">{{ $workflow->transactionType->document_name }}</p>
+                <h1 class="text-2xl font-bold text-gray-900">Edit Workflow: <span class="text-primary">{{ $workflow->id }}</span></h1>
+                <p class="text-gray-600 mt-1">{{ $workflow->transaction_name }}</p>
             </div>
         </div>
 
@@ -71,6 +71,24 @@
                     @csrf
                     @method('PUT')
 
+                    {{-- Transaction Name --}}
+                    <div class="form-control mb-6">
+                        <label class="label">
+                            <span class="label-text font-medium">Transaction Name</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <input type="text" name="transaction_name" 
+                               class="input input-bordered @error('transaction_name') input-error @enderror" 
+                               placeholder="e.g., Business Permit Application"
+                               value="{{ old('transaction_name', $workflow->transaction_name) }}" 
+                               required>
+                        @error('transaction_name')
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ $message }}</span>
+                            </label>
+                        @enderror
+                    </div>
+
                     {{-- Description --}}
                     <div class="form-control mb-6">
                         <label class="label">
@@ -118,6 +136,86 @@
                         </svg>
                         Add Step
                     </button>
+
+                    {{-- Document Tags Section --}}
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Document Tags</h3>
+                        <p class="text-sm text-gray-500 mb-4">Select document tags required for this workflow. Tags are grouped by department.</p>
+                        
+                        <div id="documentTagsContainer" class="space-y-4">
+                            @php
+                                $groupedTags = $documentTags->groupBy(function($tag) {
+                                    return $tag->department_id ?? 'general';
+                                });
+                            @endphp
+
+                            @forelse($groupedTags as $departmentId => $tags)
+                                @php
+                                    $department = $departmentId !== 'general' ? $tags->first()->department : null;
+                                @endphp
+                                <div class="border rounded-lg p-4 bg-gray-50">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-medium text-gray-900 flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                            </svg>
+                                            {{ $department ? $department->name : 'General Tags' }}
+                                        </h4>
+                                        <span class="badge badge-ghost badge-sm">{{ $tags->count() }} tags</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        @foreach($tags as $tag)
+                                            @php
+                                                $isSelected = $selectedTags->contains('id', $tag->id);
+                                                $isRequired = $selectedTags->where('id', $tag->id)->first()['is_required'] ?? false;
+                                            @endphp
+                                            <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:border-primary transition-colors">
+                                                <label class="flex items-center gap-2 cursor-pointer flex-1">
+                                                    <input type="checkbox" 
+                                                           name="document_tags[{{ $departmentId }}_{{ $loop->index }}][id]" 
+                                                           value="{{ $tag->id }}" 
+                                                           class="checkbox checkbox-sm checkbox-primary document-tag-checkbox"
+                                                           data-tag-id="{{ $tag->id }}"
+                                                           data-department-id="{{ $tag->department_id ?? '' }}"
+                                                           {{ $isSelected ? 'checked' : '' }}>
+                                                    <span class="text-sm">{{ $tag->name }}</span>
+                                                </label>
+                                                <label class="flex items-center gap-1 cursor-pointer" title="Mark as required">
+                                                    <input type="checkbox" 
+                                                           name="document_tags[{{ $departmentId }}_{{ $loop->index }}][is_required]" 
+                                                           value="1" 
+                                                           class="checkbox checkbox-xs checkbox-warning required-checkbox"
+                                                           data-tag-id="{{ $tag->id }}"
+                                                           {{ $isSelected ? '' : 'disabled' }}
+                                                           {{ $isRequired ? 'checked' : '' }}>
+                                                    <span class="text-xs text-gray-500">Required</span>
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-6 text-gray-500">
+                                    <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                    </svg>
+                                    <p>No document tags available.</p>
+                                    <a href="{{ route('admin.document-tags.index') }}" class="btn btn-sm btn-primary mt-2">
+                                        Manage Document Tags
+                                    </a>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        {{-- Selected Tags Summary --}}
+                        <div id="selectedTagsSummary" class="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20" style="{{ $selectedTags->count() > 0 ? '' : 'display: none;' }}">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Selected Tags:</h5>
+                            <div id="selectedTagsList" class="flex flex-wrap gap-2">
+                                {{-- Populated by JS --}}
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="flex justify-end gap-3 pt-6 border-t border-gray-200 mt-6">
                         <a href="{{ route('admin.workflows.index') }}" class="btn btn-ghost">Cancel</a>
@@ -168,10 +266,77 @@
     @push('scripts')
         <script>
             const departments = @json($departments);
+            const documentTags = @json($documentTags);
+            const selectedTagsData = @json($selectedTags);
             const currentConfig = @json($currentConfig);
             let stepIndex = 0;
 
-            function createStepHtml(index, departmentId = '', canReturnTo = [], processTimeValue = 3, processTimeUnit = 'days',
+            // Document Tags functionality
+            function initDocumentTags() {
+                document.querySelectorAll('.document-tag-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        const tagId = this.dataset.tagId;
+                        const requiredCheckbox = document.querySelector(`.required-checkbox[data-tag-id="${tagId}"]`);
+                        
+                        if (requiredCheckbox) {
+                            requiredCheckbox.disabled = !this.checked;
+                            if (!this.checked) {
+                                requiredCheckbox.checked = false;
+                            }
+                        }
+                        
+                        updateSelectedTagsSummary();
+                    });
+                });
+
+                // Initialize summary on page load
+                updateSelectedTagsSummary();
+            }
+
+            function updateSelectedTagsSummary() {
+                const selectedCheckboxes = document.querySelectorAll('.document-tag-checkbox:checked');
+                const summary = document.getElementById('selectedTagsSummary');
+                const list = document.getElementById('selectedTagsList');
+
+                if (selectedCheckboxes.length === 0) {
+                    summary.style.display = 'none';
+                    return;
+                }
+
+                summary.style.display = 'block';
+                list.innerHTML = '';
+
+                selectedCheckboxes.forEach(checkbox => {
+                    const tagId = checkbox.dataset.tagId;
+                    const tag = documentTags.find(t => t.id == tagId);
+                    const isRequired = document.querySelector(`.required-checkbox[data-tag-id="${tagId}"]`)?.checked;
+                    
+                    if (tag) {
+                        const badge = document.createElement('span');
+                        badge.className = `badge ${isRequired ? 'badge-warning' : 'badge-primary'} gap-1`;
+                        badge.innerHTML = `
+                            ${tag.name}
+                            ${isRequired ? '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>' : ''}
+                            <button type="button" class="hover:text-error" onclick="removeTag(${tagId})">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        `;
+                        list.appendChild(badge);
+                    }
+                });
+            }
+
+            function removeTag(tagId) {
+                const checkbox = document.querySelector(`.document-tag-checkbox[data-tag-id="${tagId}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            }
+
+            function createStepHtml(index, departmentId = '', processTimeValue = 3, processTimeUnit = 'days',
                 notes = '') {
                 const deptOptions = departments.map(d =>
                     `<option value="${d.id}" ${departmentId == d.id ? 'selected' : ''}>${d.name}</option>`
@@ -235,7 +400,7 @@
                             </div>
                         </div>
 
-                        <div class="form-control mb-3">
+                        <div class="form-control">
                             <label class="label">
                                 <span class="label-text font-medium">Instructions/Notes</span>
                                 <span class="label-text-alt text-gray-400">Optional</span>
@@ -244,16 +409,6 @@
                                       class="textarea textarea-bordered textarea-sm step-notes" 
                                       rows="2" 
                                       placeholder="e.g., Review budget allocation and verify fund availability...">${notes}</textarea>
-                        </div>
-
-                        <div class="form-control return-to-container" style="display: none;">
-                            <label class="label">
-                                <span class="label-text font-medium">Can Return To</span>
-                                <span class="label-text-alt text-gray-400">Enable loop-back routing</span>
-                            </label>
-                            <div class="return-to-options space-y-2 p-3 bg-white rounded border border-gray-200">
-                                <span class="text-gray-400 text-sm">No previous steps available</span>
-                            </div>
                         </div>
                     </div>
                 `;
@@ -385,7 +540,6 @@
                         container.insertAdjacentHTML('beforeend', createStepHtml(
                             index,
                             step.department_id,
-                            step.can_return_to || [],
                             step.process_time_value || 3,
                             step.process_time_unit || 'days',
                             step.notes || ''
@@ -393,26 +547,14 @@
                         stepIndex = index + 1;
                     });
 
-                    // Restore can_return_to checkboxes after all steps are added
+                    // Update preview after steps are loaded
                     setTimeout(() => {
-                        updateReturnToOptions();
-                        currentConfig.steps.forEach((step, index) => {
-                            if (step.can_return_to && step.can_return_to.length > 0) {
-                                const stepEl = container.querySelectorAll('.step-item')[index];
-                                if (stepEl) {
-                                    step.can_return_to.forEach(deptId => {
-                                        const checkbox = stepEl.querySelector(
-                                            `.return-to-checkbox[value="${deptId}"]`);
-                                        if (checkbox) checkbox.checked = true;
-                                    });
-                                }
-                            }
-                        });
                         updatePreview();
                         updateStepCountAndDifficulty();
                     }, 100);
                 }
 
+                initDocumentTags();
                 attachEventListeners();
                 attachDifficultyListeners();
                 updateStepCountAndDifficulty();
@@ -457,7 +599,6 @@
                 stepIndex++;
 
                 updateStepNumbers();
-                updateReturnToOptions();
                 attachEventListeners();
                 updatePreview();
                 updateStepCountAndDifficulty();
@@ -469,7 +610,6 @@
                     btn.onclick = function() {
                         this.closest('.step-item').remove();
                         updateStepNumbers();
-                        updateReturnToOptions();
                         updatePreview();
                         updateVisualFlow();
                         updateStepCountAndDifficulty();
@@ -484,7 +624,6 @@
                         if (prev && prev.classList.contains('step-item')) {
                             item.parentNode.insertBefore(item, prev);
                             updateStepNumbers();
-                            updateReturnToOptions();
                             updatePreview();
                             updateVisualFlow();
                         }
@@ -499,7 +638,6 @@
                         if (next && next.classList.contains('step-item')) {
                             item.parentNode.insertBefore(next, item);
                             updateStepNumbers();
-                            updateReturnToOptions();
                             updatePreview();
                             updateVisualFlow();
                         }
@@ -509,7 +647,6 @@
                 // Department change
                 document.querySelectorAll('.department-select').forEach(select => {
                     select.onchange = function() {
-                        updateReturnToOptions();
                         updatePreview();
                         updateVisualFlow();
                     };
@@ -556,86 +693,6 @@
 
                     const notes = item.querySelector('.step-notes');
                     if (notes) notes.name = `steps[${index}][notes]`;
-
-                    item.querySelectorAll('.return-to-checkbox').forEach(cb => {
-                        cb.name = `steps[${index}][can_return_to][]`;
-                    });
-                });
-            }
-
-            function updateReturnToOptions() {
-                const steps = document.querySelectorAll('.step-item');
-
-                steps.forEach((step, index) => {
-                    const container = step.querySelector('.return-to-container');
-                    const optionsDiv = step.querySelector('.return-to-options');
-
-                    if (index === 0) {
-                        container.style.display = 'none';
-                        return;
-                    }
-
-                    container.style.display = 'block';
-                    optionsDiv.innerHTML = '';
-
-                    let hasOptions = false;
-                    let checkboxesHtml = '';
-
-                    for (let i = 0; i < index; i++) {
-                        const prevStep = steps[i];
-                        const prevSelect = prevStep.querySelector('.department-select');
-                        const prevDeptId = prevSelect?.value;
-                        const prevDeptName = prevSelect?.options[prevSelect.selectedIndex]?.text;
-
-                        if (prevDeptId && prevDeptName && prevDeptName !== 'Select Department') {
-                            hasOptions = true;
-                            checkboxesHtml += `
-                                <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                                    <input type="checkbox" 
-                                           name="steps[${index}][can_return_to][]" 
-                                           value="${prevDeptId}" 
-                                           class="checkbox checkbox-sm checkbox-primary return-to-checkbox">
-                                    <span class="label-text">Allow return to <strong>${prevDeptName}</strong></span>
-                                </label>
-                            `;
-                        }
-                    }
-
-                    if (hasOptions) {
-                        // Add "Select All" checkbox at the top
-                        optionsDiv.innerHTML = `
-                            <label class="flex items-center gap-2 cursor-pointer hover:bg-primary/10 p-1 rounded border-b border-gray-200 pb-2 mb-2">
-                                <input type="checkbox" 
-                                       class="checkbox checkbox-sm checkbox-primary select-all-checkbox">
-                                <span class="label-text font-medium">Select All</span>
-                            </label>
-                            ${checkboxesHtml}
-                        `;
-
-                        // Attach select all functionality
-                        const selectAllCb = optionsDiv.querySelector('.select-all-checkbox');
-                        const returnToCbs = optionsDiv.querySelectorAll('.return-to-checkbox');
-
-                        selectAllCb.onchange = function() {
-                            returnToCbs.forEach(cb => {
-                                cb.checked = this.checked;
-                            });
-                            updatePreview();
-                        };
-
-                        // Update "Select All" state when individual checkboxes change
-                        returnToCbs.forEach(cb => {
-                            cb.onchange = function() {
-                                const allChecked = Array.from(returnToCbs).every(c => c.checked);
-                                const someChecked = Array.from(returnToCbs).some(c => c.checked);
-                                selectAllCb.checked = allChecked;
-                                selectAllCb.indeterminate = someChecked && !allChecked;
-                                updatePreview();
-                            };
-                        });
-                    } else {
-                        optionsDiv.innerHTML = '<span class="text-gray-400 text-sm">Select departments in previous steps first</span>';
-                    }
                 });
             }
 
@@ -646,19 +703,13 @@
                     const processTimeValue = item.querySelector('.process-time-value')?.value || 3;
                     const processTimeUnit = item.querySelector('.process-time-unit')?.value || 'days';
                     const notes = item.querySelector('.step-notes')?.value || '';
-                    const canReturnTo = [];
-
-                    item.querySelectorAll('.return-to-checkbox:checked').forEach(cb => {
-                        canReturnTo.push(parseInt(cb.value));
-                    });
 
                     if (deptId) {
                         steps.push({
                             department_id: parseInt(deptId),
                             process_time_value: parseInt(processTimeValue),
                             process_time_unit: processTimeUnit,
-                            notes: notes,
-                            can_return_to: canReturnTo
+                            notes: notes
                         });
                     }
                 });

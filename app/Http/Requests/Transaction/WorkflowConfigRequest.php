@@ -24,8 +24,6 @@ class WorkflowConfigRequest extends FormRequest
         return [
             'steps' => 'required|array|min:1',
             'steps.*.department_id' => 'required|exists:departments,id',
-            'steps.*.can_return_to' => 'nullable|array',
-            'steps.*.can_return_to.*' => 'exists:departments,id',
         ];
     }
 
@@ -42,35 +40,8 @@ class WorkflowConfigRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $this->validateReturnToOnlyEarlierSteps($validator);
             $this->validateNoDuplicateDepartments($validator);
         });
-    }
-
-    protected function validateReturnToOnlyEarlierSteps($validator)
-    {
-        $steps = $this->input('steps', []);
-        
-        foreach ($steps as $index => $step) {
-            $canReturnTo = $step['can_return_to'] ?? [];
-            
-            foreach ($canReturnTo as $returnToDeptId) {
-                $found = false;
-                for ($i = 0; $i < $index; $i++) {
-                    if (($steps[$i]['department_id'] ?? null) == $returnToDeptId) {
-                        $found = true;
-                        break;
-                    }
-                }
-                
-                if (!$found) {
-                    $validator->errors()->add(
-                        "steps.{$index}.can_return_to",
-                        'A step can only return to earlier steps in the workflow.'
-                    );
-                }
-            }
-        }
     }
 
     protected function validateNoDuplicateDepartments($validator)

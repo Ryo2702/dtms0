@@ -3,7 +3,7 @@
 namespace App\Services\Transaction;
 
 use App\Models\Department;
-use App\Models\TransactionType;
+use App\Models\Workflow;
 
 class WorkflowConfigService
 {
@@ -12,9 +12,9 @@ class WorkflowConfigService
      * 
      * @param array $steps Array of step configurations
      *   [
-     *     ['department_id' => 1, 'can_return_to' => []],
-     *     ['department_id' => 2, 'can_return_to' => [1]],
-     *     ['department_id' => 3, 'can_return_to' => [1, 2]],
+     *     ['department_id' => 1],
+     *     ['department_id' => 2],
+     *     ['department_id' => 3],
      *   ]
      */
     public function buildWorkflowConfig(array $steps): array
@@ -41,7 +41,6 @@ class WorkflowConfigService
                 'process_time_unit' => $step['process_time_unit'] ?? 'days',
                 'notes' => $step['notes'] ?? '',
                 'difficulty' => $step['difficulty'] ?? 'simple',
-                'can_return_to' => $step['can_return_to'] ?? [],
             ];
         }
 
@@ -53,6 +52,7 @@ class WorkflowConfigService
 
     /**
      * Build transition map from steps
+     * Each step can reject back to the previous department
      */
     protected function buildTransitions(array $steps): array
     {
@@ -76,44 +76,18 @@ class WorkflowConfigService
                 $transitions[$currentState]['approve'] = 'completed';
             }
 
-            // Backward transitions (reject) based on can_return_to
-            foreach ($step['can_return_to'] as $returnToDeptId) {
-                // Find the step with this department_id
-                $returnToStep = collect($steps)->firstWhere('department_id', $returnToDeptId);
-                if ($returnToStep) {
-                    $returnToDept = $this->sanitizeDepartmentName($returnToStep['department_name']);
-                    $transitions[$currentState]['reject'] = "returned_to_{$returnToDept}";
-                    // Only one reject destination per step (take the first one for simplicity)
-                    // Or we can allow selection during runtime
-                    break;
-                }
+            // Backward transition (reject) - returns to previous department
+            if ($index > 0) {
+                $prevDept = $this->sanitizeDepartmentName($steps[$index - 1]['department_name']);
+                $transitions[$currentState]['reject'] = "returned_to_{$prevDept}";
             }
 
-            // If this step can be returned to, add resubmit transition
-            $canBeReturnedTo = collect($steps)->contains(function ($s) use ($step) {
-                return in_array($step['department_id'], $s['can_return_to'] ?? []);
-            });
-
-            if ($canBeReturnedTo || $index === 0) {
-                // Find which step returns to this one
-                $returningStep = collect($steps)->first(function ($s) use ($step) {
-                    return in_array($step['department_id'], $s['can_return_to'] ?? []);
-                });
-
-                if ($returningStep) {
-                    $returningDept = $this->sanitizeDepartmentName($returningStep['department_name']);
-                    $transitions[$returnedState] = [
-                        'resubmit' => "pending_{$returningDept}_review",
-                    ];
-                } else {
-                    // Default: resubmit goes to next step
-                    if ($index < $stepCount - 1) {
-                        $nextDept = $this->sanitizeDepartmentName($steps[$index + 1]['department_name']);
-                        $transitions[$returnedState] = [
-                            'resubmit' => "pending_{$nextDept}_review",
-                        ];
-                    }
-                }
+            // Add resubmit transition for returned states (goes back to the department that rejected)
+            if ($index < $stepCount - 1) {
+                $nextDept = $this->sanitizeDepartmentName($steps[$index + 1]['department_name']);
+                $transitions[$returnedState] = [
+                    'resubmit' => "pending_{$nextDept}_review",
+                ];
             }
         }
 
@@ -153,22 +127,6 @@ class WorkflowConfigService
             $errors[] = 'Each department can only appear once in the workflow.';
         }
 
-        // Check that can_return_to references valid earlier steps
-        foreach ($config['steps'] as $index => $step) {
-            foreach ($step['can_return_to'] ?? [] as $returnToDeptId) {
-                $found = false;
-                for ($i = 0; $i < $index; $i++) {
-                    if ($config['steps'][$i]['department_id'] == $returnToDeptId) {
-                        $found = true;
-                        break;
-                    }
-                }
-                if (!$found) {
-                    $errors[] = "Step {$step['department_name']} can only return to earlier steps in the workflow.";
-                }
-            }
-        }
-
         // Check final step leads to completed
         $lastStep = end($config['steps']);
         $lastDept = $this->sanitizeDepartmentName($lastStep['department_name']);
@@ -184,9 +142,9 @@ class WorkflowConfigService
     /**
      * Get available return destinations for a step
      */
-    public function getReturnableSteps(TransactionType $transactionType, int $currentStepIndex): array
+    public function getReturnableSteps(Workflow $workflow, int $currentStepIndex): array
     {
-        $steps = $transactionType->getWorkflowSteps();
+        $steps = $workflow->getWorkflowSteps();
         $returnable = [];
 
         for ($i = 0; $i < $currentStepIndex; $i++) {

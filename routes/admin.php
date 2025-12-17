@@ -4,7 +4,6 @@ use App\Http\Controllers\Admin\AuditLog\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
 use App\Http\Controllers\DocumentTagController;
 use App\Http\Controllers\Admin\Users\UserController;
-use App\Http\Controllers\Transaction\TransactionTypeController;
 use App\Http\Controllers\Transaction\WorkflowConfigController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +61,6 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{workflow}/tag-departments', [WorkflowConfigController::class, 'getTagDepartments'])->name('tag-departments');
         });
 
-        Route::resource('transaction-types', TransactionTypeController::class);
+        // Transaction Types removed; workflows now own transaction naming
     });
 });

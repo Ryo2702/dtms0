@@ -12,9 +12,6 @@
                     </ul>
                 </nav>
                 <h1 class="text-2xl font-bold text-gray-900">Create New Workflow</h1>
-                @if($transactionType)
-                    <p class="text-gray-600 mt-1">{{ $transactionType->document_name }}</p>
-                @endif
             </div>
         </div>
 
@@ -72,24 +69,23 @@
                 <form action="{{ route('admin.workflows.store') }}" method="POST" id="workflowForm">
                     @csrf
 
-                    {{-- Transaction Type Selection (hidden if pre-selected) --}}
-                    @if($transactionType)
-                        <input type="hidden" name="transaction_type_id" value="{{ $transactionType->id }}">
-                    @else
-                        <div class="form-control mb-6">
+                    {{-- Transaction Name --}}
+                    <div class="form-control mb-6">
+                        <label class="label">
+                            <span class="label-text font-medium">Transaction Name</span>
+                            <span class="label-text-alt text-error">*</span>
+                        </label>
+                        <input type="text" name="transaction_name" 
+                               class="input input-bordered @error('transaction_name') input-error @enderror" 
+                               placeholder="e.g., Business Permit Application"
+                               value="{{ old('transaction_name') }}" 
+                               required>
+                        @error('transaction_name')
                             <label class="label">
-                                <span class="label-text font-medium">Transaction Type</span>
+                                <span class="label-text-alt text-error">{{ $message }}</span>
                             </label>
-                            <select name="transaction_type_id" class="select select-bordered" required>
-                                <option value="">Select Transaction Type</option>
-                                @foreach($transactionTypes as $type)
-                                    <option value="{{ $type->id }}" {{ old('transaction_type_id') == $type->id ? 'selected' : '' }}>
-                                        {{ $type->document_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
+                        @enderror
+                    </div>
 
                     {{-- Description --}}
                     <div class="form-control mb-6">
@@ -144,12 +140,14 @@
                         
                         <div id="documentTagsContainer" class="space-y-4">
                             @php
-                                $groupedTags = $documentTags->groupBy('department_id');
+                                $groupedTags = $documentTags->groupBy(function($tag) {
+                                    return $tag->department_id ?? 'general';
+                                });
                             @endphp
 
                             @forelse($groupedTags as $departmentId => $tags)
                                 @php
-                                    $department = $tags->first()->department;
+                                    $department = $departmentId !== 'general' ? $tags->first()->department : null;
                                 @endphp
                                 <div class="border rounded-lg p-4 bg-gray-50">
                                     <div class="flex items-center justify-between mb-3">
@@ -157,7 +155,7 @@
                                             <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                                             </svg>
-                                            {{ $department->name }}
+                                            {{ $department ? $department->name : 'General Tags' }}
                                         </h4>
                                         <span class="badge badge-ghost badge-sm">{{ $tags->count() }} tags</span>
                                     </div>
@@ -167,15 +165,16 @@
                                             <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:border-primary transition-colors">
                                                 <label class="flex items-center gap-2 cursor-pointer flex-1">
                                                     <input type="checkbox" 
-                                                           name="document_tags[{{ $loop->parent->index }}_{{ $loop->index }}][id]" 
+                                                           name="document_tags[{{ $departmentId }}_{{ $loop->index }}][id]" 
                                                            value="{{ $tag->id }}" 
                                                            class="checkbox checkbox-sm checkbox-primary document-tag-checkbox"
-                                                           data-tag-id="{{ $tag->id }}">
+                                                           data-tag-id="{{ $tag->id }}"
+                                                           data-department-id="{{ $tag->department_id ?? '' }}">
                                                     <span class="text-sm">{{ $tag->name }}</span>
                                                 </label>
                                                 <label class="flex items-center gap-1 cursor-pointer" title="Mark as required">
                                                     <input type="checkbox" 
-                                                           name="document_tags[{{ $loop->parent->index }}_{{ $loop->index }}][is_required]" 
+                                                           name="document_tags[{{ $departmentId }}_{{ $loop->index }}][is_required]" 
                                                            value="1" 
                                                            class="checkbox checkbox-xs checkbox-warning required-checkbox"
                                                            data-tag-id="{{ $tag->id }}"
@@ -376,7 +375,7 @@
                 }
             }
 
-            function createStepHtml(index, departmentId = '', canReturnTo = [], processTimeValue = 3, processTimeUnit = 'days',
+            function createStepHtml(index, departmentId = '', processTimeValue = 3, processTimeUnit = 'days',
                 notes = '') {
                 const deptOptions = departments.map(d =>
                     `<option value="${d.id}" ${departmentId == d.id ? 'selected' : ''}>${d.name}</option>`
@@ -440,7 +439,7 @@
                             </div>
                         </div>
 
-                        <div class="form-control mb-3">
+                        <div class="form-control">
                             <label class="label">
                                 <span class="label-text font-medium">Instructions/Notes</span>
                                 <span class="label-text-alt text-gray-400">Optional</span>
@@ -449,16 +448,6 @@
                                       class="textarea textarea-bordered textarea-sm step-notes" 
                                       rows="2" 
                                       placeholder="e.g., Review budget allocation and verify fund availability...">${notes}</textarea>
-                        </div>
-
-                        <div class="form-control return-to-container" style="display: none;">
-                            <label class="label">
-                                <span class="label-text font-medium">Can Return To</span>
-                                <span class="label-text-alt text-gray-400">Enable loop-back routing</span>
-                            </label>
-                            <div class="return-to-options space-y-2 p-3 bg-white rounded border border-gray-200">
-                                <span class="text-gray-400 text-sm">No previous steps available</span>
-                            </div>
                         </div>
                     </div>
                 `;
@@ -553,7 +542,6 @@
                 stepIndex++;
 
                 updateStepNumbers();
-                updateReturnToOptions();
                 attachEventListeners();
                 updatePreview();
                 updateStepCountAndDifficulty();
@@ -565,7 +553,6 @@
                     btn.onclick = function() {
                         this.closest('.step-item').remove();
                         updateStepNumbers();
-                        updateReturnToOptions();
                         updatePreview();
                         updateVisualFlow();
                         updateStepCountAndDifficulty();
@@ -580,7 +567,6 @@
                         if (prev && prev.classList.contains('step-item')) {
                             item.parentNode.insertBefore(item, prev);
                             updateStepNumbers();
-                            updateReturnToOptions();
                             updatePreview();
                             updateVisualFlow();
                         }
@@ -595,7 +581,6 @@
                         if (next && next.classList.contains('step-item')) {
                             item.parentNode.insertBefore(next, item);
                             updateStepNumbers();
-                            updateReturnToOptions();
                             updatePreview();
                             updateVisualFlow();
                         }
@@ -605,7 +590,6 @@
                 // Department change
                 document.querySelectorAll('.department-select').forEach(select => {
                     select.onchange = function() {
-                        updateReturnToOptions();
                         updatePreview();
                         updateVisualFlow();
                     };
@@ -652,86 +636,6 @@
 
                     const notes = item.querySelector('.step-notes');
                     if (notes) notes.name = `steps[${index}][notes]`;
-
-                    item.querySelectorAll('.return-to-checkbox').forEach(cb => {
-                        cb.name = `steps[${index}][can_return_to][]`;
-                    });
-                });
-            }
-
-            function updateReturnToOptions() {
-                const steps = document.querySelectorAll('.step-item');
-
-                steps.forEach((step, index) => {
-                    const container = step.querySelector('.return-to-container');
-                    const optionsDiv = step.querySelector('.return-to-options');
-
-                    if (index === 0) {
-                        container.style.display = 'none';
-                        return;
-                    }
-
-                    container.style.display = 'block';
-                    optionsDiv.innerHTML = '';
-
-                    let hasOptions = false;
-                    let checkboxesHtml = '';
-
-                    for (let i = 0; i < index; i++) {
-                        const prevStep = steps[i];
-                        const prevSelect = prevStep.querySelector('.department-select');
-                        const prevDeptId = prevSelect?.value;
-                        const prevDeptName = prevSelect?.options[prevSelect.selectedIndex]?.text;
-
-                        if (prevDeptId && prevDeptName && prevDeptName !== 'Select Department') {
-                            hasOptions = true;
-                            checkboxesHtml += `
-                                <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                                    <input type="checkbox" 
-                                           name="steps[${index}][can_return_to][]" 
-                                           value="${prevDeptId}" 
-                                           class="checkbox checkbox-sm checkbox-primary return-to-checkbox">
-                                    <span class="label-text">Allow return to <strong>${prevDeptName}</strong></span>
-                                </label>
-                            `;
-                        }
-                    }
-
-                    if (hasOptions) {
-                        // Add "Select All" checkbox at the top
-                        optionsDiv.innerHTML = `
-                            <label class="flex items-center gap-2 cursor-pointer hover:bg-primary/10 p-1 rounded border-b border-gray-200 pb-2 mb-2">
-                                <input type="checkbox" 
-                                       class="checkbox checkbox-sm checkbox-primary select-all-checkbox">
-                                <span class="label-text font-medium">Select All</span>
-                            </label>
-                            ${checkboxesHtml}
-                        `;
-
-                        // Attach select all functionality
-                        const selectAllCb = optionsDiv.querySelector('.select-all-checkbox');
-                        const returnToCbs = optionsDiv.querySelectorAll('.return-to-checkbox');
-
-                        selectAllCb.onchange = function() {
-                            returnToCbs.forEach(cb => {
-                                cb.checked = this.checked;
-                            });
-                            updatePreview();
-                        };
-
-                        // Update "Select All" state when individual checkboxes change
-                        returnToCbs.forEach(cb => {
-                            cb.onchange = function() {
-                                const allChecked = Array.from(returnToCbs).every(c => c.checked);
-                                const someChecked = Array.from(returnToCbs).some(c => c.checked);
-                                selectAllCb.checked = allChecked;
-                                selectAllCb.indeterminate = someChecked && !allChecked;
-                                updatePreview();
-                            };
-                        });
-                    } else {
-                        optionsDiv.innerHTML = '<span class="text-gray-400 text-sm">Select departments in previous steps first</span>';
-                    }
                 });
             }
 
@@ -742,19 +646,13 @@
                     const processTimeValue = item.querySelector('.process-time-value')?.value || 3;
                     const processTimeUnit = item.querySelector('.process-time-unit')?.value || 'days';
                     const notes = item.querySelector('.step-notes')?.value || '';
-                    const canReturnTo = [];
-
-                    item.querySelectorAll('.return-to-checkbox:checked').forEach(cb => {
-                        canReturnTo.push(parseInt(cb.value));
-                    });
 
                     if (deptId) {
                         steps.push({
                             department_id: parseInt(deptId),
                             process_time_value: parseInt(processTimeValue),
                             process_time_unit: processTimeUnit,
-                            notes: notes,
-                            can_return_to: canReturnTo
+                            notes: notes
                         });
                     }
                 });

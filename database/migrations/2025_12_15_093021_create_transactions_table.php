@@ -17,9 +17,8 @@ return new class extends Migration
 
             $table->enum('level_of_urgency', ['normal', 'urgent', 'highly_urgent'])->default('normal');
 
-            
+            $table->string('workflow_id');
             $table->foreignId('document_tags_id')->constrained('document_tags');
-            $table->foreignId('transaction_type_id')->constrained('transaction_types');
             $table->foreignId('assign_staff_id')->constrained('assign_staff');
             $table->foreignId('department_id')->constrained('departments');
 
@@ -38,8 +37,8 @@ return new class extends Migration
             $table->json('workflow_history')->nullable();
             $table->timestamps();
 
+            $table->foreign('workflow_id')->references('id')->on('workflows')->cascadeOnDelete();
             $table->index(['department_id', 'transaction_status']);
-            $table->index(['transaction_type_id', 'transaction_status']);
             $table->index('submitted_at');
         });
 

@@ -5,8 +5,8 @@
         {{-- Header --}}
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Document Tags</h1>
-                <p class="text-gray-600 mt-2">Manage your document tags and categories</p>
+                <h1 class="text-2xl font-bold text-gray-900">Documents</h1>
+                <p class="text-gray-600 mt-2">Manage your documents</p>
             </div>
             <button type="button" class="btn btn-primary gap-2" onclick="tagModal.showModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -89,15 +89,6 @@
                             </svg>
                             Edit
                         </button>
-                        <button type="button" onclick="deleteDocumentTag({{ $tag->id }})"
-                            class="btn btn-ghost btn-sm text-error gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 6h18"/>
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                            </svg>
-                            Delete
-                        </button>
                     </td>
                 </tr>
             @empty
@@ -108,7 +99,7 @@
                                 <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
                                 <path d="M7 7h.01"/>
                             </svg>
-                            <p>No document tags found.</p>
+                            <p>No documents found.</p>
                         </div>
                     </td>
                 </tr>
@@ -285,39 +276,6 @@
         </button>
         <button type="submit" form="edit-tag-form" class="btn btn-primary" id="editSubmitBtn">
             Update Tag
-        </button>
-        @endslot
-    </x-modal>
-
-    {{-- Delete Confirmation Modal --}}
-    <x-modal id="deleteTagModal" title="Delete Document Tag" size="sm">
-        <div class="py-4">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-error">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                        <path d="M12 9v4"/>
-                        <path d="M12 17h.01"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-lg">Are you sure?</h3>
-                    <p class="text-gray-600 text-sm">This action cannot be undone. This will permanently delete the document tag.</p>
-                </div>
-            </div>
-        </div>
-
-        <form id="delete-tag-form" method="POST">
-            @csrf
-            @method('DELETE')
-        </form>
-
-        @slot('actions')
-        <button type="button" class="btn btn-ghost" onclick="deleteTagModal.close()">
-            Cancel
-        </button>
-        <button type="submit" form="delete-tag-form" class="btn btn-error">
-            Delete Tag
         </button>
         @endslot
     </x-modal>

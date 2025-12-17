@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Transaction;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\DocumentTag;
-use App\Models\TransactionType;
 use App\Models\Workflow;
 use App\Services\Transaction\WorkflowConfigService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -24,15 +23,15 @@ class WorkflowConfigController extends Controller
     }
 
     /**
-     * Show all workflows grouped by transaction type
+     * Show all workflows with TS# and transaction name
      */
     public function index()
     {
-        $transactionTypes = TransactionType::with(['workflows' => function ($q) {
-            $q->with('documentTags.department');
-        }])->get();
+        $workflows = Workflow::with('documentTags.department')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        return view('workflows.index', compact('transactionTypes'));
+        return view('workflows.index', compact('workflows'));
     }
 
     /**
@@ -40,17 +39,11 @@ class WorkflowConfigController extends Controller
      */
     public function create(Request $request)
     {
-        $transactionTypeId = $request->get('transaction_type_id');
-        $transactionType = $transactionTypeId
-            ? TransactionType::findOrFail($transactionTypeId)
-            : null;
-
-        $transactionTypes = TransactionType::where('status', true)->get();
         $departments = Department::where('status', 1)->get();
         $documentTags = DocumentTag::where('status', true)->with('department')->get();
         $currentConfig = ['steps' => [], 'transitions' => [], 'difficulty' => 'simple'];
 
-        return view('workflows.create', compact('transactionType', 'transactionTypes', 'departments', 'documentTags', 'currentConfig'));
+        return view('workflows.create', compact('departments', 'documentTags', 'currentConfig'));
     }
 
     /**
@@ -59,7 +52,7 @@ class WorkflowConfigController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'transaction_type_id' => 'required|exists:transaction_types,id',
+            'transaction_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'difficulty' => 'required|in:simple,complex,highly_technical',
             'steps' => 'required|array|min:1',
@@ -84,7 +77,7 @@ class WorkflowConfigController extends Controller
 
             // Create the workflow
             $workflow = Workflow::create([
-                'transaction_type_id' => $request->input('transaction_type_id'),
+                'transaction_name' => $request->input('transaction_name'),
                 'description' => $request->input('description'),
                 'difficulty' => $request->input('difficulty'),
                 'workflow_config' => $config,
@@ -119,7 +112,6 @@ class WorkflowConfigController extends Controller
      */
     public function edit(Workflow $workflow)
     {
-        $workflow->load('transactionType');
         $departments = Department::where('status', 1)->get();
         $documentTags = DocumentTag::where('status', true)->with('department')->get();
         $currentConfig = $workflow->workflow_config ?? ['steps' => [], 'transitions' => [], 'difficulty' => 'simple'];
@@ -139,6 +131,7 @@ class WorkflowConfigController extends Controller
     public function update(Request $request, Workflow $workflow)
     {
         $request->validate([
+            'transaction_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'difficulty' => 'required|in:simple,complex,highly_technical',
             'steps' => 'required|array|min:1',
@@ -163,6 +156,7 @@ class WorkflowConfigController extends Controller
 
 
             $workflow->update([
+                'transaction_name' => $request->input('transaction_name'),
                 'description' => $request->input('description'),
                 'difficulty' => $request->input('difficulty'),
                 'workflow_config' => $config,
@@ -184,7 +178,7 @@ class WorkflowConfigController extends Controller
 
             return redirect()
                 ->route('admin.workflows.index')
-                ->with('success', "Workflow '{$workflow->name}' updated successfully!");
+                ->with('success', "Workflow '{$workflow->transaction_name}' updated successfully!");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage())->withInput();

@@ -12,7 +12,7 @@ class Transaction extends Model
         'transaction_code',
         'level_of_urgency',
         'document_tags_id',
-        'transaction_type_id',
+        'workflow_id',
         'assign_staff_id',
         'transaction_status',
         'current_state',
@@ -30,9 +30,9 @@ class Transaction extends Model
         ];
     }
 
-    public function transactionType()
+    public function workflow()
     {
-        return $this->belongsTo(TransactionType::class);
+        return $this->belongsTo(Workflow::class);
     }
 
     public function assignStaff()
@@ -144,7 +144,7 @@ class Transaction extends Model
      */
     public function getAvailableActions(): array
     {
-        $transitions = $this->transactionType->getTransitions();
+        $transitions = $this->workflow->getTransition();
         return $transitions[$this->current_state] ?? [];
     }
 

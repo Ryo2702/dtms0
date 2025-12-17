@@ -4,7 +4,7 @@ namespace App\Services\Transaction;
 
 use App\Models\Transaction;
 use App\Models\TransactionLog;
-use App\Models\TransactionType;
+use App\Models\Workflow;
 use App\Models\User;
 use App\Models\WorkflowLog;
 use Illuminate\Support\Facades\DB;
@@ -16,13 +16,13 @@ class WorkflowEngineService
      */
     public function initializeTransaction(Transaction $transaction): void
     {
-        $transactionType = $transaction->transactionType;
+        $workflow = $transaction->workflow;
         
-        if (!$transactionType->hasWorkflowConfigured()) {
-            throw new \Exception('Transaction type has no workflow configured.');
+        if (!$workflow->hasWorkConfigured()) {
+            throw new \Exception('Workflow has no configuration.');
         }
 
-        $initialState = $transactionType->getInitialState();
+        $initialState = $workflow->getInitialState();
         
         $transaction->update([
             'current_state' => $initialState,
@@ -45,7 +45,7 @@ class WorkflowEngineService
             DB::beginTransaction();
 
             $currentState = $transaction->current_state;
-            $transitions = $transaction->transactionType->getTransitions();
+            $transitions = $transaction->workflow->getTransition();
 
             // Check if action is valid for current state
             if (!isset($transitions[$currentState][$action])) {
@@ -56,7 +56,7 @@ class WorkflowEngineService
 
             // For reject action, we might need to determine the specific return destination
             if ($action === 'reject' && $returnToDepartmentId) {
-                $nextState = $this->getReturnState($transaction->transactionType, $returnToDepartmentId);
+                $nextState = $this->getReturnState($transaction->workflow, $returnToDepartmentId);
             }
 
             // Log the transition
@@ -96,13 +96,13 @@ class WorkflowEngineService
     /**
      * Get return state for a specific department
      */
-    protected function getReturnState(TransactionType $transactionType, int $departmentId): string
+    protected function getReturnState(Workflow $workflow, int $departmentId): string
     {
-        $steps = $transactionType->getWorkflowSteps();
+        $steps = $workflow->getWorkflowSteps();
         
         foreach ($steps as $step) {
             if ($step['department_id'] == $departmentId) {
-                $deptName = $transactionType->sanitizeDepartmentName($step['department_name']);
+                $deptName = $this->sanitizeDepartmentName($step['department_name']);
                 return "returned_to_{$deptName}";
             }
         }
@@ -111,12 +111,20 @@ class WorkflowEngineService
     }
 
     /**
+     * Sanitize department name for state string
+     */
+    protected function sanitizeDepartmentName(string $name): string
+    {
+        return str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9\s]/', '', $name));
+    }
+
+    /**
      * Get available actions for a transaction and user
      */
     public function getAvailableActions(Transaction $transaction, User $user): array
     {
         $currentState = $transaction->current_state;
-        $transitions = $transaction->transactionType->getTransitions();
+        $transitions = $transaction->workflow->getTransition();
 
         if (!isset($transitions[$currentState])) {
             return [];
@@ -159,7 +167,7 @@ class WorkflowEngineService
      */
     public function getReturnOptions(Transaction $transaction): array
     {
-        $steps = $transaction->transactionType->getWorkflowSteps();
+        $steps = $transaction->workflow->getWorkflowSteps();
         $currentState = $transaction->current_state;
 
         // Find current step index
@@ -177,21 +185,19 @@ class WorkflowEngineService
             return [];
         }
 
-        // Get the can_return_to from current step
-        $currentStep = $steps[$currentIndex] ?? null;
-        $canReturnTo = $currentStep['can_return_to'] ?? [];
-
-        $options = [];
-        foreach ($steps as $step) {
-            if (in_array($step['department_id'], $canReturnTo)) {
-                $options[] = [
-                    'department_id' => $step['department_id'],
-                    'department_name' => $step['department_name'],
-                ];
-            }
+        // Return option is always the previous step
+        $previousStep = $steps[$currentIndex - 1] ?? null;
+        
+        if (!$previousStep) {
+            return [];
         }
 
-        return $options;
+        return [
+            [
+                'department_id' => $previousStep['department_id'],
+                'department_name' => $previousStep['department_name'],
+            ]
+        ];
     }
 
     /**
@@ -199,7 +205,7 @@ class WorkflowEngineService
      */
     public function getWorkflowProgress(Transaction $transaction): array
     {
-        $steps = $transaction->transactionType->getWorkflowSteps();
+        $steps = $transaction->workflow->getWorkflowSteps();
         $currentState = $transaction->current_state;
         $currentDept = $transaction->getCurrentDepartmentFromState();
 
@@ -221,7 +227,6 @@ class WorkflowEngineService
                 'department_id' => $step['department_id'],
                 'department_name' => $step['department_name'],
                 'status' => $status,
-                'can_return_to' => $step['can_return_to'],
             ];
         }
 

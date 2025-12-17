@@ -65,10 +65,15 @@ class DocumentTagController extends Controller
      */
     public function store(Request $request)
     {
+        // Convert empty string to null for department_id
+        $request->merge([
+            'department_id' => $request->input('department_id') ?: null
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'department_id' => 'required|exists:departments,id',
+            'department_id' => 'nullable|exists:departments,id',
             'status' => 'boolean',
         ]);
 
@@ -126,7 +131,7 @@ class DocumentTagController extends Controller
      */
     public function show(DocumentTag $documentTag)
     {
-        $documentTag->load(['department', 'workflows.transactionType']);
+        $documentTag->load(['department', 'workflows']);
 
         return response()->json([
             'id' => $documentTag->id,
@@ -162,10 +167,15 @@ class DocumentTagController extends Controller
      */
     public function update(Request $request, DocumentTag $documentTag)
     {
+        // Convert empty string to null for department_id
+        $request->merge([
+            'department_id' => $request->input('department_id') ?: null
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'department_id' => 'required|exists:departments,id',
+            'department_id' => 'nullable|exists:departments,id',
             'status' => 'boolean',
         ]);
 

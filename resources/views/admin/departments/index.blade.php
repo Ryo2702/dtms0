@@ -143,6 +143,29 @@
                     <span class="label-text ml-2">Active</span>
                 </label>
             </div>
+
+            {{-- Document Tags Field --}}
+            @if(isset($availableDocumentTags) && $availableDocumentTags->count() > 0)
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Attach Document Tags</span>
+                    <span class="label-text-alt text-gray-500">Optional</span>
+                </label>
+                <div class="border rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        @foreach($availableDocumentTags as $tag)
+                            <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded border border-gray-200 hover:border-primary transition-colors">
+                                <input type="checkbox" name="document_tags[]" value="{{ $tag->id }}" class="checkbox checkbox-sm checkbox-primary">
+                                <span class="text-sm">{{ $tag->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+                <label class="label">
+                    <span class="label-text-alt">Select document tags to associate with this department</span>
+                </label>
+            </div>
+            @endif
         </form>
 
         @slot('actions')
@@ -197,6 +220,20 @@
                 <label class="cursor-pointer label">
                     <input type="checkbox" id="edit_status" name="status" value="1" class="checkbox checkbox-primary" />
                     <span class="label-text ml-2">Active</span>
+                </label>
+            </div>
+
+            {{-- Document Tags Field --}}
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Document Tags</span>
+                    <span class="label-text-alt text-gray-500">Manage department tags</span>
+                </label>
+                <div id="edit_document_tags_container" class="border rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
+                    <p class="text-gray-500 text-sm text-center py-2">Loading tags...</p>
+                </div>
+                <label class="label">
+                    <span class="label-text-alt">Select document tags to associate with this department</span>
                 </label>
             </div>
         </form>
@@ -357,6 +394,28 @@
                     document.getElementById('edit_name').value = data.name;
                     document.getElementById('edit_description').value = data.description || '';
                     document.getElementById('edit_status').checked = data.status == 1;
+
+                    // Populate document tags
+                    const tagsContainer = document.getElementById('edit_document_tags_container');
+                    const allTags = [...(data.document_tags || []), ...(data.available_tags || [])];
+                    const currentTagIds = (data.document_tags || []).map(t => t.id);
+                    
+                    if (allTags.length > 0) {
+                        let tagsHtml = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">';
+                        allTags.forEach(tag => {
+                            const isChecked = currentTagIds.includes(tag.id) ? 'checked' : '';
+                            tagsHtml += `
+                                <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded border border-gray-200 hover:border-primary transition-colors">
+                                    <input type="checkbox" name="document_tags[]" value="${tag.id}" class="checkbox checkbox-sm checkbox-primary" ${isChecked}>
+                                    <span class="text-sm">${tag.name}</span>
+                                </label>
+                            `;
+                        });
+                        tagsHtml += '</div>';
+                        tagsContainer.innerHTML = tagsHtml;
+                    } else {
+                        tagsContainer.innerHTML = '<p class="text-gray-500 text-sm text-center py-2">No document tags available</p>';
+                    }
 
                     // Update form action
                     document.getElementById('editDepartmentForm').action = `/admin/departments/${id}`;

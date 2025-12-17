@@ -46,7 +46,6 @@ class DatabaseSeeder extends Seeder
 
       
 
-        $this->call(TransactionTypeSeeder::class);
         $this->call(DepartmentSeeder::class);
     }
 }

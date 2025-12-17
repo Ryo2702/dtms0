@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Workflow extends Model
 {
     protected $fillable = [
-        'transaction_type_id',
+        'transaction_name',
         'description',
         'difficulty',
         'workflow_config',
@@ -21,12 +21,25 @@ class Workflow extends Model
         'status' => 'boolean'
     ];
 
+    protected $keyType = 'string';
+    public $incrementing = false;
 
-    public function transactionType()
+    protected static function boot()
     {
-        return $this->belongsTo(TransactionType::class);
-    }
+        parent::boot();
 
+        static::creating(function (self $model) {
+            if (empty($model->id)) {
+                $prefix = 'TS';
+                $last = self::orderBy('created_at', 'desc')->first();
+                $next = 1;
+                if ($last && preg_match('/^TS(\d{4,})$/', $last->id, $m)) {
+                    $next = ((int) $m[1]) + 1;
+                }
+                $model->id = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+            }
+        });
+    }
     public function documentTags()
     {
         return $this->belongsToMany(DocumentTag::class, 'document_tag_workflow')

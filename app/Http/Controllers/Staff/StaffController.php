@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\AssignStaff;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class StaffController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user->type !== 'Head') {
             abort(403, 'Unauthorized');

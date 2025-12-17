@@ -29,8 +29,14 @@ class DepartmentController extends Controller
         $departments = Department::where('name', 'not like', '%Admin%')
             ->orderBy($sort, $direction)
             ->paginate(8)
-            ->appends(['sort' => $sort, 'direction' => $direction]);;
-        return view('admin.departments.index', compact('departments'));
+            ->appends(['sort' => $sort, 'direction' => $direction]);
+
+        // Get document tags without department assigned (general tags that can be attached)
+        $availableDocumentTags = \App\Models\DocumentTag::whereNull('department_id')
+            ->where('status', true)
+            ->get();
+
+        return view('admin.departments.index', compact('departments', 'availableDocumentTags'));
     }
 
     /**
@@ -54,7 +60,15 @@ class DepartmentController extends Controller
                 $data['logo'] = $logoPath;
             }
 
-            Department::create($data);
+            $department = Department::create($data);
+
+            // Assign document tags to department if provided
+            if ($request->has('document_tags')) {
+                $tagIds = array_filter($request->input('document_tags', []));
+                if (!empty($tagIds)) {
+                    \App\Models\DocumentTag::whereIn('id', $tagIds)->update(['department_id' => $department->id]);
+                }
+            }
 
             return redirect()
                 ->route('admin.departments.index')
@@ -71,6 +85,14 @@ class DepartmentController extends Controller
     {
         $department = Department::findOrFail($id);
 
+        // Get document tags for this department
+        $departmentTags = $department->documentTags()->get(['id', 'name', 'slug']);
+        
+        // Get available general tags (not assigned to any department)
+        $availableTags = \App\Models\DocumentTag::whereNull('department_id')
+            ->where('status', true)
+            ->get(['id', 'name', 'slug']);
+
         return response()->json([
             'id' => $department->id,
             'name' => $department->name,
@@ -82,7 +104,9 @@ class DepartmentController extends Controller
             'active_users_count' => $department->getActiveUsersCount(),
             'total_users_count' => $department->getTotalUsersCount(),
             'created_at' => $department->created_at,
-            'update_at' => $department->updated_at
+            'updated_at' => $department->updated_at,
+            'document_tags' => $departmentTags,
+            'available_tags' => $availableTags
         ]);
     }
     /**
@@ -117,6 +141,21 @@ class DepartmentController extends Controller
             }
 
             $department->update($data);
+
+            // Handle document tags update
+            if ($request->has('document_tags')) {
+                $newTagIds = array_filter($request->input('document_tags', []));
+                
+                // Remove old tags from this department (set department_id to null)
+                \App\Models\DocumentTag::where('department_id', $department->id)
+                    ->whereNotIn('id', $newTagIds)
+                    ->update(['department_id' => null]);
+                
+                // Assign new tags to this department
+                if (!empty($newTagIds)) {
+                    \App\Models\DocumentTag::whereIn('id', $newTagIds)->update(['department_id' => $department->id]);
+                }
+            }
 
             return redirect()
                 ->route('admin.departments.index')
@@ -244,12 +283,12 @@ class DepartmentController extends Controller
     {
         $department = Department::findOrFail($id);
         $workflows = $department->getWorkflowsWithTags()
-            ->with(['transactionType', 'documentTags'])
+            ->with(['documentTags'])
             ->get()
             ->map(function ($workflow) use ($department) {
                 return [
                     'id' => $workflow->id,
-                    'transaction_type' => $workflow->transactionType->transaction_name,
+                    'transaction_name' => $workflow->transaction_name,
                     'description' => $workflow->description,
                     'difficulty' => $workflow->difficulty,
                     'status' => $workflow->status,

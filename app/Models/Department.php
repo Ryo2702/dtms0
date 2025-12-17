@@ -50,12 +50,6 @@ class Department extends Model
         return $this->hasOne(User::class)->where('type', 'Admin');
     }
 
-    // Get transaction types for this department
-
-    public function transactionTypes(): HasMany{
-        return $this->hasMany(TransactionType::class);
-    }
-
     public function transaction(){
         return $this->hasMany(Transaction::class);
     }

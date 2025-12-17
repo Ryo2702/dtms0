@@ -7,8 +7,8 @@
         {{-- Header --}}
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Workflow Management</h1>
-                <p class="text-gray-600 mt-1">Configure document routing workflows for each transaction type</p>
+                <h1 class="text-2xl font-bold text-gray-900">Transaction</h1>
+                <p class="text-gray-600 mt-1">Configure document routing workflows</p>
             </div>
             <a href="{{ route('admin.workflows.create') }}" class="btn btn-primary">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,58 +18,59 @@
             </a>
         </div>
 
-        {{-- Transaction Types with Workflows --}}
-        @foreach ($transactionTypes as $transactionType)
-            <div class="card bg-base-100 shadow-md mb-6">
-                <div class="card-body">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h2 class="card-title text-lg">{{ $transactionType->document_name }}</h2>
-                            <p class="text-sm text-gray-500">{{ $transactionType->description }}</p>
-                        </div>
-                        <a href="{{ route('admin.workflows.create', ['transaction_type_id' => $transactionType->id]) }}"
-                            class="btn btn-sm btn-outline btn-primary">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Workflow
-                        </a>
-                    </div>
-
-                    @if ($transactionType->workflows->count() > 0)
-                        <div class="overflow-x-auto">
-                            <table class="table table-zebra w-full">
-                                <thead>
-                                    <tr>
-                                        <th>Steps</th>
-                                        <th>Document Tags</th>
-                                        <th>Estimated Time</th>
-                                        <th>Difficulty</th>
-                                        <th>Status</th>
-                                        <th class="text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($transactionType->workflows as $workflow)
-                                        @php
-                                            $steps = $workflow->getWorkflowSteps();
-                                            $totalTime = 0;
-                                            $timeUnit = 'days';
-                                            foreach ($steps as $step) {
-                                                $value = $step['process_time_value'] ?? 0;
-                                                $unit = $step['process_time_unit'] ?? 'days';
-                                                if ($unit === 'hours') {
-                                                    $totalTime += $value / 24;
-                                                } elseif ($unit === 'weeks') {
-                                                    $totalTime += $value * 7;
-                                                } else {
-                                                    $totalTime += $value;
-                                                }
+        {{-- Workflows Table --}}
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body">
+                @if ($workflows->count() > 0)
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr>
+                                    <th>TS#</th>
+                                    <th>Transaction Name</th>
+                                    <th>Steps</th>
+                                    <th>Document Tags</th>
+                                    <th>Estimated Time</th>
+                                    <th>Difficulty</th>
+                                    <th>Status</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($workflows as $workflow)
+                                    @php
+                                        $steps = $workflow->getWorkflowSteps();
+                                        $totalTime = 0;
+                                        $timeUnit = 'days';
+                                        foreach ($steps as $step) {
+                                            $value = $step['process_time_value'] ?? 0;
+                                            $unit = $step['process_time_unit'] ?? 'days';
+                                            if ($unit === 'hours') {
+                                                $totalTime += $value / 24;
+                                            } elseif ($unit === 'weeks') {
+                                                $totalTime += $value * 7;
+                                            } else {
+                                                $totalTime += $value;
                                             }
-                                            $totalTime = round($totalTime, 1);
-                                        @endphp
-                                        <tr>
-                                            <td>
+                                        }
+                                        $totalTime = round($totalTime, 1);
+                                    @endphp
+                                    <tr>
+                                        {{-- TS# Column --}}
+                                        <td>
+                                            <span class="font-mono font-bold text-primary">{{ $workflow->id }}</span>
+                                        </td>
+                                        {{-- Transaction Name Column --}}
+                                        <td>
+                                            <div>
+                                                <div class="font-medium">{{ $workflow->transaction_name }}</div>
+                                                @if($workflow->description)
+                                                    <div class="text-xs text-gray-500">{{ Str::limit($workflow->description, 50) }}</div>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        {{-- Steps Column --}}
+                                        <td>
                                                 {{-- Arrow-based Step Flow Design --}}
                                                 <div class="flex flex-wrap items-center gap-1">
                                                     @foreach ($steps as $index => $step)
@@ -211,7 +212,7 @@ $originTags = $originDepartmentId
                                             <td>
                                                 <label class="swap">
                                                     <input type="checkbox" {{ $workflow->status ? 'checked' : '' }}
-                                                        onchange="toggleStatus({{ $workflow->id }})">
+                                                        onchange="toggleStatus('{{ $workflow->id }}')">
                                                     <span class="swap-on badge badge-success">Active</span>
                                                     <span class="swap-off badge badge-ghost">Inactive</span>
                                                 </label>
@@ -227,7 +228,7 @@ $originTags = $originDepartmentId
                                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </a>
-                                                    <button onclick="openDuplicateModal({{ $workflow->id }})"
+                                                    <button onclick="openDuplicateModal('{{ $workflow->id }}')"
                                                         class="btn btn-xs btn-ghost" title="Duplicate">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -236,7 +237,7 @@ $originTags = $originDepartmentId
                                                                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                                         </svg>
                                                     </button>
-                                                    <button onclick="confirmDelete({{ $workflow->id }})"
+                                                    <button onclick="confirmDelete('{{ $workflow->id }}')"
                                                         class="btn btn-xs btn-ghost text-error" title="Delete">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -248,44 +249,26 @@ $originTags = $originDepartmentId
                                                 </div>
                                             </td>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="text-center py-8 text-gray-500">
-                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <p>No workflows configured yet</p>
-                            <a href="{{ route('admin.workflows.create', ['transaction_type_id' => $transactionType->id]) }}"
-                                class="btn btn-sm btn-primary mt-2">
-                                Create First Workflow
-                            </a>
-                        </div>
-                    @endif
-                </div>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center py-12 text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Workflows</h3>
+                        <p class="text-gray-500 mb-4">Create your first workflow to get started.</p>
+                        <a href="{{ route('admin.workflows.create') }}" class="btn btn-primary">
+                            Create First Workflow
+                        </a>
+                    </div>
+                @endif
             </div>
-        @endforeach
-
-        @if ($transactionTypes->isEmpty())
-            <div class="card bg-base-100 shadow-md">
-                <div class="card-body text-center py-12">
-                    <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Transaction Types</h3>
-                    <p class="text-gray-500 mb-4">Create transaction types first before configuring workflows.</p>
-                    <a href="{{ route('admin.transaction-types.index') }}" class="btn btn-primary">
-                        Manage Transaction Types
-                    </a>
-                </div>
-            </div>
-        @endif
+        </div>
     </div>
 
     {{-- Delete Confirmation Modal --}}
