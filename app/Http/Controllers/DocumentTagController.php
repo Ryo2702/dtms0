@@ -22,15 +22,17 @@ class DocumentTagController extends Controller
         $direction = $request->get('direction', 'asc');
         $departmentFilter = $request->get('department_id');
 
-        $allowedSorts = ['name', 'slug', 'status', 'department_id', 'created_at'];
+        $allowedSorts = ['name', 'slug', 'status', 'created_at'];
         if (!in_array($sort, $allowedSorts)) {
             $sort = 'name';
         }
 
-        $query = DocumentTag::with('department');
+        $query = DocumentTag::with('departments');
 
         if ($departmentFilter) {
-            $query->where('department_id', $departmentFilter);
+            $query->whereHas('departments', function ($q) use ($departmentFilter) {
+                $q->where('departments.id', $departmentFilter);
+            });
         }
 
         $documentTags = $query->orderBy($sort, $direction)
@@ -65,15 +67,11 @@ class DocumentTagController extends Controller
      */
     public function store(Request $request)
     {
-        // Convert empty string to null for department_id
-        $request->merge([
-            'department_id' => $request->input('department_id') ?: null
-        ]);
-
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'department_id' => 'nullable|exists:departments,id',
+            'department_ids' => 'nullable|array',
+            'department_ids.*' => 'exists:departments,id',
             'status' => 'boolean',
         ]);
 
@@ -92,16 +90,21 @@ class DocumentTagController extends Controller
                 'name' => $request->input('name'),
                 'slug' => $slug,
                 'description' => $request->input('description'),
-                'department_id' => $request->input('department_id'),
                 'status' => $request->boolean('status', true),
             ]);
+
+            // Sync departments (many-to-many)
+            if ($request->has('department_ids')) {
+                $departmentIds = array_filter($request->input('department_ids', []));
+                $documentTag->departments()->sync($departmentIds);
+            }
 
             // Return JSON for AJAX/modal request
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Document tag created successfully.',
-                    'data' => $documentTag->load('department')
+                    'data' => $documentTag->load('departments')
                 ]);
             }
 
@@ -131,7 +134,7 @@ class DocumentTagController extends Controller
      */
     public function show(DocumentTag $documentTag)
     {
-        $documentTag->load(['department', 'workflows']);
+        $documentTag->load(['departments', 'workflows']);
 
         return response()->json([
             'id' => $documentTag->id,
@@ -139,7 +142,7 @@ class DocumentTagController extends Controller
             'slug' => $documentTag->slug,
             'description' => $documentTag->description,
             'status' => $documentTag->status,
-            'department' => $documentTag->department,
+            'departments' => $documentTag->departments,
             'workflows' => $documentTag->workflows,
             'workflows_count' => $documentTag->workflows->count(),
             'created_at' => $documentTag->created_at,
@@ -152,12 +155,14 @@ class DocumentTagController extends Controller
      */
     public function edit(DocumentTag $documentTag)
     {
+        $documentTag->load('departments');
+        
         return response()->json([
             'id' => $documentTag->id,
             'name' => $documentTag->name,
             'slug' => $documentTag->slug,
             'description' => $documentTag->description,
-            'department_id' => $documentTag->department_id,
+            'department_ids' => $documentTag->departments->pluck('id')->toArray(),
             'status' => $documentTag->status,
         ]);
     }
@@ -167,15 +172,11 @@ class DocumentTagController extends Controller
      */
     public function update(Request $request, DocumentTag $documentTag)
     {
-        // Convert empty string to null for department_id
-        $request->merge([
-            'department_id' => $request->input('department_id') ?: null
-        ]);
-
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'department_id' => 'nullable|exists:departments,id',
+            'department_ids' => 'nullable|array',
+            'department_ids.*' => 'exists:departments,id',
             'status' => 'boolean',
         ]);
 
@@ -183,7 +184,6 @@ class DocumentTagController extends Controller
             $data = [
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
-                'department_id' => $request->input('department_id'),
                 'status' => $request->boolean('status', true),
             ];
 
@@ -201,12 +201,16 @@ class DocumentTagController extends Controller
 
             $documentTag->update($data);
 
+            // Sync departments (many-to-many)
+            $departmentIds = array_filter($request->input('department_ids', []));
+            $documentTag->departments()->sync($departmentIds);
+
             // Return JSON for AJAX/modal request
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Document tag updated successfully.',
-                    'data' => $documentTag->load('department')
+                    'data' => $documentTag->load('departments')
                 ]);
             }
 

@@ -13,12 +13,11 @@
         </div>
 
         {{-- Departments Table --}}
-        <x-data-table :headers="['Logo', 'Name', 'Code', 'Members', 'Status', 'Actions']" :paginator="$departments"
-            :sortableFields="['name', 'code', 'status']" emptyMessage="No departments found.">
-            @foreach($departments as $department)
+        <x-data-table :headers="['Logo', 'Name', 'Code', 'Documents','Members', 'Status', 'Actions']" :paginator="$departments" :sortableFields="['name', 'code', 'status']" emptyMessage="No departments found.">
+            @foreach ($departments as $department)
                 <tr class="hover">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($department->getLogoUrl())
+                        @if ($department->getLogoUrl())
                             <img src="{{ $department->getLogoUrl() }}" alt="{{ $department->name }}"
                                 class="h-10 w-10 rounded-full object-cover">
                         @else
@@ -37,24 +36,35 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="badge badge-primary">{{ $department->code }}</span>
                     </td>
+                     <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-1 max-w-xs">
+                            @forelse ($department->documentTags as $tag)
+                                <span class="badge badge-neutral badge-outline badge-sm">{{ $tag->name }}</span>
+                            @empty
+                                <span class="text-gray-400 text-sm">-</span>
+                            @endforelse
+                        </div>
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {{ $department->getActiveUsersCount() }} / {{ $department->getTotalUsersCount() }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($department->status)
+                        @if ($department->status)
                             <span class="badge badge-success">Active</span>
                         @else
                             <span class="badge">Inactive</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                        <button onclick="viewDepartmentDetails({{ $department->id }})" class="btn btn-ghost btn-sm btn-link">
+                        <button onclick="viewDepartmentDetails({{ $department->id }})"
+                            class="btn btn-ghost btn-sm btn-link">
                             Details
                         </button>
                         <button onclick="editDepartment({{ $department->id }})" class="btn btn-ghost btn-sm btn-link">
                             Edit
                         </button>
-                        <button onclick="manageDepartmentUsers({{ $department->id}})" class="btn btn-ghost btn-sm btn-link">
+                        <button onclick="manageDepartmentUsers({{ $department->id }})"
+                            class="btn btn-ghost btn-sm btn-link">
                             Manage Users
                         </button>
                     </td>
@@ -69,37 +79,31 @@
             enctype="multipart/form-data" class="space-y-4">
             @csrf
 
+            {{-- Logo Field --}}
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">Department Logo</span>
+                </label>
+                <input type="file" id="logo" name="logo" accept="image/*"
+                    class="file-input file-input-bordered" />
+                <label class="label">
+                    <span class="label-text-alt">Accepted formats: JPG, PNG, GIF (Max 2MB)</span>
+                </label>
+                @error('logo')
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ $message }}</span>
+                    </label>
+                @enderror
+            </div>
 
             {{-- Name Field --}}
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text font-medium">Department Name</span>
+                    <span class="label-text font-medium">Description</span>
                 </label>
-                <select id="name" name="title" required class="select select-bordered">
-                    <option value="">Select a department...</option>
-                    <option value="Tourism Office">Tourism Office</option>
-                    <option value="Civil Security">Civil Security</option>
-                    <option value="Office of the Municipal Accounting">Office of the Municipal Accounting</option>
-                    <option value="Office of the Municipal Agriculture">Office of the Municipal Agriculture</option>
-                    <option value="Office of the Municipal Mayor">Office of the Municipal Mayor</option>
-                    <option value="Budget and Management Office">Budget and Management Office</option>
-                    <option value="Office of the Municipal Civil Engineering">Office of the Municipal Civil Engineering
-                    </option>
-                    <option value="Office of Health and Welfare">Office of Health and Welfare</option>
-                    <option value="Human Resources Management Office">Human Resources Management Office</option>
-                    <option value="Office of the Municipal Treasurer">Office of the Municipal Treasurer</option>
-                    <option value="Public Employment Service Office">Public Employment Service Office</option>
-                    <option value="Municipal Planning and Development Office">Municipal Planning and Development Office
-                    </option>
-                    <option value="Territorial Integrity Sanggui">Territorial Integrity Sanggui</option>
-                    <option value="Provincial Welfare and Development">Provincial Welfare and Development</option>
-                    <option value="Information Office Municipal">Information Office Municipal</option>
-                    <option value="Banasud Office">Banasud Office</option>
-                    <option value="General Services Office">General Services Office</option>
-                    <option value="Community Development Office">Community Development Office</option>
-                    <option value="Legal and Compliance Office">Legal and Compliance Office</option>
-                </select>
-                @error('title')
+                <input id="name" name="title" placeholder="Enter department description"
+                    class="input input-bordered"></input>
+                @error('description')
                     <label class="label">
                         <span class="label-text-alt text-error">{{ $message }}</span>
                     </label>
@@ -120,61 +124,49 @@
                 @enderror
             </div>
 
-            {{-- Logo Field --}}
-            <div class="form-control">
-                <label class="label">
-                    <span class="label-text font-medium">Department Logo</span>
-                </label>
-                <input type="file" id="logo" name="logo" accept="image/*" class="file-input file-input-bordered" />
-                <label class="label">
-                    <span class="label-text-alt">Accepted formats: JPG, PNG, GIF (Max 2MB)</span>
-                </label>
-                @error('logo')
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ $message }}</span>
-                    </label>
-                @enderror
-            </div>
 
             {{-- Status Field --}}
             <div class="form-control">
                 <label class="cursor-pointer label">
-                    <input type="checkbox" id="status" name="status" value="1" checked class="checkbox checkbox-primary" />
+                    <input type="checkbox" id="status" name="status" value="1" checked
+                        class="checkbox checkbox-primary" />
                     <span class="label-text ml-2">Active</span>
                 </label>
             </div>
 
             {{-- Document Tags Field --}}
-            @if(isset($availableDocumentTags) && $availableDocumentTags->count() > 0)
-            <div class="form-control">
-                <label class="label">
-                    <span class="label-text font-medium">Attach Document Tags</span>
-                    <span class="label-text-alt text-gray-500">Optional</span>
-                </label>
-                <div class="border rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        @foreach($availableDocumentTags as $tag)
-                            <label class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded border border-gray-200 hover:border-primary transition-colors">
-                                <input type="checkbox" name="document_tags[]" value="{{ $tag->id }}" class="checkbox checkbox-sm checkbox-primary">
-                                <span class="text-sm">{{ $tag->name }}</span>
-                            </label>
-                        @endforeach
+            @if (isset($availableDocumentTags) && $availableDocumentTags->count() > 0)
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Attach Document Tags</span>
+                        <span class="label-text-alt text-gray-500">Optional</span>
+                    </label>
+                    <div class="border rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            @foreach ($availableDocumentTags as $tag)
+                                <label
+                                    class="flex items-center gap-2 cursor-pointer p-2 bg-white rounded border border-gray-200 hover:border-primary transition-colors">
+                                    <input type="checkbox" name="document_tags[]" value="{{ $tag->id }}"
+                                        class="checkbox checkbox-sm checkbox-primary">
+                                    <span class="text-sm">{{ $tag->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
                     </div>
+                    <label class="label">
+                        <span class="label-text-alt">Select document tags to associate with this department</span>
+                    </label>
                 </div>
-                <label class="label">
-                    <span class="label-text-alt">Select document tags to associate with this department</span>
-                </label>
-            </div>
             @endif
         </form>
 
         @slot('actions')
-        <button type="button" class="btn btn-ghost" onclick="departmentModal.close()">
-            Cancel
-        </button>
-        <button type="submit" form="departmentForm" class="btn btn-primary" id="submitBtn">
-            Create Department
-        </button>
+            <button type="button" class="btn btn-ghost" onclick="departmentModal.close()">
+                Cancel
+            </button>
+            <button type="submit" form="departmentForm" class="btn btn-primary" id="submitBtn">
+                Create Department
+            </button>
         @endslot
     </x-modal>
 
@@ -208,7 +200,8 @@
                 <label class="label">
                     <span class="label-text font-medium">Department Logo</span>
                 </label>
-                <input type="file" id="edit_logo" name="logo" accept="image/*" class="file-input file-input-bordered" />
+                <input type="file" id="edit_logo" name="logo" accept="image/*"
+                    class="file-input file-input-bordered" />
                 <label class="label">
                     <span class="label-text-alt">Leave empty to keep current logo. Accepted formats: JPG, PNG, GIF (Max
                         2MB)</span>
@@ -218,7 +211,8 @@
             {{-- Status Field --}}
             <div class="form-control">
                 <label class="cursor-pointer label">
-                    <input type="checkbox" id="edit_status" name="status" value="1" class="checkbox checkbox-primary" />
+                    <input type="checkbox" id="edit_status" name="status" value="1"
+                        class="checkbox checkbox-primary" />
                     <span class="label-text ml-2">Active</span>
                 </label>
             </div>
@@ -239,12 +233,12 @@
         </form>
 
         @slot('actions')
-        <button type="button" class="btn btn-ghost" onclick="editDepartmentModal.close()">
-            Cancel
-        </button>
-        <button type="submit" form="editDepartmentForm" class="btn btn-primary" id="editSubmitBtn">
-            Update Department
-        </button>
+            <button type="button" class="btn btn-ghost" onclick="editDepartmentModal.close()">
+                Cancel
+            </button>
+            <button type="submit" form="editDepartmentForm" class="btn btn-primary" id="editSubmitBtn">
+                Update Department
+            </button>
         @endslot
     </x-modal>
 
@@ -255,9 +249,10 @@
             <div class="flex justify-center">
                 <div id="details_logo_container"
                     class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                    <img id="details_logo" src="" alt="Department Logo" class="h-full w-full object-cover hidden">
-                    <svg id="details_logo_placeholder" class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
+                    <img id="details_logo" src="" alt="Department Logo"
+                        class="h-full w-full object-cover hidden">
+                    <svg id="details_logo_placeholder" class="w-12 h-12 text-gray-400" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                     </svg>
@@ -304,12 +299,12 @@
         </div>
 
         @slot('actions')
-        <button type="button" class="btn btn-ghost" onclick="detailsDepartmentModal.close()">
-            Close
-        </button>
-        <button type="button" id="details_edit_btn" class="btn btn-primary">
-            Edit Department
-        </button>
+            <button type="button" class="btn btn-ghost" onclick="detailsDepartmentModal.close()">
+                Close
+            </button>
+            <button type="button" id="details_edit_btn" class="btn btn-primary">
+                Edit Department
+            </button>
         @endslot
     </x-modal>
 
@@ -354,9 +349,9 @@
         </div>
 
         @slot('actions')
-        <button type="button" class="btn btn-ghost" onclick="manageUsersModal.close()">
-            Close
-        </button>
+            <button type="button" class="btn btn-ghost" onclick="manageUsersModal.close()">
+                Close
+            </button>
         @endslot
     </x-modal>
 
@@ -366,7 +361,7 @@
         const submitBtn = document.getElementById('submitBtn');
 
         if (form) {
-            form.addEventListener('submit', function (e) {
+            form.addEventListener('submit', function(e) {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Creating...';
             });
@@ -376,7 +371,7 @@
         const modalElement = document.getElementById('departmentModal');
         if (modalElement) {
             const originalShowModal = departmentModal.showModal;
-            departmentModal.showModal = function () {
+            departmentModal.showModal = function() {
                 document.getElementById('departmentForm').reset();
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -399,7 +394,7 @@
                     const tagsContainer = document.getElementById('edit_document_tags_container');
                     const allTags = [...(data.document_tags || []), ...(data.available_tags || [])];
                     const currentTagIds = (data.document_tags || []).map(t => t.id);
-                    
+
                     if (allTags.length > 0) {
                         let tagsHtml = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">';
                         allTags.forEach(tag => {
@@ -414,7 +409,8 @@
                         tagsHtml += '</div>';
                         tagsContainer.innerHTML = tagsHtml;
                     } else {
-                        tagsContainer.innerHTML = '<p class="text-gray-500 text-sm text-center py-2">No document tags available</p>';
+                        tagsContainer.innerHTML =
+                            '<p class="text-gray-500 text-sm text-center py-2">No document tags available</p>';
                     }
 
                     // Update form action
@@ -448,7 +444,8 @@
                     // Set basic information
                     document.getElementById('details_name').textContent = data.name;
                     document.getElementById('details_code').textContent = data.code;
-                    document.getElementById('details_description').textContent = data.description || 'No description available';
+                    document.getElementById('details_description').textContent = data.description ||
+                        'No description available';
 
                     // Set status
                     const statusElement = document.getElementById('details_status');
@@ -461,14 +458,15 @@
                     // Set members count
                     const activeUsers = data.active_users_count || 0;
                     const totalUsers = data.total_users_count || 0;
-                    document.getElementById('details_members').textContent = `${activeUsers} active / ${totalUsers} total`;
+                    document.getElementById('details_members').textContent =
+                        `${activeUsers} active / ${totalUsers} total`;
 
                     // Set dates
                     document.getElementById('details_created_at').textContent = formatDate(data.created_at);
                     document.getElementById('details_updated_at').textContent = formatDate(data.updated_at);
 
                     // Set edit button action
-                    document.getElementById('details_edit_btn').onclick = function () {
+                    document.getElementById('details_edit_btn').onclick = function() {
                         detailsDepartmentModal.close();
                         editDepartment(id);
                     };
@@ -496,7 +494,8 @@
             fetch(`/admin/departments/${id}/users`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('manage_dept_info').textContent = `${data.department.name} (${data.department.code})`;
+                    document.getElementById('manage_dept_info').textContent =
+                        `${data.department.name} (${data.department.code})`;
 
                     // Populate available users dropdown
                     const userSelect = document.getElementById('assign_user_id');
@@ -559,7 +558,7 @@
         // Handle assign user form submission
         const assignUserForm = document.getElementById('assignUserForm');
         if (assignUserForm) {
-            assignUserForm.addEventListener('submit', function (e) {
+            assignUserForm.addEventListener('submit', function(e) {
                 const userId = document.getElementById('assign_user_id').value;
                 if (!userId) {
                     e.preventDefault();

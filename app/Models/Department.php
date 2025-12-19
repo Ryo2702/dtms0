@@ -55,7 +55,7 @@ class Department extends Model
     }
 
     public function documentTags() {
-        return $this->hasMany(DocumentTag::class);
+        return $this->belongsToMany(DocumentTag::class, 'department_document_tag')->withTimestamps();
     }
 
     public function activeUsers(): HasMany

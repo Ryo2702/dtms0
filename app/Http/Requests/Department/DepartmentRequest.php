@@ -23,7 +23,7 @@ class DepartmentRequest extends FormRequest
     public function rules(): array
     {
         /** @var int|string|null $departmentId */
-        $departmentId = request()->route('department');
+        $departmentId = $this->route('id') ?? $this->route('department');
         return [
             'title' => [
                 'required', 
@@ -32,7 +32,7 @@ class DepartmentRequest extends FormRequest
                 Rule::unique('departments', 'name')->ignore($departmentId)
             ],
             'logo' => ['nullable', 'image', 'max:2048'],
-            'status' => ['required', 'boolean'],
+            'status' => ['nullable', 'boolean'],
         ];
     }
 

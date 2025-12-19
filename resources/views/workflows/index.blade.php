@@ -28,8 +28,9 @@
                                 <tr>
                                     <th>TS#</th>
                                     <th>Transaction Name</th>
+                                    <th>Origin Departments</th>
                                     <th>Steps</th>
-                                    <th>Document Tags</th>
+                                    <th>Document</th>
                                     <th>Estimated Time</th>
                                     <th>Difficulty</th>
                                     <th>Status</th>
@@ -69,6 +70,27 @@
                                                 @endif
                                             </div>
                                         </td>
+                                        {{-- Origin Departments Column --}}
+                                        <td>
+                                            @php
+                                                $originDeptIds = $workflow->origin_departments ?? [];
+                                                $originDepts = \App\Models\Department::whereIn('id', $originDeptIds)->get();
+                                            @endphp
+                                            @if($originDepts->count() > 0)
+                                                <div class="flex flex-wrap gap-1 max-w-[200px]">
+                                                    @foreach($originDepts->take(3) as $dept)
+                                                        <span class="badge badge-sm badge-info" title="{{ $dept->name }}">
+                                                            {{ Str::limit($dept->name, 12) }}
+                                                        </span>
+                                                    @endforeach
+                                                    @if($originDepts->count() > 3)
+                                                        <span class="badge badge-sm badge-ghost">+{{ $originDepts->count() - 3 }}</span>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <span class="text-gray-400 text-sm">All departments</span>
+                                            @endif
+                                        </td>
                                         {{-- Steps Column --}}
                                         <td>
                                                 {{-- Arrow-based Step Flow Design --}}
@@ -82,10 +104,6 @@
                                                                         class="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-content text-xs font-bold mr-1.5">
                                                                         {{ $index + 1 }}
                                                                     </span>
-                                                                    @if ($index === 0)
-                                                                        <span
-                                                                            class="badge badge-xs badge-info mr-1">Origin</span>
-                                                                    @endif
                                                                     <span
                                                                         class="text-xs font-medium">{{ $step['department_name'] ?? 'Unknown' }}</span>
                                                                 </div>
@@ -146,45 +164,21 @@
                                             </td>
                                             {{-- Document Tags Column --}}
                                             @php
-                                                $steps = $workflow->getWorkflowSteps();
-                                                $totalTime = 0;
-                                                $timeUnit = 'days';
-                                                foreach ($steps as $step) {
-                                                    $value = $step['process_time_value'] ?? 0;
-                                                    $unit = $step['process_time_unit'] ?? 'days';
-                                                    if ($unit === 'hours') {
-                                                        $totalTime += $value / 24;
-                                                    } elseif ($unit === 'weeks') {
-                                                        $totalTime += $value * 7;
-                                                    } else {
-                                                        $totalTime += $value;
-                                                    }
-                                                }
-                                                $totalTime = round($totalTime, 1);
-
-                                                // Get origin department's document tags
-$originDepartmentId = $steps[0]['department_id'] ?? null;
-$originTags = $originDepartmentId
-    ? \App\Models\DocumentTag::where(
-        'department_id',
-        $originDepartmentId,
-    )
-        ->where('status', true)
-                                                        ->get()
-                                                    : collect();
+                                                // Get workflow's document tags directly
+                                                $workflowTags = $workflow->documentTags()->where('status', true)->get();
                                             @endphp
                                             <td>
-                                                @if ($originTags->count() > 0)
+                                                @if ($workflowTags->count() > 0)
                                                     <div class="flex flex-wrap gap-1 max-w-[200px]">
-                                                        @foreach ($originTags->take(3) as $tag)
+                                                        @foreach ($workflowTags->take(3) as $tag)
                                                             <span class="badge badge-sm badge-ghost"
                                                                 title="{{ $tag->description }}">
                                                                 {{ Str::limit($tag->name, 15) }}
                                                             </span>
                                                         @endforeach
-                                                        @if ($originTags->count() > 3)
+                                                        @if ($workflowTags->count() > 3)
                                                             <span class="badge badge-sm badge-ghost">
-                                                                +{{ $originTags->count() - 3 }} more
+                                                                +{{ $workflowTags->count() - 3 }} more
                                                             </span>
                                                         @endif
                                                     </div>

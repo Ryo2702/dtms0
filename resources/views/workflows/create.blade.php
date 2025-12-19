@@ -96,6 +96,43 @@
                         <textarea name="description" class="textarea textarea-bordered" rows="2" placeholder="Describe this workflow...">{{ old('description') }}</textarea>
                     </div>
 
+                    {{-- Origin Departments Section --}}
+                    <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                    </svg>
+                                    Origin Departments
+                                </h4>
+                                <p class="text-xs text-gray-500 mt-1">Select departments where this transaction can originate. The workflow will be visible to all selected departments.</p>
+                            </div>
+                            <span id="originDeptCount" class="badge badge-info badge-sm">0 selected</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                            @foreach($departments as $department)
+                                <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 hover:border-blue-400 transition-colors cursor-pointer">
+                                    <input type="checkbox" 
+                                           name="origin_departments[]" 
+                                           value="{{ $department->id }}" 
+                                           class="checkbox checkbox-sm checkbox-info origin-dept-checkbox"
+                                           {{ in_array($department->id, old('origin_departments', [])) ? 'checked' : '' }}>
+                                    <span class="text-sm truncate" title="{{ $department->name }}">{{ $department->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+
+                        {{-- Selected Origin Departments Summary --}}
+                        <div id="originDeptSummary" class="mt-3 p-2 bg-white rounded border border-blue-200" style="display: none;">
+                            <h5 class="text-xs font-medium text-gray-600 mb-1">Selected Origin Departments:</h5>
+                            <div id="originDeptList" class="flex flex-wrap gap-1">
+                                {{-- Populated by JS --}}
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Auto-calculated Difficulty Display --}}
                     <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div class="flex items-center justify-between">
@@ -136,45 +173,48 @@
                     {{-- Document Tags Section --}}
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Document Tags</h3>
-                        <p class="text-sm text-gray-500 mb-4">Select document tags required for this workflow. Tags are grouped by department.</p>
+                        <p class="text-sm text-gray-500 mb-4">Select document tags required for this workflow.</p>
                         
                         <div id="documentTagsContainer" class="space-y-4">
-                            @php
-                                $groupedTags = $documentTags->groupBy(function($tag) {
-                                    return $tag->department_id ?? 'general';
-                                });
-                            @endphp
-
-                            @forelse($groupedTags as $departmentId => $tags)
-                                @php
-                                    $department = $departmentId !== 'general' ? $tags->first()->department : null;
-                                @endphp
+                            @if($documentTags->count() > 0)
                                 <div class="border rounded-lg p-4 bg-gray-50">
                                     <div class="flex items-center justify-between mb-3">
                                         <h4 class="font-medium text-gray-900 flex items-center gap-2">
                                             <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                                             </svg>
-                                            {{ $department ? $department->name : 'General Tags' }}
+                                            Available Document Tags
                                         </h4>
-                                        <span class="badge badge-ghost badge-sm">{{ $tags->count() }} tags</span>
+                                        <span class="badge badge-ghost badge-sm">{{ $documentTags->count() }} tags</span>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        @foreach($tags as $tag)
+                                        @foreach($documentTags as $tag)
                                             <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:border-primary transition-colors">
                                                 <label class="flex items-center gap-2 cursor-pointer flex-1">
                                                     <input type="checkbox" 
-                                                           name="document_tags[{{ $departmentId }}_{{ $loop->index }}][id]" 
+                                                           name="document_tags[{{ $loop->index }}][id]" 
                                                            value="{{ $tag->id }}" 
                                                            class="checkbox checkbox-sm checkbox-primary document-tag-checkbox"
                                                            data-tag-id="{{ $tag->id }}"
-                                                           data-department-id="{{ $tag->department_id ?? '' }}">
-                                                    <span class="text-sm">{{ $tag->name }}</span>
+                                                           data-department-ids="{{ $tag->departments->pluck('id')->join(',') }}">
+                                                    <div>
+                                                        <span class="text-sm">{{ $tag->name }}</span>
+                                                        @if($tag->departments->count() > 0)
+                                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                                @foreach($tag->departments->take(2) as $dept)
+                                                                    <span class="badge badge-ghost badge-xs">{{ $dept->name }}</span>
+                                                                @endforeach
+                                                                @if($tag->departments->count() > 2)
+                                                                    <span class="badge badge-ghost badge-xs">+{{ $tag->departments->count() - 2 }}</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </label>
                                                 <label class="flex items-center gap-1 cursor-pointer" title="Mark as required">
                                                     <input type="checkbox" 
-                                                           name="document_tags[{{ $departmentId }}_{{ $loop->index }}][is_required]" 
+                                                           name="document_tags[{{ $loop->index }}][is_required]" 
                                                            value="1" 
                                                            class="checkbox checkbox-xs checkbox-warning required-checkbox"
                                                            data-tag-id="{{ $tag->id }}"
@@ -185,17 +225,17 @@
                                         @endforeach
                                     </div>
                                 </div>
-                            @empty
+                            @else
                                 <div class="text-center py-6 text-gray-500">
                                     <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                                     </svg>
                                     <p>No document tags available.</p>
-                                    <a href="{{ route('admin.document-tags.create') }}" class="btn btn-sm btn-primary mt-2">
+                                    <a href="{{ route('admin.document-tags.index') }}" class="btn btn-sm btn-primary mt-2">
                                         Create Document Tag
                                     </a>
                                 </div>
-                            @endforelse
+                            @endif
                         </div>
 
                         {{-- Selected Tags Summary --}}
@@ -341,8 +381,9 @@
                 selectedCheckboxes.forEach(checkbox => {
                     const tagId = checkbox.dataset.tagId;
                     const tag = documentTags.find(t => t.id == tagId);
-                    if (tag && tag.department_id) {
-                        departmentIds.add(tag.department_id);
+                    // Handle multiple departments per tag
+                    if (tag && tag.departments && tag.departments.length > 0) {
+                        tag.departments.forEach(dept => departmentIds.add(dept.id));
                     }
                 });
 
@@ -350,15 +391,18 @@
                 departmentIds.forEach(deptId => {
                     const dept = departments.find(d => d.id == deptId);
                     if (dept) {
-                        const tagsInDept = documentTags.filter(t => t.department_id == deptId);
-                        const selectedInDept = tagsInDept.filter(t => 
-                            document.querySelector(`.document-tag-checkbox[data-tag-id="${t.id}"]:checked`)
-                        );
+                        // Count tags that belong to this department
+                        const selectedTagsInDept = documentTags.filter(t => {
+                            if (!t.departments) return false;
+                            const belongsToDept = t.departments.some(d => d.id == deptId);
+                            const isSelected = document.querySelector(`.document-tag-checkbox[data-tag-id="${t.id}"]:checked`);
+                            return belongsToDept && isSelected;
+                        });
                         
                         html += `
                             <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
                                 <span class="text-sm font-medium">${dept.name}</span>
-                                <span class="badge badge-sm badge-ghost">${selectedInDept.length} tag${selectedInDept.length !== 1 ? 's' : ''}</span>
+                                <span class="badge badge-sm badge-ghost">${selectedTagsInDept.length} tag${selectedTagsInDept.length !== 1 ? 's' : ''}</span>
                             </div>
                         `;
                     }
@@ -528,9 +572,62 @@
             // Initialize
             document.addEventListener('DOMContentLoaded', function() {
                 initDocumentTags();
+                initOriginDepartments();
                 attachEventListeners();
                 updateStepCountAndDifficulty();
             });
+
+            // Origin Departments functionality
+            function initOriginDepartments() {
+                document.querySelectorAll('.origin-dept-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', updateOriginDeptSummary);
+                });
+                updateOriginDeptSummary();
+            }
+
+            function updateOriginDeptSummary() {
+                const selectedCheckboxes = document.querySelectorAll('.origin-dept-checkbox:checked');
+                const countBadge = document.getElementById('originDeptCount');
+                const summary = document.getElementById('originDeptSummary');
+                const list = document.getElementById('originDeptList');
+
+                countBadge.textContent = `${selectedCheckboxes.length} selected`;
+
+                if (selectedCheckboxes.length === 0) {
+                    summary.style.display = 'none';
+                    return;
+                }
+
+                summary.style.display = 'block';
+                list.innerHTML = '';
+
+                selectedCheckboxes.forEach(checkbox => {
+                    const deptId = checkbox.value;
+                    const dept = departments.find(d => d.id == deptId);
+                    
+                    if (dept) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge badge-info gap-1';
+                        badge.innerHTML = `
+                            ${dept.name}
+                            <button type="button" class="hover:text-error" onclick="removeOriginDept(${deptId})">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        `;
+                        list.appendChild(badge);
+                    }
+                });
+            }
+
+            function removeOriginDept(deptId) {
+                const checkbox = document.querySelector(`.origin-dept-checkbox[value="${deptId}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    updateOriginDeptSummary();
+                }
+            }
 
             // Add Step button
             document.getElementById('addStepBtn').addEventListener('click', function() {

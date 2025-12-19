@@ -11,7 +11,6 @@ class DocumentTag extends Model
         'name',
         'slug',
         'description',
-        'department_id',
         'status'
     ];
 
@@ -40,8 +39,8 @@ class DocumentTag extends Model
     }
 
 
-    public function department(){
-        return $this->belongsTo(Department::class);
+    public function departments(){
+        return $this->belongsToMany(Department::class, 'department_document_tag')->withTimestamps();
     }
 
     public function workflows()  {
@@ -57,6 +56,12 @@ class DocumentTag extends Model
     }
 
     public function scopeByDepartment($query, $departmentId) {
-        return $query->where('department_id', $departmentId);
+        return $query->whereHas('departments', function ($q) use ($departmentId){
+            $q->where('departments.id', $departmentId);
+        });
+    }
+
+    public function isUsedDepartment($departmentId) {
+        return $this->departments()->where('departments.id', $departmentId)->exists();
     }
 }

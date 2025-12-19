@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Departments;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Department\DepartmentRequest;
 use App\Models\Department;
+use App\Models\DocumentTag;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -32,8 +33,7 @@ class DepartmentController extends Controller
             ->appends(['sort' => $sort, 'direction' => $direction]);
 
         // Get document tags without department assigned (general tags that can be attached)
-        $availableDocumentTags = \App\Models\DocumentTag::whereNull('department_id')
-            ->where('status', true)
+        $availableDocumentTags = DocumentTag::where('status', true)
             ->get();
 
         return view('admin.departments.index', compact('departments', 'availableDocumentTags'));
@@ -62,12 +62,10 @@ class DepartmentController extends Controller
 
             $department = Department::create($data);
 
-            // Assign document tags to department if provided
+            // Sync document tags (many-to-many)
             if ($request->has('document_tags')) {
                 $tagIds = array_filter($request->input('document_tags', []));
-                if (!empty($tagIds)) {
-                    \App\Models\DocumentTag::whereIn('id', $tagIds)->update(['department_id' => $department->id]);
-                }
+                $department->documentTags()->sync($tagIds);
             }
 
             return redirect()
@@ -85,12 +83,13 @@ class DepartmentController extends Controller
     {
         $department = Department::findOrFail($id);
 
+
         // Get document tags for this department
-        $departmentTags = $department->documentTags()->get(['id', 'name', 'slug']);
-        
-        // Get available general tags (not assigned to any department)
-        $availableTags = \App\Models\DocumentTag::whereNull('department_id')
-            ->where('status', true)
+        $departmentTags = $department->documentTags()->get(['document_tags.id', 'name', 'slug']);
+
+        // Get all active tags (for selection - tags can be shared)
+        $availableTags = DocumentTag::where('status', true)
+            ->whereNotIn('id', $departmentTags->pluck('id'))
             ->get(['id', 'name', 'slug']);
 
         return response()->json([
@@ -142,21 +141,9 @@ class DepartmentController extends Controller
 
             $department->update($data);
 
-            // Handle document tags update
-            if ($request->has('document_tags')) {
-                $newTagIds = array_filter($request->input('document_tags', []));
-                
-                // Remove old tags from this department (set department_id to null)
-                \App\Models\DocumentTag::where('department_id', $department->id)
-                    ->whereNotIn('id', $newTagIds)
-                    ->update(['department_id' => null]);
-                
-                // Assign new tags to this department
-                if (!empty($newTagIds)) {
-                    \App\Models\DocumentTag::whereIn('id', $newTagIds)->update(['department_id' => $department->id]);
-                }
-            }
-
+            $tagIds = array_filter($request->input('document_tags', []));
+            $department->documentTags()->sync($tagIds);
+            
             return redirect()
                 ->route('admin.departments.index')
                 ->with('success', 'Department updated successfully');
@@ -319,7 +306,7 @@ class DepartmentController extends Controller
         $department = Department::findOrFail($id);
         $tags = $department->getActiveDocumentTags()
             ->get(['id', 'name', 'slug']);
-            
+
         return response()->json($tags);
     }
 }

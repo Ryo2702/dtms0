@@ -11,12 +11,14 @@ class Workflow extends Model
         'description',
         'difficulty',
         'workflow_config',
+        'origin_departments',
         'is_default',
         'status'
     ];
 
     protected $casts = [
         'workflow_config' => 'array',
+        'origin_departments' => 'array',
         'is_default' => 'boolean',
         'status' => 'boolean'
     ];
@@ -40,6 +42,39 @@ class Workflow extends Model
             }
         });
     }
+
+    /**
+     * Get the origin departments relationship
+     */
+    public function originDepartments()
+    {
+        return Department::whereIn('id', $this->origin_departments ?? [])->get();
+    }
+
+    /**
+     * Get origin department IDs
+     */
+    public function getOriginDepartmentIds(): array
+    {
+        return $this->origin_departments ?? [];
+    }
+
+    /**
+     * Check if a department is an origin department
+     */
+    public function isOriginDepartment(int $departmentId): bool
+    {
+        return in_array($departmentId, $this->origin_departments ?? []);
+    }
+
+    /**
+     * Sync origin departments
+     */
+    public function syncOriginDepartments(array $departmentIds): void
+    {
+        $this->update(['origin_departments' => array_values(array_unique(array_map('intval', $departmentIds)))]);
+    }
+
     public function documentTags()
     {
         return $this->belongsToMany(DocumentTag::class, 'document_tag_workflow')

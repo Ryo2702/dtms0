@@ -54,10 +54,17 @@
                         {{ $tag->description ?? '-' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($tag->department)
-                            <span class="badge badge-outline">{{ $tag->department->name }}</span>
+                        @if($tag->departments->count() > 0)
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($tag->departments->take(3) as $dept)
+                                    <span class="badge badge-outline badge-sm">{{ $dept->name }}</span>
+                                @endforeach
+                                @if($tag->departments->count() > 3)
+                                    <span class="badge badge-ghost badge-sm">+{{ $tag->departments->count() - 3 }} more</span>
+                                @endif
+                            </div>
                         @else
-                            <span class="text-gray-400">-</span>
+                            <span class="text-gray-400">All Departments</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -158,18 +165,21 @@
                 @enderror
             </div>
 
-            {{-- Department Field --}}
+            {{-- Departments Field (Multiple) --}}
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text font-medium">Department</span>
+                    <span class="label-text font-medium">Departments</span>
+                    <span class="label-text-alt text-gray-500">Leave empty for all departments</span>
                 </label>
-                <select name="department_id" id="department_id" class="select select-bordered">
-                    <option value="">Select Department (Optional)</option>
+                <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg">
                     @foreach($departments ?? [] as $dept)
-                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                        <label class="cursor-pointer label justify-start gap-2">
+                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}" class="checkbox checkbox-sm checkbox-primary">
+                            <span class="label-text">{{ $dept->name }}</span>
+                        </label>
                     @endforeach
-                </select>
-                @error('department_id')
+                </div>
+                @error('department_ids')
                     <label class="label">
                         <span class="label-text-alt text-error">{{ $message }}</span>
                     </label>
@@ -243,18 +253,21 @@
                 @enderror
             </div>
 
-            {{-- Department Field --}}
+            {{-- Departments Field (Multiple) --}}
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text font-medium">Department</span>
+                    <span class="label-text font-medium">Departments</span>
+                    <span class="label-text-alt text-gray-500">Leave empty for all departments</span>
                 </label>
-                <select name="department_id" id="edit_department_id" class="select select-bordered">
-                    <option value="">Select Department (Optional)</option>
+                <div id="edit_departments_container" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg">
                     @foreach($departments ?? [] as $dept)
-                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                        <label class="cursor-pointer label justify-start gap-2">
+                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}" class="checkbox checkbox-sm checkbox-primary edit-dept-checkbox">
+                            <span class="label-text">{{ $dept->name }}</span>
+                        </label>
                     @endforeach
-                </select>
-                @error('department_id')
+                </div>
+                @error('department_ids')
                     <label class="label">
                         <span class="label-text-alt text-error">{{ $message }}</span>
                     </label>
@@ -331,7 +344,18 @@
                     document.getElementById('edit_name').value = data.name;
                     document.getElementById('edit_slug').value = data.slug || '';
                     document.getElementById('edit_description').value = data.description || '';
-                    document.getElementById('edit_department_id').value = data.department_id || '';
+                    
+                    // Reset all department checkboxes
+                    document.querySelectorAll('.edit-dept-checkbox').forEach(cb => cb.checked = false);
+                    
+                    // Check the departments that are assigned
+                    if (data.department_ids && data.department_ids.length > 0) {
+                        data.department_ids.forEach(deptId => {
+                            const checkbox = document.querySelector(`.edit-dept-checkbox[value="${deptId}"]`);
+                            if (checkbox) checkbox.checked = true;
+                        });
+                    }
+                    
                     document.getElementById('edit_status').checked = data.status == 1;
 
                     document.getElementById('edit-tag-form').action = `/document-tags/${id}`;

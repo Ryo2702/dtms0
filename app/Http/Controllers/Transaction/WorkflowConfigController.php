@@ -27,11 +27,12 @@ class WorkflowConfigController extends Controller
      */
     public function index()
     {
-        $workflows = Workflow::with('documentTags.department')
+        $workflows = Workflow::with('documentTags.departments')
             ->orderBy('created_at', 'desc')
             ->get();
+        $availableDocumentTags = DocumentTag::where('status', true)->get();
 
-        return view('workflows.index', compact('workflows'));
+        return view('workflows.index', compact('workflows','availableDocumentTags'));
     }
 
     /**
@@ -40,7 +41,7 @@ class WorkflowConfigController extends Controller
     public function create(Request $request)
     {
         $departments = Department::where('status', 1)->get();
-        $documentTags = DocumentTag::where('status', true)->with('department')->get();
+        $documentTags = DocumentTag::where('status', true)->with('departments')->get();
         $currentConfig = ['steps' => [], 'transitions' => [], 'difficulty' => 'simple'];
 
         return view('workflows.create', compact('departments', 'documentTags', 'currentConfig'));
@@ -75,12 +76,16 @@ class WorkflowConfigController extends Controller
                 return back()->withErrors(['workflow' => $errors])->withInput();
             }
 
+            // Process origin departments
+            $originDepartments = array_values(array_unique(array_map('intval', $request->input('origin_departments', []))));
+
             // Create the workflow
             $workflow = Workflow::create([
                 'transaction_name' => $request->input('transaction_name'),
                 'description' => $request->input('description'),
                 'difficulty' => $request->input('difficulty'),
                 'workflow_config' => $config,
+                'origin_departments' => $originDepartments,
                 'status' => true,
             ]);
 
@@ -90,7 +95,7 @@ class WorkflowConfigController extends Controller
                     ->filter(fn($tag) => isset($tag['id']) && !empty($tag['id']))
                     ->values()
                     ->toArray();
-                
+
                 if (!empty($tags)) {
                     $workflow->syncDocumentTags($tags);
                 }
@@ -113,7 +118,7 @@ class WorkflowConfigController extends Controller
     public function edit(Workflow $workflow)
     {
         $departments = Department::where('status', 1)->get();
-        $documentTags = DocumentTag::where('status', true)->with('department')->get();
+        $documentTags = DocumentTag::where('status', true)->with('departments')->get();
         $currentConfig = $workflow->workflow_config ?? ['steps' => [], 'transitions' => [], 'difficulty' => 'simple'];
 
         $selectedTags = $workflow->documentTags->map(function ($tag) {
@@ -122,7 +127,10 @@ class WorkflowConfigController extends Controller
                 'is_required' => $tag->pivot->is_required,
             ];
         });
-        return view('workflows.edit', compact('workflow', 'departments', 'currentConfig', 'documentTags', 'selectedTags'));
+
+        $originDepartmentIds = $workflow->getOriginDepartmentIds();
+
+        return view('workflows.edit', compact('workflow', 'departments', 'currentConfig', 'documentTags', 'selectedTags', 'originDepartmentIds'));
     }
 
     /**
@@ -136,6 +144,8 @@ class WorkflowConfigController extends Controller
             'difficulty' => 'required|in:simple,complex,highly_technical',
             'steps' => 'required|array|min:1',
             'steps.*.department_id' => 'required|exists:departments,id',
+            'origin_departments' => 'nullable|array',
+            'origin_departments.*' => 'exists:departments,id',
             'document_tags' => 'nullable|array',
             'document_tags.*.id' => 'exists:document_tags,id',
             'document_tags.*.is_required' => 'boolean'
@@ -154,12 +164,15 @@ class WorkflowConfigController extends Controller
                 return back()->withErrors(['workflow' => $errors])->withInput();
             }
 
+            // Process origin departments
+            $originDepartments = array_values(array_unique(array_map('intval', $request->input('origin_departments', []))));
 
             $workflow->update([
                 'transaction_name' => $request->input('transaction_name'),
                 'description' => $request->input('description'),
                 'difficulty' => $request->input('difficulty'),
                 'workflow_config' => $config,
+                'origin_departments' => $originDepartments,
             ]);
 
             if ($request->has('document_tags')) {
@@ -168,12 +181,12 @@ class WorkflowConfigController extends Controller
                     ->filter(fn($tag) => isset($tag['id']) && !empty($tag['id']))
                     ->values()
                     ->toArray();
-                
+
                 $workflow->syncDocumentTags($tags);
             } else {
                 $workflow->documentTags()->detach();
             }
-            
+
             DB::commit();
 
             return redirect()
@@ -232,25 +245,27 @@ class WorkflowConfigController extends Controller
     }
 
 
-    public function getDocumentTags(Workflow $workflow)  {
+    public function getDocumentTags(Workflow $workflow)
+    {
         $tags = $workflow->documentTags()
-            ->with('department')
+            ->with('departments')
             ->get()
-            ->map(function ($tag){
+            ->map(function ($tag) {
                 return [
                     'id' => $tag->id,
                     'name' => $tag->name,
                     'slug' => $tag->slug,
-                    'department' => $tag->department->name,
-                    'department_id' => $tag->department->id,
+                    'departments' => $tag->departments->pluck('name')->toArray(),
+                    'department_ids' => $tag->departments->pluck('id')->toArray(),
                     'is_required' => $tag->pivot->is_required
-                ]; 
+                ];
             });
         return response()->json($tags);
     }
 
 
-    public function getTagDepartments(Workflow $workflow) {
+    public function getTagDepartments(Workflow $workflow)
+    {
         $departments = $workflow->getTagDepartments();
 
         return response()->json($departments);
