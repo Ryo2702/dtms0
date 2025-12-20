@@ -44,7 +44,6 @@ class Department extends Model
         return $this->hasMany(User::class);
     }
 
-    // Admin
     public function admin(): HasOne
     {
         return $this->hasOne(User::class)->where('type', 'Admin');
