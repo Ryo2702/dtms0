@@ -155,6 +155,7 @@ class DocumentTagController extends Controller
      */
     public function edit(DocumentTag $documentTag)
     {
+        
         $documentTag->load('departments');
         
         return response()->json([
@@ -232,74 +233,6 @@ class DocumentTagController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Document tag update failed.');
-        }
-    }
-
-    /**
-     * Show confirmation for deleting a document tag (for modal/ajax)
-     */
-    public function confirmDelete(DocumentTag $documentTag)
-    {
-        $workflowCount = $documentTag->workflows()->count();
-        
-        return response()->json([
-            'id' => $documentTag->id,
-            'name' => $documentTag->name,
-            'workflows_count' => $workflowCount,
-            'can_delete' => $workflowCount === 0,
-            'message' => $workflowCount > 0 
-                ? "This tag is connected to {$workflowCount} workflow(s) and cannot be deleted."
-                : "Are you sure you want to delete this tag?"
-        ]);
-    }
-
-    /**
-     * Delete a document tag
-     */
-    public function destroy(DocumentTag $documentTag)
-    {
-        try {
-            // Check if tag is being used by any workflow
-            $workflowCount = $documentTag->workflows()->count();
-            
-            if ($workflowCount > 0) {
-                // Return JSON error for AJAX/modal request
-                if (request()->wantsJson() || request()->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Cannot delete tag that is connected to {$workflowCount} workflow(s)."
-                    ], 422);
-                }
-                
-                return back()->with('error', 'Cannot delete tag that is connected to workflows.');
-            }
-
-            $documentTag->delete();
-
-            // Return JSON for AJAX/modal request
-            if (request()->wantsJson() || request()->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Document tag deleted successfully.'
-                ]);
-            }
-
-            return redirect()
-                ->route('admin.document-tags.index')
-                ->with('success', 'Document tag deleted successfully.');
-        } catch (\Exception $e) {
-            Log::error('Document tag deletion failed: ' . $e->getMessage());
-            
-            // Return JSON error for AJAX/modal request
-            if (request()->wantsJson() || request()->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Document tag deletion failed.',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-
-            return back()->with('error', 'Document tag deletion failed.');
         }
     }
 

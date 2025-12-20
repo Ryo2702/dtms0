@@ -13,7 +13,7 @@
                     <path d="M5 12h14"/>
                     <path d="M12 5v14"/>
                 </svg>
-                Add Document Tag
+                Add Documents
             </button>
         </div>
 
@@ -338,7 +338,7 @@
 
         // Edit document tag
         function editDocumentTag(id) {
-            fetch(`/document-tags/${id}/edit`)
+            fetch(`/admin/document-tags/${id}/edit`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('edit_name').value = data.name;
@@ -358,7 +358,7 @@
                     
                     document.getElementById('edit_status').checked = data.status == 1;
 
-                    document.getElementById('edit-tag-form').action = `/document-tags/${id}`;
+                    document.getElementById('edit-tag-form').action = `/admin/document-tags/${id}`;
 
                     const editSubmitBtn = document.getElementById('editSubmitBtn');
                     editSubmitBtn.disabled = false;
@@ -383,11 +383,6 @@
             });
         }
 
-        // Delete document tag
-        function deleteDocumentTag(id) {
-            document.getElementById('delete-tag-form').action = `/document-tags/${id}`;
-            deleteTagModal.showModal();
-        }
 
         // Filter functions
         function filterByDepartment() {

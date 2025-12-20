@@ -62,7 +62,7 @@
                     </li>
 
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                        <span>Workflow</span>
+                        <span>getWorkflowsWithTags</span>
                     </li>
 
                     <li class="mb-1">
