@@ -5,15 +5,13 @@
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-gray-900">Department Management</h1>
             <button type="button" class="btn btn-primary gap-2" onclick="departmentModal.showModal()">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
+                <i data-lucide="plus" class="w-5 h-5"></i>
                 Add Department
             </button>
         </div>
 
         {{-- Departments Table --}}
-        <x-data-table :headers="['Logo', 'Name', 'Code', 'Documents','Members', 'Status', 'Actions']" :paginator="$departments" :sortableFields="['name', 'code', 'status']" emptyMessage="No departments found.">
+        <x-data-table :headers="['Logo', 'Name', 'Code', 'Documents', 'Members', 'Status', 'Actions']" :paginator="$departments" :sortableFields="['name', 'code', 'status']" emptyMessage="No departments found.">
             @foreach ($departments as $department)
                 <tr class="hover">
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -22,10 +20,7 @@
                                 class="h-10 w-10 rounded-full object-cover">
                         @else
                             <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                                </svg>
+                                <i data-lucide="image-off" class="w-6 h-6 text-gray-400"></i>
                             </div>
                         @endif
                     </td>
@@ -36,7 +31,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="badge badge-primary">{{ $department->code }}</span>
                     </td>
-                     <td class="px-6 py-4">
+                    <td class="px-6 py-4">
                         <div class="flex flex-wrap gap-1 max-w-xs">
                             @forelse ($department->documentTags as $tag)
                                 <span class="badge badge-neutral badge-outline badge-sm">{{ $tag->name }}</span>
@@ -55,18 +50,34 @@
                             <span class="badge">Inactive</span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
-                        <button onclick="viewDepartmentDetails({{ $department->id }})"
-                            class="btn btn-ghost btn-sm btn-link">
-                            Details
-                        </button>
-                        <button onclick="editDepartment({{ $department->id }})" class="btn btn-ghost btn-sm btn-link">
-                            Edit
-                        </button>
-                        <button onclick="manageDepartmentUsers({{ $department->id }})"
-                            class="btn btn-ghost btn-sm btn-link">
-                            Manage Users
-                        </button>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="relative inline-block text-left">
+                            <button class="btn btn-ghost btn-sm btn-square dropdown-trigger"
+                                data-dropdown="dropdown-{{ $department->id }}">
+                                <i data-lucide="ellipsis-vertical" class="w-5 h-5"></i>
+                            </button>
+
+                            <div id="dropdown-{{ $department->id }}"
+                                class="hidden absolute right-0 mt-2 w-52 origin-top-right rounded-lg bg-base-100 shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                                <div class="py-1">
+                                    <button onclick="handleAction('view', {{ $department->id }})"
+                                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-left hover:bg-base-200">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                        View Details
+                                    </button>
+                                    <button onclick="handleAction('edit', {{ $department->id }})"
+                                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-left hover:bg-base-200">
+                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                        Edit
+                                    </button>
+                                    <button onclick="handleAction('manage', {{ $department->id }})"
+                                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-left hover:bg-base-200">
+                                        <i data-lucide="users" class="w-4 h-4"></i>
+                                        Manage Users
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             @endforeach
@@ -99,11 +110,10 @@
             {{-- Name Field --}}
             <div class="form-control">
                 <label class="label">
-                    <span class="label-text font-medium">Description</span>
+                    <span class="label-text font-medium">Department Name</span>
                 </label>
-                <input id="name" name="title" placeholder="Enter department description"
-                    class="input input-bordered"></input>
-                @error('description')
+                <input id="name" name="title" placeholder="Enter department name" class="input input-bordered">
+                @error('name')
                     <label class="label">
                         <span class="label-text-alt text-error">{{ $message }}</span>
                     </label>
@@ -251,11 +261,7 @@
                     class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                     <img id="details_logo" src="" alt="Department Logo"
                         class="h-full w-full object-cover hidden">
-                    <svg id="details_logo_placeholder" class="w-12 h-12 text-gray-400" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    </svg>
+                    <i data-lucide="file-text" id="details_logo_placeholder" class="w-12 h-12 text-gray-400"></i>
                 </div>
             </div>
 
@@ -303,6 +309,7 @@
                 Close
             </button>
             <button type="button" id="details_edit_btn" class="btn btn-primary">
+                <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
                 Edit Department
             </button>
         @endslot
@@ -313,11 +320,7 @@
         <div class="space-y-4">
             {{-- Department Info --}}
             <div class="alert alert-info">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    class="stroke-current shrink-0 w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+                <i data-lucide="info" class="w-6 h-6"></i>
                 <span id="manage_dept_info"></span>
             </div>
 
@@ -332,6 +335,7 @@
                         <option value="">Select a user...</option>
                     </select>
                     <button type="submit" class="btn btn-primary">
+                        <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
                         Assign User
                     </button>
                 </form>
@@ -354,8 +358,85 @@
             </button>
         @endslot
     </x-modal>
-
     <script>
+        // Initialize icons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDropdowns();
+            initializeLucideIcons();
+        });
+
+        function initializeLucideIcons() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function initializeDropdowns() {
+            // Toggle dropdown on button click
+            document.addEventListener('click', function(e) {
+                const trigger = e.target.closest('.dropdown-trigger');
+
+                if (trigger) {
+                    e.stopPropagation();
+                    const dropdownId = trigger.getAttribute('data-dropdown');
+                    const dropdown = document.getElementById(dropdownId);
+
+                    // Close all other dropdowns
+                    closeAllDropdowns();
+
+                    // Toggle current dropdown
+                    if (dropdown) {
+                        dropdown.classList.toggle('hidden');
+                        initializeLucideIcons();
+                    }
+                } else {
+                    // Close all dropdowns when clicking outside
+                    if (!e.target.closest('[id^="dropdown-"]')) {
+                        closeAllDropdowns();
+                    }
+                }
+            });
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+                dropdown.classList.add('hidden');
+            });
+        }
+
+        function handleAction(action, id) {
+            closeAllDropdowns();
+
+            switch (action) {
+                case 'view':
+                    viewDepartmentDetails(id);
+                    break;
+                case 'edit':
+                    editDepartment(id);
+                    break;
+                case 'manage':
+                    manageDepartmentUsers(id);
+                    break;
+            }
+        }
+
+        function viewDepartmentDetails(id) {
+            // Your existing function implementation
+
+            setTimeout(() => initializeLucideIcons(), 100);
+        }
+
+        function editDepartment(id) {
+            // Your existing function implementation
+
+            setTimeout(() => initializeLucideIcons(), 100);
+        }
+
+        function manageDepartmentUsers(id) {
+            // Your existing function implementation
+
+            setTimeout(() => initializeLucideIcons(), 100);
+        }
         // Handle form submission
         const form = document.getElementById('departmentForm');
         const submitBtn = document.getElementById('submitBtn');

@@ -199,22 +199,6 @@ class WorkflowConfigController extends Controller
     }
 
     /**
-     * Delete a workflow
-     */
-    public function destroy(Workflow $workflow)
-    {
-        try {
-            $workflow->delete();
-
-            return redirect()
-                ->route('admin.workflows.index')
-                ->with('success', "Workflow deleted successfully!");
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
-        }
-    }
-
-    /**
      * Toggle workflow status (active/inactive)
      */
     public function toggleStatus(Workflow $workflow)

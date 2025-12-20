@@ -9,9 +9,10 @@
                 <p class="text-gray-600 mt-2">Manage your documents</p>
             </div>
             <button type="button" class="btn btn-primary gap-2" onclick="tagModal.showModal()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14"/>
-                    <path d="M12 5v14"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14" />
+                    <path d="M12 5v14" />
                 </svg>
                 Add Documents
             </button>
@@ -21,11 +22,11 @@
         <div class="mb-4 flex gap-2">
             <select class="select select-bordered w-full max-w-xs" id="departmentFilter" onchange="filterByDepartment()">
                 <option value="">All Departments</option>
-                @foreach($departments ?? [] as $dept)
+                @foreach ($departments ?? [] as $dept)
                     <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                 @endforeach
             </select>
-            
+
             <select class="select select-bordered w-full max-w-xs" id="statusFilter" onchange="filterByStatus()">
                 <option value="">All Status</option>
                 <option value="1">Active</option>
@@ -34,16 +35,12 @@
         </div>
 
         {{-- Data Table --}}
-        <x-data-table :headers="['Tag Name', 'Slug', 'Description', 'Department', 'Status', 'Actions']" :paginator="$documentTags"
-            emptyMessage="No document tags found.">
+        <x-data-table :headers="['Tag Name', 'Slug', 'Description', 'Department', 'Status', 'Actions']" :paginator="$documentTags" emptyMessage="No document tags found.">
             @forelse($documentTags as $tag)
                 <tr class="hover">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
-                                <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
-                                <path d="M7 7h.01"/>
-                            </svg>
+                            <i data-lucide="tag" class="w-4 h-4 text-primary"></i>
                             <span class="font-medium text-gray-900">{{ $tag->name }}</span>
                         </div>
                     </td>
@@ -54,13 +51,14 @@
                         {{ $tag->description ?? '-' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($tag->departments->count() > 0)
+                        @if ($tag->departments->count() > 0)
                             <div class="flex flex-wrap gap-1">
-                                @foreach($tag->departments->take(3) as $dept)
+                                @foreach ($tag->departments->take(3) as $dept)
                                     <span class="badge badge-outline badge-sm">{{ $dept->name }}</span>
                                 @endforeach
-                                @if($tag->departments->count() > 3)
-                                    <span class="badge badge-ghost badge-sm">+{{ $tag->departments->count() - 3 }} more</span>
+                                @if ($tag->departments->count() > 3)
+                                    <span class="badge badge-ghost badge-sm">+{{ $tag->departments->count() - 3 }}
+                                        more</span>
                                 @endif
                             </div>
                         @else
@@ -68,44 +66,48 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($tag->status)
+                        @if ($tag->status)
                             <span class="badge badge-success gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                    <path d="m9 11 3 3L22 4"/>
-                                </svg>
+                                <i data-lucide="check-circle" class="w-3 h-3"></i>
                                 Active
                             </span>
                         @else
                             <span class="badge badge-ghost gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <path d="m15 9-6 6"/>
-                                    <path d="m9 9 6 6"/>
-                                </svg>
+                                <i data-lucide="x-circle" class="w-3 h-3"></i>
                                 Inactive
                             </span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button type="button" onclick="editDocumentTag({{ $tag->id }})"
-                            class="btn btn-ghost btn-sm gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                                <path d="m15 5 4 4"/>
-                            </svg>
-                            Edit
-                        </button>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="relative inline-block text-left">
+                            <button class="btn btn-ghost btn-sm btn-square dropdown-trigger"
+                                data-dropdown="dropdown-{{ $tag->id }}">
+                                <i data-lucide="ellipsis-vertical" class="w-5 h-5"></i>
+                            </button>
+
+                            <div id="dropdown-{{ $tag->id }}"
+                                class="hidden absolute right-0 mt-2 w-52 origin-top-right rounded-lg bg-base-100 shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                                <div class="py-1">
+                                    <button onclick="handleAction('view', {{ $tag->id }})"
+                                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-left hover:bg-base-200">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                        View Details
+                                    </button>
+                                    <button onclick="handleAction('edit', {{ $tag->id }})"
+                                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-left hover:bg-base-200">
+                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                        Edit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             @empty
                 <tr>
                     <td colspan="6" class="px-6 py-8 text-center">
                         <div class="flex flex-col items-center justify-center text-gray-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-gray-400">
-                                <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
-                                <path d="M7 7h.01"/>
-                            </svg>
+                            <i data-lucide="tag" class="w-12 h-12 mb-2 text-gray-400"></i>
                             <p>No documents found.</p>
                         </div>
                     </td>
@@ -172,9 +174,10 @@
                     <span class="label-text-alt text-gray-500">Leave empty for all departments</span>
                 </label>
                 <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg">
-                    @foreach($departments ?? [] as $dept)
+                    @foreach ($departments ?? [] as $dept)
                         <label class="cursor-pointer label justify-start gap-2">
-                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}" class="checkbox checkbox-sm checkbox-primary">
+                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}"
+                                class="checkbox checkbox-sm checkbox-primary">
                             <span class="label-text">{{ $dept->name }}</span>
                         </label>
                     @endforeach
@@ -189,19 +192,20 @@
             {{-- Status Field --}}
             <div class="form-control">
                 <label class="cursor-pointer label justify-start gap-2">
-                    <input type="checkbox" id="status" name="status" value="1" checked class="checkbox checkbox-primary">
+                    <input type="checkbox" id="status" name="status" value="1" checked
+                        class="checkbox checkbox-primary">
                     <span class="label-text">Active</span>
                 </label>
             </div>
         </form>
 
         @slot('actions')
-        <button type="button" class="btn btn-ghost" onclick="tagModal.close()">
-            Cancel
-        </button>
-        <button type="submit" form="tag-form" class="btn btn-primary" id="submitBtn">
-            Create Tag
-        </button>
+            <button type="button" class="btn btn-ghost" onclick="tagModal.close()">
+                Cancel
+            </button>
+            <button type="submit" form="tag-form" class="btn btn-primary" id="submitBtn">
+                Create Tag
+            </button>
         @endslot
     </x-modal>
 
@@ -259,10 +263,12 @@
                     <span class="label-text font-medium">Departments</span>
                     <span class="label-text-alt text-gray-500">Leave empty for all departments</span>
                 </label>
-                <div id="edit_departments_container" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg">
-                    @foreach($departments ?? [] as $dept)
+                <div id="edit_departments_container"
+                    class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg">
+                    @foreach ($departments ?? [] as $dept)
                         <label class="cursor-pointer label justify-start gap-2">
-                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}" class="checkbox checkbox-sm checkbox-primary edit-dept-checkbox">
+                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}"
+                                class="checkbox checkbox-sm checkbox-primary edit-dept-checkbox">
                             <span class="label-text">{{ $dept->name }}</span>
                         </label>
                     @endforeach
@@ -277,29 +283,104 @@
             {{-- Status Field --}}
             <div class="form-control">
                 <label class="cursor-pointer label justify-start gap-2">
-                    <input type="checkbox" id="edit_status" name="status" value="1" class="checkbox checkbox-primary">
+                    <input type="checkbox" id="edit_status" name="status" value="1"
+                        class="checkbox checkbox-primary">
                     <span class="label-text">Active</span>
                 </label>
             </div>
         </form>
 
         @slot('actions')
-        <button type="button" class="btn btn-ghost" onclick="editTagModal.close()">
-            Cancel
-        </button>
-        <button type="submit" form="edit-tag-form" class="btn btn-primary" id="editSubmitBtn">
-            Update Tag
-        </button>
+            <button type="button" class="btn btn-ghost" onclick="editTagModal.close()">
+                Cancel
+            </button>
+            <button type="submit" form="edit-tag-form" class="btn btn-primary" id="editSubmitBtn">
+                Update Tag
+            </button>
         @endslot
     </x-modal>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDropdowns();
+            initializeLucideIcons();
+        });
+
+        function initializeLucideIcons() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function initializeDropdowns() {
+            // Toggle dropdown on button click
+            document.addEventListener('click', function(e) {
+                const trigger = e.target.closest('.dropdown-trigger');
+
+                if (trigger) {
+                    e.stopPropagation();
+                    const dropdownId = trigger.getAttribute('data-dropdown');
+                    const dropdown = document.getElementById(dropdownId);
+
+                    // Close all other dropdowns
+                    closeAllDropdowns();
+
+                    // Toggle current dropdown
+                    if (dropdown) {
+                        dropdown.classList.toggle('hidden');
+                        initializeLucideIcons();
+                    }
+                } else {
+                    // Close all dropdowns when clicking outside
+                    if (!e.target.closest('[id^="dropdown-"]')) {
+                        closeAllDropdowns();
+                    }
+                }
+            });
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+                dropdown.classList.add('hidden');
+            });
+        }
+
+        function handleAction(action, id) {
+            closeAllDropdowns();
+
+            switch (action) {
+                case 'view':
+                    viewDocumentTag(id);
+                    break;
+                case 'edit':
+                    editDocumentTag(id);
+                    break;
+            }
+        }
+
+        function viewDocumentTag(id) {
+            // Your existing function implementation
+            setTimeout(() => initializeLucideIcons(), 100);
+        }
+
+        function editDocumentTag(id) {
+            // Your existing function implementation
+            setTimeout(() => initializeLucideIcons(), 100);
+        }
+
+        function filterByDepartment() {
+            // Your existing filter implementation
+        }
+
+        function filterByStatus() {
+            // Your existing filter implementation
+        }
         // Create form handling
         const form = document.getElementById('tag-form');
         const submitBtn = document.getElementById('submitBtn');
 
         if (form) {
-            form.addEventListener('submit', function (e) {
+            form.addEventListener('submit', function(e) {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Creating...';
             });
@@ -309,7 +390,7 @@
         const modalElement = document.getElementById('tagModal');
         if (modalElement) {
             const originalShowModal = tagModal.showModal;
-            tagModal.showModal = function () {
+            tagModal.showModal = function() {
                 document.getElementById('tag-form').reset();
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -344,10 +425,10 @@
                     document.getElementById('edit_name').value = data.name;
                     document.getElementById('edit_slug').value = data.slug || '';
                     document.getElementById('edit_description').value = data.description || '';
-                    
+
                     // Reset all department checkboxes
                     document.querySelectorAll('.edit-dept-checkbox').forEach(cb => cb.checked = false);
-                    
+
                     // Check the departments that are assigned
                     if (data.department_ids && data.department_ids.length > 0) {
                         data.department_ids.forEach(deptId => {
@@ -355,7 +436,7 @@
                             if (checkbox) checkbox.checked = true;
                         });
                     }
-                    
+
                     document.getElementById('edit_status').checked = data.status == 1;
 
                     document.getElementById('edit-tag-form').action = `/admin/document-tags/${id}`;
@@ -377,7 +458,7 @@
         const editSubmitBtn = document.getElementById('editSubmitBtn');
 
         if (editForm) {
-            editForm.addEventListener('submit', function (e) {
+            editForm.addEventListener('submit', function(e) {
                 editSubmitBtn.disabled = true;
                 editSubmitBtn.textContent = 'Updating...';
             });
@@ -399,19 +480,19 @@
 
         function applyFilters(departmentId, statusId) {
             const params = new URLSearchParams(window.location.search);
-            
+
             if (departmentId) {
                 params.set('department', departmentId);
             } else {
                 params.delete('department');
             }
-            
+
             if (statusId !== '') {
                 params.set('status', statusId);
             } else {
                 params.delete('status');
             }
-            
+
             window.location.search = params.toString();
         }
     </script>
