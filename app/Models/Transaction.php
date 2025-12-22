@@ -13,13 +13,18 @@ class Transaction extends Model
         'level_of_urgency',
         'document_tags_id',
         'workflow_id',
+        'workflow_snapshot',
+        'total_workflow_steps',
         'assign_staff_id',
+        'department_id',        
+        'current_workflow_step', 
         'transaction_status',
         'current_state',
         'revision_number',
         'created_by',
         'submitted_at',
         'completed_at',
+        'workflow_history',    
     ];
 
     protected function casts(): array
@@ -27,6 +32,8 @@ class Transaction extends Model
         return [
             'submitted_at' => 'datetime',
             'completed_at' => 'datetime',
+            'workflow_snapshot' => 'array',
+            'workflow_history' => 'array'
         ];
     }
 
@@ -63,6 +70,11 @@ class Transaction extends Model
     {
         return $this->hasMany(TransactionLog::class)->orderBy('created_at', 'desc');
     }
+
+    public function department() {
+        return $this->belongsTo(Department::class);
+    }
+
 
     // Scopes
     public function scopeInProgress($query)
@@ -137,6 +149,14 @@ class Transaction extends Model
             return str_replace('_', ' ', $matches[1]);
         }
         return null;
+    }
+
+    public function getWorkflowSteps()  {
+        return $this->workflow_snapshot['steps'] ?? $this->workflow?->getWorkflowSteps() ?? [];
+    }
+
+    public function getTransitions() {
+        return $this->workflow_snapshot['transitions'] ?? $this->workflow?->getTransition();
     }
 
     /**

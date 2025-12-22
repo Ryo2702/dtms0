@@ -9,11 +9,7 @@
                 <p class="text-gray-600 mt-2">Manage your documents</p>
             </div>
             <button type="button" class="btn btn-primary gap-2" onclick="tagModal.showModal()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                </svg>
+                <i data-lucide="plus" class="h-5 w-5"></i>
                 Add Documents
             </button>
         </div>
@@ -359,23 +355,18 @@
         }
 
         function viewDocumentTag(id) {
-            // Your existing function implementation
             setTimeout(() => initializeLucideIcons(), 100);
         }
 
         function editDocumentTag(id) {
-            // Your existing function implementation
             setTimeout(() => initializeLucideIcons(), 100);
         }
 
         function filterByDepartment() {
-            // Your existing filter implementation
         }
 
         function filterByStatus() {
-            // Your existing filter implementation
         }
-        // Create form handling
         const form = document.getElementById('tag-form');
         const submitBtn = document.getElementById('submitBtn');
 

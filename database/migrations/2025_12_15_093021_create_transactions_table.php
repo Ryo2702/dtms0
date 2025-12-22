@@ -30,11 +30,13 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users');
 
             $table->integer('current_workflow_step')->default(1);
+            $table->integer('total_workflow_steps')->default(1);
             $table->timestamp('submitted_at')->useCurrent();
             $table->timestamp('completed_at')->nullable();
 
 
             $table->json('workflow_history')->nullable();
+            $table->json('workflow_snapshot')->nullable(); 
             $table->timestamps();
 
             $table->foreign('workflow_id')->references('id')->on('workflows')->cascadeOnDelete();
