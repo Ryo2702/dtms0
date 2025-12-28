@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Transaction\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -27,4 +28,20 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
     });
 
+    Route::prefix('transactions')->name('transactions.')->group(function () {
+        Route::get('/', [TransactionController::class, 'index'])->name('index');
+        Route::get('/create', [TransactionController::class, 'create'])->name('create');
+        Route::post('/', [TransactionController::class, 'store'])->name('store');
+        Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
+        Route::get('/{transaction}/edit', [TransactionController::class, 'edit'])->name('edit');
+        Route::put('/{transaction}', [TransactionController::class, 'update'])->name('update');
+
+        // Workflow actions
+        Route::post('/{transaction}/action', [TransactionController::class, 'executeAction'])->name('action');
+        Route::get('/{transaction}/tracker', [TransactionController::class, 'tracker'])->name('tracker');
+        Route::get('/{transaction}/history', [TransactionController::class, 'history'])->name('history');
+
+        // AJAX endpoint
+        Route::get('/workflow/{workflow}/config', [TransactionController::class, 'getWorkflowConfig'])->name('workflow.config');
+    });
 });
