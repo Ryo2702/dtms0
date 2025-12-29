@@ -8,7 +8,6 @@ use App\Http\Requests\Transaction\ExecuteActionRequest;
 use App\Models\Transaction;
 use App\Models\Workflow;
 use App\Models\Department;
-use App\Models\DocumentTag;
 use App\Models\AssignStaff;
 use App\Services\Transaction\TrasactionService;
 use Illuminate\Http\Request;
@@ -23,58 +22,62 @@ class TransactionController extends Controller
     ) {}
 
     /**
-     * Display a listing of transactions
+     * Display available workflows for creating transactions
      */
     public function index(Request $request)
     {
-        $filters = $request->only([
-            'status', 'urgency', 'department_id', 'workflow_id',
-            'search', 'date_from', 'date_to'
-        ]);
+        $user = $request->user();
+        
+        // Get active workflows - filter by user's department if origin_departments is set
+        $workflows = Workflow::where('status', true)
+            ->with('documentTags')
+            ->get()
+            ->filter(function ($workflow) use ($user) {
+                // If no origin departments set, workflow is available to all
+                if (empty($workflow->origin_departments)) {
+                    return true;
+                }
+                // Check if user's department is in origin departments
+                return in_array($user->department_id, $workflow->origin_departments);
+            });
 
-        $transactions = $this->transactionService->getTransactions($filters);
-        $statistics = $this->transactionService->getStatistics();
-
-        $workflows = Workflow::where('status', true)->get();
-        $departments = Department::where('status', true)->get();
-
-        return view('transactions.index', compact(
-            'transactions',
-            'statistics',
-            'workflows',
-            'departments',
-            'filters'
-        ));
+        return view('transactions.index', compact('workflows'));
     }
 
     /**
-     * Show form for creating a new transaction
+     * Show form for creating a new transaction based on selected workflow
      */
     public function create(Request $request)
     {
-        $workflows = Workflow::where('status', true)
-            ->with('documentTags')
-            ->get();
-
-        $departments = Department::where('status', true)->get();
-        $documentTags = DocumentTag::where('status', true)->get();
-        $assignStaff = AssignStaff::active()->get();
-
-        $selectedWorkflow = null;
-        $workflowConfig = null;
-
-        if ($request->has('workflow_id')) {
-            $selectedWorkflow = Workflow::find($request->workflow_id);
-            $workflowConfig = $selectedWorkflow?->workflow_config;
+        $workflowId = $request->get('workflow_id');
+        
+        if (!$workflowId) {
+            return redirect()->route('transactions.index')
+                ->with('error', 'Please select a workflow first.');
         }
 
+        $workflow = Workflow::where('status', true)
+            ->with('documentTags')
+            ->findOrFail($workflowId);
+
+        $user = $request->user();
+        
+        // Verify user can access this workflow
+        if (!empty($workflow->origin_departments) && 
+            !in_array($user->department_id, $workflow->origin_departments)) {
+            return redirect()->route('transactions.index')
+                ->with('error', 'You do not have access to this workflow.');
+        }
+
+        $assignStaff = AssignStaff::active()->get();
+        $workflowConfig = $workflow->workflow_config;
+        $workflowSteps = $workflow->getWorkflowSteps();
+
         return view('transactions.create', compact(
-            'workflows',
-            'departments',
-            'documentTags',
+            'workflow',
             'assignStaff',
-            'selectedWorkflow',
-            'workflowConfig'
+            'workflowConfig',
+            'workflowSteps'
         ));
     }
 
@@ -84,8 +87,17 @@ class TransactionController extends Controller
     public function store(TransactionRequest $request)
     {
         try {
+            $validated = $request->validated();
+            
+            // If workflow_snapshot is provided with editable steps, use it
+            // Otherwise, get the default from the workflow
+            if (!isset($validated['workflow_snapshot'])) {
+                $workflow = Workflow::findOrFail($validated['workflow_id']);
+                $validated['workflow_snapshot'] = $workflow->workflow_config;
+            }
+
             $transaction = $this->transactionService->createTransaction(
-                $request->validated(),
+                $validated,
                 $request->user()
             );
 
@@ -131,21 +143,18 @@ class TransactionController extends Controller
         }
 
         $transaction = $this->transactionService->getTransactionDetails($transaction);
-
-        $departments = Department::where('status', true)->get();
-        $documentTags = DocumentTag::where('status', true)->get();
         $assignStaff = AssignStaff::active()->get();
 
         $canEditWorkflow = $transaction->current_workflow_step === 1;
         $workflowConfig = $transaction->workflow_snapshot ?? $transaction->workflow->workflow_config;
+        $workflowSteps = $workflowConfig['steps'] ?? [];
 
         return view('transactions.edit', compact(
             'transaction',
-            'departments',
-            'documentTags',
             'assignStaff',
             'canEditWorkflow',
-            'workflowConfig'
+            'workflowConfig',
+            'workflowSteps'
         ));
     }
 

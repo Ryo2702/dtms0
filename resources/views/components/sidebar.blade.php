@@ -72,6 +72,7 @@
                             <span>Transaction</span>
                         </a>
                     </li>
+
                     <li class="mb-1">
                         <a href="{{ route('admin.document-tags.index') }}"
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transaction-types') ? 'bg-white/20' : '' }}">
@@ -94,6 +95,14 @@
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'staff') ? 'bg-white/20' : '' }}">
                             <i data-lucide="users-round" class="w-5 h-5"></i>
                             <span>Staff Management</span>
+                        </a>
+                    </li>
+
+                           <li class="mb-1">
+                        <a href="{{ route('transactions.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transactions') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="file-type" class="w-5 h-5"></i>
+                            <span>Transaction</span>
                         </a>
                     </li>
                 @endif

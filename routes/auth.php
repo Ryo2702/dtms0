@@ -37,7 +37,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{transaction}', [TransactionController::class, 'update'])->name('update');
 
         // Workflow actions
-        Route::post('/{transaction}/action', [TransactionController::class, 'executeAction'])->name('action');
+        Route::post('/{transaction}/execute-action', [TransactionController::class, 'executeAction'])->name('execute-action');
         Route::get('/{transaction}/tracker', [TransactionController::class, 'tracker'])->name('tracker');
         Route::get('/{transaction}/history', [TransactionController::class, 'history'])->name('history');
 
