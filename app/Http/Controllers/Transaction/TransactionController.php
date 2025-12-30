@@ -30,7 +30,9 @@ class TransactionController extends Controller
         
         // Get active workflows - filter by user's department if origin_departments is set
         $workflows = Workflow::where('status', true)
-            ->with('documentTags')
+            ->with(['documentTags' => function ($query) {
+                $query->where('status', true);
+            }])
             ->get()
             ->filter(function ($workflow) use ($user) {
                 // If no origin departments set, workflow is available to all
@@ -41,7 +43,13 @@ class TransactionController extends Controller
                 return in_array($user->department_id, $workflow->origin_departments);
             });
 
-        return view('transactions.index', compact('workflows'));
+        // Get departments for workflow route editing (Head users can edit route)
+        $departments = Department::where('status', true)->orderBy('name')->get();
+        
+        // Check if user can edit workflow route (Head role only, not Admin)
+        $canEditRoute = $user->hasRole('Head');
+
+        return view('transactions.index', compact('workflows', 'departments', 'canEditRoute'));
     }
 
     /**
@@ -115,7 +123,7 @@ class TransactionController extends Controller
     /**
      * Display the specified transaction
      */
-    public function show(Transaction $transaction)
+    public function show(Request $request, Transaction $transaction)
     {
         $transaction = $this->transactionService->getTransactionDetails($transaction);
         $workflowProgress = $this->transactionService->getWorkflowProgress($transaction);
@@ -123,6 +131,21 @@ class TransactionController extends Controller
             $transaction,
             request()->user()
         );
+
+        // If AJAX request, return JSON with rendered HTML for modal
+        if ($request->ajax() || $request->wantsJson()) {
+            $html = view('transactions.partials.show-content', compact(
+                'transaction',
+                'workflowProgress',
+                'availableActions'
+            ))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'transaction' => $transaction
+            ]);
+        }
 
         return view('transactions.show', compact(
             'transaction',
@@ -134,9 +157,14 @@ class TransactionController extends Controller
     /**
      * Show form for editing the transaction
      */
-    public function edit(Transaction $transaction)
+    public function edit(Request $request, Transaction $transaction)
     {
         if ($transaction->isCompleted() || $transaction->isCancelled()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'error' => 'Cannot edit a completed or cancelled transaction.'
+                ], 400);
+            }
             return redirect()
                 ->route('transactions.show', $transaction)
                 ->with('error', 'Cannot edit a completed or cancelled transaction.');
@@ -148,6 +176,23 @@ class TransactionController extends Controller
         $canEditWorkflow = $transaction->current_workflow_step === 1;
         $workflowConfig = $transaction->workflow_snapshot ?? $transaction->workflow->workflow_config;
         $workflowSteps = $workflowConfig['steps'] ?? [];
+
+        // If AJAX request, return JSON with rendered HTML for modal
+        if ($request->ajax() || $request->wantsJson()) {
+            $html = view('transactions.partials.edit-form', compact(
+                'transaction',
+                'assignStaff',
+                'canEditWorkflow',
+                'workflowConfig',
+                'workflowSteps'
+            ))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'transaction' => $transaction
+            ]);
+        }
 
         return view('transactions.edit', compact(
             'transaction',
