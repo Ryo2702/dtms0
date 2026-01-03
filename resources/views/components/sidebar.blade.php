@@ -85,10 +85,17 @@
                         <span>Status</span>
                     </li>
 
+                    <li class="mb-1">
+                        <a href="{{ route('transactions.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transactions') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="file-type" class="w-5 h-5"></i>
+                            <span>Transaction</span>
+                        </a>
 
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Department</span>
                     </li>
+
 
                     <li class="mb-1">
                         <a href="{{ route('staff.index') }}"
@@ -98,12 +105,6 @@
                         </a>
                     </li>
 
-                           <li class="mb-1">
-                        <a href="{{ route('transactions.index') }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transactions') ? 'bg-white/20' : '' }}">
-                            <i data-lucide="file-type" class="w-5 h-5"></i>
-                            <span>Transaction</span>
-                        </a>
                     </li>
                 @endif
 

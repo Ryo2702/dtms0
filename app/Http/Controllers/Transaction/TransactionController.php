@@ -49,7 +49,13 @@ class TransactionController extends Controller
         // Check if user can edit workflow route (Head role only, not Admin)
         $canEditRoute = $user->hasRole('Head');
 
-        return view('transactions.index', compact('workflows', 'departments', 'canEditRoute'));
+        // Get user's transactions
+        $transactions = Transaction::where('created_by', $user->id)
+            ->with(['workflow', 'assignStaff', 'department'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('transactions.index', compact('workflows', 'departments', 'canEditRoute', 'transactions'));
     }
 
     /**
@@ -172,8 +178,9 @@ class TransactionController extends Controller
 
         $transaction = $this->transactionService->getTransactionDetails($transaction);
         $assignStaff = AssignStaff::active()->get();
+        $departments = Department::where('status', true)->orderBy('name')->get();
 
-        $canEditWorkflow = $transaction->current_workflow_step === 1;
+        $canEditWorkflow = (int) $transaction->current_workflow_step === 1;
         $workflowConfig = $transaction->workflow_snapshot ?? $transaction->workflow->workflow_config;
         $workflowSteps = $workflowConfig['steps'] ?? [];
 
@@ -182,6 +189,7 @@ class TransactionController extends Controller
             $html = view('transactions.partials.edit-form', compact(
                 'transaction',
                 'assignStaff',
+                'departments',
                 'canEditWorkflow',
                 'workflowConfig',
                 'workflowSteps'
@@ -197,6 +205,7 @@ class TransactionController extends Controller
         return view('transactions.edit', compact(
             'transaction',
             'assignStaff',
+            'departments',
             'canEditWorkflow',
             'workflowConfig',
             'workflowSteps'

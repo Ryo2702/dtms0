@@ -419,7 +419,7 @@
                 }
             }
 
-            function createStepHtml(index, departmentId = '', processTimeValue = 3, processTimeUnit = 'days',
+            function createStepHtml(index, departmentId = '', processTimeValue = 3, processTimeUnit = 'minutes',
                 notes = '') {
                 const deptOptions = departments.map(d =>
                     `<option value="${d.id}" ${departmentId == d.id ? 'selected' : ''}>${d.name}</option>`
@@ -476,6 +476,7 @@
                                     <span class="label-text font-medium">Time Unit</span>
                                 </label>
                                 <select name="steps[${index}][process_time_unit]" class="select select-bordered select-sm process-time-unit" required>
+                                    <option value="minutes" ${processTimeUnit === 'minutes' ? 'selected' : ''}>Minutes</option>
                                     <option value="hours" ${processTimeUnit === 'hours' ? 'selected' : ''}>Hours</option>
                                     <option value="days" ${processTimeUnit === 'days' ? 'selected' : ''}>Days</option>
                                     <option value="weeks" ${processTimeUnit === 'weeks' ? 'selected' : ''}>Weeks</option>
@@ -502,9 +503,11 @@
                 let totalDays = 0;
                 document.querySelectorAll('.step-item').forEach(item => {
                     const value = parseFloat(item.querySelector('.process-time-value')?.value) || 0;
-                    const unit = item.querySelector('.process-time-unit')?.value || 'days';
+                    const unit = item.querySelector('.process-time-unit')?.value || 'minutes';
 
-                    if (unit === 'hours') {
+                    if (unit === 'minutes') {
+                        totalDays += value / 1440; // 1440 minutes in a day
+                    } else if (unit === 'hours') {
                         totalDays += value / 24;
                     } else if (unit === 'weeks') {
                         totalDays += value * 7;

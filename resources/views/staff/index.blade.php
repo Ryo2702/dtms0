@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@section('title', 'Staff Management')
+
 @section('content')
     <x-container>
         <div class="mb-6">

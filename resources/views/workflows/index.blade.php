@@ -43,8 +43,10 @@
                                         $timeUnit = 'days';
                                         foreach ($steps as $step) {
                                             $value = $step['process_time_value'] ?? 0;
-                                            $unit = $step['process_time_unit'] ?? 'days';
-                                            if ($unit === 'hours') {
+                                            $unit = $step['process_time_unit'] ?? 'minutes';
+                                            if ($unit === 'minutes') {
+                                                $totalTime += $value / 1440; // 1440 minutes in a day
+                                            } elseif ($unit === 'hours') {
                                                 $totalTime += $value / 24;
                                             } elseif ($unit === 'weeks') {
                                                 $totalTime += $value * 7;

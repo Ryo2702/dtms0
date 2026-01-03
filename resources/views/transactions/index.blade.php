@@ -32,7 +32,7 @@
                         $documentTags = $workflow->documentTags()->where('status', true)->get();
                     @endphp
                     
-                    <div class="card bg-base-100 shadow-md hover:shadow-lg transition-shadow">
+                    <div class="card bg-[#FFFDF7] shadow-md hover:shadow-lg transition-shadow border border-base-200">
                         <div class="card-body">
                             {{-- Workflow Header --}}
                             <div class="flex items-start justify-between mb-3">
@@ -84,13 +84,13 @@
                                     <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Required Documents</p>
                                     <div class="flex flex-wrap gap-1">
                                         @foreach($documentTags->take(4) as $tag)
-                                            <span class="badge badge-sm badge-ghost" title="{{ $tag->description }}">
-                                                <i data-lucide="file-text" class="w-3 h-3 mr-1"></i>
+                                            <span class="badge badge-sm badge-info badge-outline gap-1" title="{{ $tag->description }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                                 {{ Str::limit($tag->name, 15) }}
                                             </span>
                                         @endforeach
                                         @if($documentTags->count() > 4)
-                                            <span class="badge badge-sm badge-ghost">+{{ $documentTags->count() - 4 }} more</span>
+                                            <span class="badge badge-sm badge-info badge-outline">+{{ $documentTags->count() - 4 }} more</span>
                                         @endif
                                     </div>
                                 </div>
@@ -124,6 +124,101 @@
                 </div>
             </div>
         @endif
+
+        {{-- My Transactions List --}}
+        <div class="mt-10">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">My Transactions</h2>
+                    <p class="text-gray-600 text-sm">Your created transactions</p>
+                </div>
+            </div>
+
+            @if($transactions->count() > 0)
+                <div class="card bg-base-100 shadow-md overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra">
+                            <thead>
+                                <tr class="bg-base-200">
+                                    <th>Transaction Code</th>
+                                    <th>Workflow</th>
+                                    <th>Assigned Staff</th>
+                                    <th>Department</th>
+                                    <th>Status</th>
+                                    <th>Step</th>
+                                    <th>Created</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($transactions as $transaction)
+                                    <tr>
+                                        <td>
+                                            <span class="font-mono text-sm font-medium">{{ $transaction->transaction_code }}</span>
+                                        </td>
+                                        <td>{{ $transaction->workflow->transaction_name ?? 'N/A' }}</td>
+                                        <td>{{ $transaction->assignStaff->full_name ?? 'N/A' }}</td>
+                                        <td>{{ $transaction->department->name ?? 'N/A' }}</td>
+                                        <td>
+                                            @php
+                                                $statusClass = match($transaction->transaction_status) {
+                                                    'pending' => 'badge-warning',
+                                                    'in_progress' => 'badge-info',
+                                                    'completed' => 'badge-success',
+                                                    'cancelled' => 'badge-error',
+                                                    'returned' => 'badge-error',
+                                                    default => 'badge-ghost'
+                                                };
+                                            @endphp
+                                            <span class="badge badge-sm {{ $statusClass }}">
+                                                {{ ucfirst(str_replace('_', ' ', $transaction->transaction_status)) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-sm">{{ $transaction->current_workflow_step }} / {{ $transaction->total_workflow_steps }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-sm text-gray-500">{{ $transaction->created_at->format('M d, Y') }}</span>
+                                        </td>
+                                        <td class="text-right">
+                                            <div class="flex items-center justify-end gap-1">
+                                                <button type="button" 
+                                                        onclick="openViewTransactionModal('{{ $transaction->id }}')"
+                                                        class="btn btn-ghost btn-xs">
+                                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                                </button>
+                                                @if(!$transaction->isCompleted() && !$transaction->isCancelled())
+                                                    <button type="button" 
+                                                            onclick="openEditModal('{{ $transaction->id }}')"
+                                                            class="btn btn-ghost btn-xs">
+                                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {{-- Pagination --}}
+                    @if($transactions->hasPages())
+                        <div class="px-4 py-3 border-t border-base-300">
+                            {{ $transactions->links() }}
+                        </div>
+                    @endif
+                </div>
+            @else
+                <div class="card bg-base-100 shadow-md">
+                    <div class="card-body text-center py-8">
+                        <i data-lucide="file-x" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+                        <h3 class="text-lg font-medium text-gray-600">No Transactions Yet</h3>
+                        <p class="text-gray-500 text-sm">Create a transaction from the workflows above.</p>
+                    </div>
+                </div>
+            @endif
+        </div>
     </div>
 
     {{-- View Workflow Modal --}}
@@ -168,6 +263,19 @@
         const assignStaffData = @json(\App\Models\AssignStaff::active()->get());
         const departmentsData = @json($departments);
         const canEditRoute = @json($canEditRoute);
+
+        // Lucide icons for use in template
+        const svgIcons = {
+            chevronUp: '<i data-lucide="chevron-up" class="w-4 h-4"></i>',
+            chevronDown: '<i data-lucide="chevron-down" class="w-4 h-4"></i>',
+            edit: '<i data-lucide="edit" class="w-3.5 h-3.5"></i>',
+            trash: '<i data-lucide="trash-2" class="w-3.5 h-3.5"></i>',
+            gitBranch: '<i data-lucide="git-branch" class="w-3 h-3"></i>',
+            settings: '<i data-lucide="settings" class="w-3 h-3"></i>',
+            plus: '<i data-lucide="plus" class="w-4 h-4"></i>',
+            send: '<i data-lucide="send" class="w-4 h-4"></i>',
+            fileText: '<i data-lucide="file-text" class="w-3 h-3"></i>'
+        };
 
         function openViewModal(workflowId) {
             const workflow = workflowsData[workflowId];
@@ -280,10 +388,12 @@
             const steps = window.currentWorkflowSteps;
             const documentTags = workflow.document_tags || [];
 
+           
+
             let stepsHtml = '';
             steps.forEach((step, index) => {
                 stepsHtml += `
-                    <div class="step-item border border-base-300 rounded-lg p-3 bg-base-50" data-index="${index}">
+                    <div class="step-item border border-base-300 rounded-lg p-3 bg-[#FFFDF7]" data-index="${index}">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-content text-sm font-bold">
@@ -297,18 +407,18 @@
                             <div class="flex items-center gap-1">
                                 ${canEditRoute ? `
                                     <button type="button" class="btn btn-ghost btn-xs" onclick="moveStep(${index}, -1)" ${index === 0 ? 'disabled' : ''}>
-                                        <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                                        ${svgIcons.chevronUp}
                                     </button>
                                     <button type="button" class="btn btn-ghost btn-xs" onclick="moveStep(${index}, 1)" ${index === steps.length - 1 ? 'disabled' : ''}>
-                                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                        ${svgIcons.chevronDown}
                                     </button>
                                 ` : ''}
-                                <button type="button" class="btn btn-ghost btn-xs" onclick="toggleStepEdit(${index})">
-                                    <i data-lucide="edit-2" class="w-3 h-3"></i>
+                                <button type="button" class="btn btn-ghost btn-xs" onclick="toggleStepEdit(${index})" title="Edit step">
+                                    ${svgIcons.edit}
                                 </button>
                                 ${canEditRoute && steps.length > 1 ? `
-                                    <button type="button" class="btn btn-ghost btn-xs text-error" onclick="removeStep(${index})">
-                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                    <button type="button" class="btn btn-ghost btn-xs text-error" onclick="removeStep(${index})" title="Remove step">
+                                        ${svgIcons.trash}
                                     </button>
                                 ` : ''}
                             </div>
@@ -348,7 +458,7 @@
                 docsHtml = `
                     <div class="mt-4">
                         <h4 class="text-xs font-semibold text-gray-500 uppercase mb-2 flex items-center gap-1">
-                            <i data-lucide="file-text" class="w-3 h-3"></i>
+                            ${svgIcons.fileText}
                             Required Documents
                         </h4>
                         <div class="flex flex-wrap gap-1">
@@ -417,12 +527,12 @@
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
-                                    <i data-lucide="git-branch" class="w-3 h-3"></i>
+                                    ${svgIcons.gitBranch}
                                     Workflow Route (${steps.length} steps)
                                 </h4>
                                 <div class="flex items-center gap-1">
-                                    <button type="button" class="btn btn-ghost btn-xs" onclick="toggleAllStepEdits()">
-                                        <i data-lucide="settings" class="w-3 h-3"></i>
+                                    <button type="button" class="btn btn-ghost btn-xs" onclick="toggleAllStepEdits()" title="Edit all steps">
+                                        ${svgIcons.settings}
                                     </button>
                                 </div>
                             </div>
@@ -437,8 +547,8 @@
                                         <select id="add-department-select" class="select select-bordered select-sm flex-1">
                                             ${deptOptionsHtml}
                                         </select>
-                                        <button type="button" class="btn btn-outline btn-sm" onclick="addStep()">
-                                            <i data-lucide="plus" class="w-4 h-4"></i>
+                                        <button type="button" class="btn btn-outline btn-sm gap-1" onclick="addStep()">
+                                            ${svgIcons.plus}
                                             Add Step
                                         </button>
                                     </div>
@@ -453,8 +563,8 @@
                             <button type="button" onclick="window['create-transaction-modal'].close()" class="btn btn-ghost btn-sm">
                                 Cancel
                             </button>
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i data-lucide="send" class="w-4 h-4 mr-1"></i>
+                            <button type="submit" class="btn btn-primary btn-sm gap-1">
+                                ${svgIcons.send}
                                 Create
                             </button>
                         </div>
