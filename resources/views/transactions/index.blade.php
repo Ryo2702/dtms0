@@ -424,14 +424,18 @@
                             </div>
                         </div>
                         
-                        <input type="hidden" name="workflow_snapshot[steps][${index}][department_id]" value="${step.department_id}">
-                        <input type="hidden" name="workflow_snapshot[steps][${index}][department_name]" value="${step.department_name || ''}">
+                        <!-- Hidden inputs for step data (always submitted) -->
+                        <input type="hidden" name="workflow_snapshot[steps][${index}][department_id]" value="${step.department_id}" class="step-dept-id">
+                        <input type="hidden" name="workflow_snapshot[steps][${index}][department_name]" value="${step.department_name || ''}" class="step-dept-name">
+                        <input type="hidden" name="workflow_snapshot[steps][${index}][process_time_value]" value="${step.process_time_value || 1}" class="step-time-value-hidden">
+                        <input type="hidden" name="workflow_snapshot[steps][${index}][process_time_unit]" value="${step.process_time_unit || 'days'}" class="step-time-unit-hidden">
+                        <input type="hidden" name="workflow_snapshot[steps][${index}][notes]" value="${step.notes || ''}" class="step-notes-hidden">
                         
                         <div id="step-edit-${index}" class="hidden mt-3 pt-3 border-t border-base-300 space-y-2">
                             <div class="flex items-center gap-2">
                                 <label class="label-text text-xs font-medium w-24">Processing</label>
-                                <input type="number" name="workflow_snapshot[steps][${index}][process_time_value]" value="${step.process_time_value || 1}" min="1" class="input input-bordered input-xs w-16">
-                                <select name="workflow_snapshot[steps][${index}][process_time_unit]" class="select select-bordered select-xs flex-1">
+                                <input type="number" value="${step.process_time_value || 1}" min="1" class="input input-bordered input-xs w-16 step-time-value-input" onchange="updateStepHiddenField(this, ${index}, 'process_time_value')">
+                                <select class="select select-bordered select-xs flex-1 step-time-unit-input" onchange="updateStepHiddenField(this, ${index}, 'process_time_unit')">
                                     <option value="minutes" ${step.process_time_unit === 'minutes' ? 'selected' : ''}>Minutes</option>
                                     <option value="hours" ${step.process_time_unit === 'hours' ? 'selected' : ''}>Hours</option>
                                     <option value="days" ${step.process_time_unit === 'days' || !step.process_time_unit ? 'selected' : ''}>Days</option>
@@ -440,7 +444,7 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <label class="label-text text-xs font-medium w-24">Notes</label>
-                                <input type="text" name="workflow_snapshot[steps][${index}][notes]" value="${step.notes || ''}" class="input input-bordered input-xs flex-1" placeholder="Optional">
+                                <input type="text" value="${step.notes || ''}" class="input input-bordered input-xs flex-1 step-notes-input" placeholder="Optional" onchange="updateStepHiddenField(this, ${index}, 'notes')">
                             </div>
                         </div>
                     </div>
@@ -582,6 +586,31 @@
             // Reinitialize lucide icons
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
+            }
+        }
+
+        // Update hidden field when user changes step edit inputs
+        function updateStepHiddenField(inputElement, stepIndex, fieldName) {
+            const stepItem = inputElement.closest('.step-item');
+            if (!stepItem) return;
+            
+            const hiddenField = stepItem.querySelector(`input[name="workflow_snapshot[steps][${stepIndex}][${fieldName}]"]`);
+            if (hiddenField) {
+                hiddenField.value = inputElement.value;
+            }
+            
+            // Also update the currentWorkflowSteps array
+            if (window.currentWorkflowSteps && window.currentWorkflowSteps[stepIndex]) {
+                window.currentWorkflowSteps[stepIndex][fieldName] = inputElement.value;
+                
+                // Update display text if time value or unit changed
+                if (fieldName === 'process_time_value' || fieldName === 'process_time_unit') {
+                    const step = window.currentWorkflowSteps[stepIndex];
+                    const displayText = stepItem.querySelector('.text-xs.text-gray-500');
+                    if (displayText) {
+                        displayText.textContent = `${step.process_time_value || 1} ${step.process_time_unit || 'days'}`;
+                    }
+                }
             }
         }
 

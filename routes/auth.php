@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{transaction}/execute-action', [TransactionController::class, 'executeAction'])->name('execute-action');
         Route::get('/{transaction}/tracker', [TransactionController::class, 'tracker'])->name('tracker');
         Route::get('/{transaction}/history', [TransactionController::class, 'history'])->name('history');
+        Route::get('/{transaction}/workflow-config', [TransactionController::class, 'getDefaultWorkflowConfig'])->name('workflow-config');
 
         // AJAX endpoint
         Route::get('/workflow/{workflow}/config', [TransactionController::class, 'getWorkflowConfig'])->name('workflow.config');

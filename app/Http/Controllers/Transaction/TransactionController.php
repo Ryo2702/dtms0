@@ -295,6 +295,19 @@ class TransactionController extends Controller
     }
 
     /**
+     * Get default workflow configuration for a transaction (from its workflow template)
+     */
+    public function getDefaultWorkflowConfig(Transaction $transaction)
+    {
+        $workflow = $transaction->workflow;
+        
+        return response()->json([
+            'success' => true,
+            'workflow_config' => $workflow->workflow_config,
+        ]);
+    }
+
+    /**
      * Get workflow configuration for a specific workflow (AJAX)
      */
     public function getWorkflowConfig(Workflow $workflow)

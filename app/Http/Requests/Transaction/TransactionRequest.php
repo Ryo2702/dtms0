@@ -26,7 +26,7 @@ class TransactionRequest extends FormRequest
         return [
             // Required on create, optional on update
             'workflow_id' => $isUpdate ? 'sometimes|string|exists:workflows,id' : 'required|string|exists:workflows,id',
-            'document_tags_id' => $isUpdate ? 'sometimes|exists:document_tags,id' : 'required|exists:document_tags,id',
+            'document_tags_id' => $isUpdate ? 'sometimes|exists:document_tags,id' : 'nullable|exists:document_tags,id',
             'assign_staff_id' => $isUpdate ? 'sometimes|exists:assign_staff,id' : 'required|exists:assign_staff,id',
 
             // Always optional
@@ -38,9 +38,10 @@ class TransactionRequest extends FormRequest
             'workflow_snapshot.steps' => 'nullable|array|min:1',
             'workflow_snapshot.steps.*.department_id' => 'required_with:workflow_snapshot.steps|exists:departments,id',
             'workflow_snapshot.steps.*.department_name' => 'required_with:workflow_snapshot.steps|string',
-            'workflow_snapshot.steps.*.order' => 'required_with:workflow_snapshot.steps|integer|min:1',
+            'workflow_snapshot.steps.*.order' => 'nullable|integer|min:1',
             'workflow_snapshot.steps.*.process_time_value' => 'nullable|integer|min:1',
             'workflow_snapshot.steps.*.process_time_unit' => 'nullable|in:minutes,hours,days,weeks',
+            'workflow_snapshot.steps.*.notes' => 'nullable|string|max:500',
             'workflow_snapshot.transitions' => 'nullable|array',
         ];
     }

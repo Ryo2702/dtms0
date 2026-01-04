@@ -87,19 +87,25 @@ class TrasactionService
         return DB::transaction(function () use ($data, $creator) {
             $workflow = Workflow::findOrFail($data['workflow_id']);
 
-            //Calculate the total workflow steps
-            $workflowSteps = $workflow->getWorkflowSteps();
-            $totalSteps = count($workflowSteps);
-
-            //prepare workflow snapshot
+            // Use custom workflow_snapshot if provided (Head user modified it)
+            // Otherwise use the default from workflow
             $workflowSnapshot = $data['workflow_snapshot'] ?? $workflow->workflow_config;
+            
+            // Normalize steps - ensure order is set based on array index
+            if (isset($workflowSnapshot['steps'])) {
+                $workflowSnapshot['steps'] = $this->normalizeWorkflowSteps($workflowSnapshot['steps']);
+            }
+            
+            // Calculate total steps from the snapshot
+            $workflowSteps = $workflowSnapshot['steps'] ?? $workflow->getWorkflowSteps();
+            $totalSteps = count($workflowSteps);
 
             $transaction = Transaction::create([
                 'transaction_code' => Transaction::generateTransactionCode(),
                 'workflow_id' => $data['workflow_id'],
                 'workflow_snapshot' => $workflowSnapshot,
                 'total_workflow_steps' => $totalSteps,
-                'document_tags_id' => $data['document_tags_id'],
+                'document_tags_id' => $data['document_tags_id'] ?? $workflow->documentTags()->first()?->id,
                 'assign_staff_id' => $data['assign_staff_id'],
                 'department_id' => $data['department_id'] ?? $creator->department_id,
                 'level_of_urgency' => $data['level_of_urgency'] ?? 'normal',
@@ -110,6 +116,7 @@ class TrasactionService
 
             $this->workflowEngine->initializeTransaction($transaction);
 
+            // Create initial reviewer based on the workflow_snapshot (could be customized by Head)
             $this->createInitialReviewer($transaction, $workflowSteps);
 
             return $transaction->fresh(['workflow', 'creator', 'department', 'reviewers']);
@@ -125,7 +132,6 @@ class TrasactionService
 
             $updateData = [];
 
-
             if (isset($data['level_of_urgency'])) {
                 $updateData['level_of_urgency'] = $data['level_of_urgency'];
             }
@@ -134,14 +140,33 @@ class TrasactionService
                 $updateData['assign_staff_id'] = $data['assign_staff_id'];
             }
 
+            if (isset($data['department_id'])) {
+                $updateData['department_id'] = $data['department_id'];
+            }
+
             if (isset($data['document_tags_id'])) {
                 $updateData['document_tags_id'] = $data['document_tags_id'];
             }
 
-            // Allow workflow_snapshot update only if transaction is still at initial state
-            if (isset($data['workflow_snapshot']) && $transaction->current_workflow_step === 1) {
-                $updateData['workflow_snapshot'] = $data['workflow_snapshot'];
-                $updateData['total_workflow_steps'] = count($data['workflow_snapshot']['steps'] ?? []);
+            // Allow workflow_snapshot update only if transaction is still at initial state (step 1)
+            if (isset($data['workflow_snapshot']) && (int) $transaction->current_workflow_step === 1) {
+                $newSnapshot = $data['workflow_snapshot'];
+                
+                // Normalize steps - ensure order is set based on array index
+                if (isset($newSnapshot['steps'])) {
+                    $newSnapshot['steps'] = $this->normalizeWorkflowSteps($newSnapshot['steps']);
+                }
+                
+                $newSteps = $newSnapshot['steps'] ?? [];
+                $updateData['workflow_snapshot'] = $newSnapshot;
+                $updateData['total_workflow_steps'] = count($newSteps);
+                
+                // Check if first step's department changed - need to update reviewer
+                $oldSteps = $transaction->workflow_snapshot['steps'] ?? [];
+                if ($this->hasFirstStepChanged($oldSteps, $newSteps)) {
+                    // Delete current pending reviewer and create new one based on new first step
+                    $this->recreateInitialReviewer($transaction, $newSteps);
+                }
             }
 
             if (!empty($updateData)) {
@@ -150,6 +175,44 @@ class TrasactionService
 
             return $transaction->fresh(['workflow', 'creator', 'department', 'reviewers']);
         });
+    }
+
+    /**
+     * Normalize workflow steps - ensure order field matches array index
+     */
+    protected function normalizeWorkflowSteps(array $steps): array
+    {
+        return array_values(array_map(function ($step, $index) {
+            $step['order'] = $index + 1;
+            $step['process_time_value'] = (int) ($step['process_time_value'] ?? 1);
+            $step['process_time_unit'] = $step['process_time_unit'] ?? 'days';
+            return $step;
+        }, $steps, array_keys($steps)));
+    }
+
+    /**
+     * Check if the first step department has changed
+     */
+    protected function hasFirstStepChanged(array $oldSteps, array $newSteps): bool
+    {
+        $oldFirstDept = $oldSteps[0]['department_id'] ?? null;
+        $newFirstDept = $newSteps[0]['department_id'] ?? null;
+        
+        return $oldFirstDept != $newFirstDept;
+    }
+
+    /**
+     * Recreate the initial reviewer when workflow steps are modified
+     */
+    protected function recreateInitialReviewer(Transaction $transaction, array $workflowSteps): void
+    {
+        // Delete existing pending reviewers (only if at step 1)
+        $transaction->reviewers()
+            ->where('status', 'pending')
+            ->delete();
+        
+        // Create new reviewer based on updated first step
+        $this->createInitialReviewer($transaction, $workflowSteps);
     }
 
     public function getTransactionDetails(Transaction $transaction)

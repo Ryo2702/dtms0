@@ -22,9 +22,15 @@
                     </div>
                     
                     @if($canEditWorkflow)
-                        <p class="text-sm text-gray-500 mb-4">
-                            You can adjust the workflow route while the transaction is at the initial step.
-                        </p>
+                        <div class="flex items-center justify-between mb-4">
+                            <p class="text-sm text-gray-500">
+                                You can adjust the workflow route while the transaction is at the initial step.
+                            </p>
+                            <button type="button" id="btn-reset-workflow" class="btn btn-ghost btn-xs gap-1">
+                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                                Reset to Default
+                            </button>
+                        </div>
                     @else
                         <p class="text-sm text-gray-500 mb-4">
                             Workflow route cannot be modified once the transaction has progressed beyond the first step.
@@ -59,24 +65,32 @@
 
                                     {{-- Step Details --}}
                                     <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {{-- Department (Read-only) --}}
+                                        {{-- Department --}}
                                         <div>
                                             <label class="label">
                                                 <span class="label-text font-medium">Department</span>
                                             </label>
-                                            <input type="text" 
-                                                   value="{{ $step['department_name'] ?? 'Unknown Department' }}" 
-                                                   class="input input-bordered w-full bg-base-200" 
-                                                   readonly>
                                             @if($canEditWorkflow)
-                                                <input type="hidden" 
-                                                       name="workflow_snapshot[steps][{{ $index }}][department_id]" 
-                                                       value="{{ $step['department_id'] }}"
-                                                       class="step-dept-id">
+                                                <select name="workflow_snapshot[steps][{{ $index }}][department_id]" 
+                                                        class="select select-bordered w-full step-dept-select"
+                                                        onchange="updateDepartmentName(this)">
+                                                    @foreach($departments as $department)
+                                                        <option value="{{ $department->id }}" 
+                                                                data-name="{{ $department->name }}"
+                                                                {{ ($step['department_id'] ?? '') == $department->id ? 'selected' : '' }}>
+                                                            {{ $department->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                                 <input type="hidden" 
                                                        name="workflow_snapshot[steps][{{ $index }}][department_name]" 
                                                        value="{{ $step['department_name'] ?? '' }}"
                                                        class="step-dept-name">
+                                            @else
+                                                <input type="text" 
+                                                       value="{{ $step['department_name'] ?? 'Unknown Department' }}" 
+                                                       class="input input-bordered w-full bg-base-200" 
+                                                       readonly>
                                             @endif
                                         </div>
 
@@ -310,6 +324,26 @@
 (function() {
     const workflowStepsContainer = document.getElementById('workflow-steps');
     
+    // Department options for dynamically added steps
+    const departmentOptions = @json($departments->map(fn($d) => ['id' => $d->id, 'name' => $d->name]));
+    
+    // Function to update hidden department_name when select changes
+    window.updateDepartmentName = function(selectElement) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const deptName = selectedOption?.dataset?.name || selectedOption?.text || '';
+        const hiddenNameInput = selectElement.parentElement.querySelector('.step-dept-name');
+        if (hiddenNameInput) {
+            hiddenNameInput.value = deptName;
+        }
+    };
+    
+    // Generate department select options HTML
+    function getDepartmentOptionsHtml(selectedId = null) {
+        return departmentOptions.map(dept => 
+            `<option value="${dept.id}" data-name="${dept.name}" ${selectedId == dept.id ? 'selected' : ''}>${dept.name}</option>`
+        ).join('');
+    }
+    
     function reindexSteps() {
         const steps = workflowStepsContainer.querySelectorAll('.step-item');
         steps.forEach((step, index) => {
@@ -395,8 +429,11 @@
                             <label class="label">
                                 <span class="label-text font-medium">Department</span>
                             </label>
-                            <input type="text" value="${deptName}" class="input input-bordered w-full bg-base-200" readonly>
-                            <input type="hidden" name="workflow_snapshot[steps][${newIndex}][department_id]" value="${deptId}" class="step-dept-id">
+                            <select name="workflow_snapshot[steps][${newIndex}][department_id]" 
+                                    class="select select-bordered w-full step-dept-select"
+                                    onchange="updateDepartmentName(this)">
+                                ${getDepartmentOptionsHtml(deptId)}
+                            </select>
                             <input type="hidden" name="workflow_snapshot[steps][${newIndex}][department_name]" value="${deptName}" class="step-dept-name">
                         </div>
                         <div>
@@ -450,6 +487,95 @@
         }
     }
     
+    // Reset workflow to default from workflow template
+    function resetWorkflow() {
+        if (!confirm('Are you sure you want to reset the workflow to the default configuration? This will undo all your changes.')) {
+            return;
+        }
+        
+        // Fetch default workflow config from the workflow
+        fetch(`/transactions/${@json($transaction->id)}/workflow-config`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.workflow_config?.steps) {
+                    rebuildStepsFromConfig(data.workflow_config.steps);
+                }
+            })
+            .catch(error => {
+                console.error('Failed to fetch default workflow:', error);
+                alert('Failed to reset workflow. Please try again.');
+            });
+    }
+    
+    // Rebuild steps from config data
+    function rebuildStepsFromConfig(steps) {
+        workflowStepsContainer.innerHTML = '';
+        
+        steps.forEach((step, index) => {
+            const stepHtml = `
+                <div class="step-item border border-base-300 rounded-lg p-4 bg-base-50" data-index="${index}">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-base-200 text-gray-600">
+                                ${index + 1}
+                            </span>
+                        </div>
+                        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="label">
+                                    <span class="label-text font-medium">Department</span>
+                                </label>
+                                <select name="workflow_snapshot[steps][${index}][department_id]" 
+                                        class="select select-bordered w-full step-dept-select"
+                                        onchange="updateDepartmentName(this)">
+                                    ${getDepartmentOptionsHtml(step.department_id)}
+                                </select>
+                                <input type="hidden" name="workflow_snapshot[steps][${index}][department_name]" value="${step.department_name || ''}" class="step-dept-name">
+                            </div>
+                            <div>
+                                <label class="label">
+                                    <span class="label-text font-medium">Processing Time</span>
+                                </label>
+                                <div class="flex gap-2">
+                                    <input type="number" name="workflow_snapshot[steps][${index}][process_time_value]" value="${step.process_time_value || 1}" min="1" class="input input-bordered w-20 step-time-value">
+                                    <select name="workflow_snapshot[steps][${index}][process_time_unit]" class="select select-bordered flex-1 step-time-unit">
+                                        <option value="minutes" ${step.process_time_unit === 'minutes' ? 'selected' : ''}>Minutes</option>
+                                        <option value="hours" ${step.process_time_unit === 'hours' ? 'selected' : ''}>Hours</option>
+                                        <option value="days" ${step.process_time_unit === 'days' || !step.process_time_unit ? 'selected' : ''}>Days</option>
+                                        <option value="weeks" ${step.process_time_unit === 'weeks' ? 'selected' : ''}>Weeks</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="label">
+                                    <span class="label-text font-medium">Notes</span>
+                                </label>
+                                <input type="text" name="workflow_snapshot[steps][${index}][notes]" value="${step.notes || ''}" class="input input-bordered w-full step-notes" placeholder="Additional notes for this step">
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <button type="button" class="btn btn-ghost btn-xs btn-move-up" title="Move up" ${index === 0 ? 'disabled' : ''}>
+                                <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" class="btn btn-ghost btn-xs btn-move-down" title="Move down" ${index === steps.length - 1 ? 'disabled' : ''}>
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" class="btn btn-ghost btn-xs text-error btn-remove-step" title="Remove step" ${steps.length <= 1 ? 'disabled' : ''}>
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            workflowStepsContainer.insertAdjacentHTML('beforeend', stepHtml);
+        });
+        
+        // Reinitialize lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+    
     // Event delegation for step actions
     workflowStepsContainer.addEventListener('click', function(e) {
         const target = e.target.closest('button');
@@ -471,6 +597,12 @@
     const addStepBtn = document.getElementById('btn-add-step');
     if (addStepBtn) {
         addStepBtn.addEventListener('click', addStep);
+    }
+    
+    // Reset workflow button
+    const resetBtn = document.getElementById('btn-reset-workflow');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetWorkflow);
     }
 })();
 </script>
