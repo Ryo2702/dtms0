@@ -87,10 +87,27 @@
 
                     <li class="mb-1">
                         <a href="{{ route('transactions.index') }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transactions') ? 'bg-white/20' : '' }}">
-                            <i data-lucide="file-type" class="w-5 h-5"></i>
-                            <span>Transaction</span>
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transactions') && !Str::contains(request()->route()->getName(), 'reviews') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
+                            <span>Transactions</span>
                         </a>
+                    </li>
+
+                    <li class="mb-1">
+                        <a href="{{ route('transactions.reviews.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::contains(request()->route()->getName(), 'reviews') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                            <span>My Reviews</span>
+                            @php
+                                $pendingReviewsCount = \App\Models\TransactionReviewer::where('reviewer_id', $user->id)
+                                    ->where('status', 'pending')
+                                    ->count();
+                            @endphp
+                            @if($pendingReviewsCount > 0)
+                                <span class="badge badge-warning badge-sm">{{ $pendingReviewsCount }}</span>
+                            @endif
+                        </a>
+                    </li>
 
                     <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
                         <span>Department</span>

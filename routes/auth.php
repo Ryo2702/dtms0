@@ -5,6 +5,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Transaction\TransactionController;
+use App\Http\Controllers\Transaction\TransactionReviewerController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -41,6 +42,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{transaction}/tracker', [TransactionController::class, 'tracker'])->name('tracker');
         Route::get('/{transaction}/history', [TransactionController::class, 'history'])->name('history');
         Route::get('/{transaction}/workflow-config', [TransactionController::class, 'getDefaultWorkflowConfig'])->name('workflow-config');
+
+        // Transaction Reviewer routes
+        Route::prefix('reviews')->name('reviews.')->group(function () {
+            Route::get('/', [TransactionReviewerController::class, 'index'])->name('index');
+            Route::get('/overdue', [TransactionReviewerController::class, 'overdue'])->name('overdue');
+            Route::get('/{reviewer}', [TransactionReviewerController::class, 'show'])->name('show');
+            Route::put('/{reviewer}/due-date', [TransactionReviewerController::class, 'updateDueDate'])->name('update-due-date');
+            Route::put('/{reviewer}/reassign', [TransactionReviewerController::class, 'reassign'])->name('reassign');
+        });
+
+        // Review history for a specific transaction
+        Route::get('/{transaction}/reviews', [TransactionReviewerController::class, 'history'])->name('review-history');
 
         // AJAX endpoint
         Route::get('/workflow/{workflow}/config', [TransactionController::class, 'getWorkflowConfig'])->name('workflow.config');
