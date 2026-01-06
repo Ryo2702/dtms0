@@ -33,6 +33,23 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index');
         Route::get('/create', [TransactionController::class, 'create'])->name('create');
         Route::post('/', [TransactionController::class, 'store'])->name('store');
+
+        // Transaction Reviewer routes (must be before {transaction} wildcard)
+        Route::prefix('reviews')->name('reviews.')->group(function () {
+            Route::get('/', [TransactionReviewerController::class, 'index'])->name('index');
+            Route::get('/overdue', [TransactionReviewerController::class, 'overdue'])->name('overdue');
+            Route::get('/{reviewer}', [TransactionReviewerController::class, 'show'])->name('show');
+            Route::get('/{reviewer}/review', [TransactionReviewerController::class, 'review'])->name('review');
+            Route::post('/{reviewer}/approve', [TransactionReviewerController::class, 'approve'])->name('approve');
+            Route::post('/{reviewer}/reject', [TransactionReviewerController::class, 'reject'])->name('reject');
+            Route::put('/{reviewer}/due-date', [TransactionReviewerController::class, 'updateDueDate'])->name('update-due-date');
+            Route::put('/{reviewer}/reassign', [TransactionReviewerController::class, 'reassign'])->name('reassign');
+        });
+
+        // AJAX endpoint
+        Route::get('/workflow/{workflow}/config', [TransactionController::class, 'getWorkflowConfig'])->name('workflow.config');
+
+        // Routes with {transaction} wildcard (must be after static routes)
         Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
         Route::get('/{transaction}/edit', [TransactionController::class, 'edit'])->name('edit');
         Route::put('/{transaction}', [TransactionController::class, 'update'])->name('update');
@@ -43,19 +60,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{transaction}/history', [TransactionController::class, 'history'])->name('history');
         Route::get('/{transaction}/workflow-config', [TransactionController::class, 'getDefaultWorkflowConfig'])->name('workflow-config');
 
-        // Transaction Reviewer routes
-        Route::prefix('reviews')->name('reviews.')->group(function () {
-            Route::get('/', [TransactionReviewerController::class, 'index'])->name('index');
-            Route::get('/overdue', [TransactionReviewerController::class, 'overdue'])->name('overdue');
-            Route::get('/{reviewer}', [TransactionReviewerController::class, 'show'])->name('show');
-            Route::put('/{reviewer}/due-date', [TransactionReviewerController::class, 'updateDueDate'])->name('update-due-date');
-            Route::put('/{reviewer}/reassign', [TransactionReviewerController::class, 'reassign'])->name('reassign');
-        });
-
         // Review history for a specific transaction
         Route::get('/{transaction}/reviews', [TransactionReviewerController::class, 'history'])->name('review-history');
-
-        // AJAX endpoint
-        Route::get('/workflow/{workflow}/config', [TransactionController::class, 'getWorkflowConfig'])->name('workflow.config');
     });
 });
