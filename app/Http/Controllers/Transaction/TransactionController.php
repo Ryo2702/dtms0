@@ -55,7 +55,49 @@ class TransactionController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('transactions.index', compact('workflows', 'departments', 'canEditRoute', 'transactions'));
+        return view('transactions.index', compact('workflows', 'departments', 'canEditRoute'));
+    }
+
+    /**
+     * Display user's own transactions
+     */
+    public function my(Request $request)
+    {
+        $user = $request->user();
+        
+        $tab = $request->get('tab', 'all');
+        
+        // Build base query for user's transactions
+        $query = Transaction::where('created_by', $user->id)
+            ->with(['workflow', 'assignStaff', 'department', 'currentReviewer', 'originDepartment']);
+
+        // Filter by status tab
+        $transactions = match($tab) {
+            'in_progress' => $query->clone()->where('transaction_status', 'in_progress'),
+            'completed' => $query->clone()->where('transaction_status', 'completed')->where('receiving_status', 'received'),
+            'pending_receipt' => $query->clone()->where('transaction_status', 'completed')->where('receiving_status', 'pending'),
+            'cancelled' => $query->clone()->where('transaction_status', 'cancelled'),
+            default => $query->clone(),
+        };
+
+        $transactions = $transactions->orderBy('created_at', 'desc')->paginate(15);
+
+        // Stats for tabs
+        $stats = [
+            'all' => Transaction::where('created_by', $user->id)->count(),
+            'in_progress' => Transaction::where('created_by', $user->id)->where('transaction_status', 'in_progress')->count(),
+            'pending_receipt' => Transaction::where('created_by', $user->id)
+                ->where('transaction_status', 'completed')
+                ->where('receiving_status', 'pending')
+                ->count(),
+            'completed' => Transaction::where('created_by', $user->id)
+                ->where('transaction_status', 'completed')
+                ->where('receiving_status', 'received')
+                ->count(),
+            'cancelled' => Transaction::where('created_by', $user->id)->where('transaction_status', 'cancelled')->count(),
+        ];
+
+        return view('transactions.my', compact('transactions', 'stats', 'tab'));
     }
 
     /**
@@ -323,5 +365,72 @@ class TransactionController extends Controller
                 'document_tags' => $workflow->documentTags,
             ],
         ]);
+    }
+
+    /**
+     * Confirm that a completed transaction has been received
+     */
+    public function confirmReceived(Request $request, Transaction $transaction)
+    {
+        $user = $request->user();
+
+        // Check if user belongs to the origin department
+        if ($user->department_id !== $transaction->origin_department_id) {
+            abort(403, 'You are not authorized to confirm receipt of this transaction.');
+        }
+
+        // Check if transaction is completed and pending receiving
+        if ($transaction->transaction_status !== 'completed' || $transaction->receiving_status !== 'pending') {
+            return redirect()->back()
+                ->with('error', 'This transaction cannot be confirmed at this time.');
+        }
+
+        $transaction->update([
+            'receiving_status' => 'received',
+            'received_at' => now(),
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Transaction has been marked as received.');
+    }
+
+    /**
+     * Mark a completed transaction as not received
+     */
+    public function markNotReceived(Request $request, Transaction $transaction)
+    {
+        $user = $request->user();
+
+        // Check if user belongs to the origin department
+        if ($user->department_id !== $transaction->origin_department_id) {
+            abort(403, 'You are not authorized to update this transaction.');
+        }
+
+        // Check if transaction is completed and pending receiving
+        if ($transaction->transaction_status !== 'completed' || $transaction->receiving_status !== 'pending') {
+            return redirect()->back()
+                ->with('error', 'This transaction cannot be updated at this time.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $transaction->update([
+            'receiving_status' => 'not_received',
+        ]);
+
+        // Optionally log the reason
+        \App\Models\TransactionLog::create([
+            'transaction_id' => $transaction->id,
+            'from_state' => 'completed',
+            'to_state' => 'not_received',
+            'action' => 'mark_not_received',
+            'action_by' => $user->id,
+            'remarks' => $validated['reason'],
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Transaction has been marked as not received.');
     }
 }

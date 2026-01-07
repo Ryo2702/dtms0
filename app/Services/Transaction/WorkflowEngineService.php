@@ -115,7 +115,7 @@ class WorkflowEngineService
      */
     protected function sanitizeDepartmentName(string $name): string
     {
-        return str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9\s]/', '', $name));
+        return strtolower(str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9\s]/', '', $name)));
     }
 
     /**
@@ -205,38 +205,45 @@ class WorkflowEngineService
      */
     public function getWorkflowProgress(Transaction $transaction): array
     {
-        $steps = $transaction->workflow->getWorkflowSteps();
+        $steps = $transaction->getWorkflowSteps();
+        
+        // If no steps from snapshot, try from workflow
+        if (empty($steps)) {
+            $steps = $transaction->workflow?->getWorkflowSteps() ?? [];
+        }
+        
+        $currentStep = $transaction->current_workflow_step;
         $currentState = $transaction->current_state;
-        $currentDept = $transaction->getCurrentDepartmentFromState();
 
         $progress = [];
-        $foundCurrent = false;
 
-        foreach ($steps as $step) {
+        foreach ($steps as $index => $step) {
+            $stepNumber = $index + 1;
             $status = 'pending';
             
-            if ($step['department_name'] === $currentDept) {
-                $status = str_starts_with($currentState, 'returned_to_') ? 'returned' : 'current';
-                $foundCurrent = true;
-            } elseif (!$foundCurrent) {
+            if ($stepNumber < $currentStep) {
                 $status = 'completed';
+            } elseif ($stepNumber === $currentStep) {
+                $status = str_starts_with($currentState, 'returned_to_') ? 'returned' : 'current';
             }
 
             $progress[] = [
-                'order' => $step['order'],
+                'order' => $step['order'] ?? $stepNumber,
                 'department_id' => $step['department_id'],
                 'department_name' => $step['department_name'],
+                'process_time_value' => $step['process_time_value'] ?? 3,
+                'process_time_unit' => $step['process_time_unit'] ?? 'days',
                 'status' => $status,
             ];
         }
 
-        // Mark as completed if transaction is done
+        // Mark all as completed if transaction is done
         if ($transaction->isCompleted()) {
             foreach ($progress as &$step) {
                 $step['status'] = 'completed';
             }
         }
 
-        return $progress;
+        return ['steps' => $progress];
     }
 }

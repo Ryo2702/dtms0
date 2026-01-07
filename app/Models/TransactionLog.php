@@ -24,6 +24,11 @@ class TransactionLog extends Model
         return $this->belongsTo(User::class, 'action_by');
     }
 
+    public function actionBy()
+    {
+        return $this->belongsTo(User::class, 'action_by');
+    }
+
     /**
      * Get human-readable action description
      */

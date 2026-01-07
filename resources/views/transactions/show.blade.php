@@ -129,38 +129,66 @@
                 {{-- Workflow Progress --}}
                 <x-card title="Workflow Progress">
                     @if(isset($workflowProgress['steps']) && count($workflowProgress['steps']) > 0)
-                        <div class="space-y-3">
+                        <div class="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-0 w-full overflow-x-auto py-4">
                             @foreach($workflowProgress['steps'] as $index => $step)
                                 @php
                                     $isCompleted = $step['status'] === 'completed';
                                     $isCurrent = $step['status'] === 'current';
-                                    $isPending = $step['status'] === 'pending';
+                                    $isReturned = $step['status'] === 'returned';
                                 @endphp
-                                <div class="flex items-start gap-3 p-3 rounded-lg {{ $isCurrent ? 'bg-primary/10 border border-primary' : ($isCompleted ? 'bg-green-50' : 'bg-gray-50') }}">
-                                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                                        {{ $isCompleted ? 'bg-success text-white' : ($isCurrent ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600') }}">
-                                        @if($isCompleted)
-                                            <i data-lucide="check" class="w-4 h-4"></i>
-                                        @else
-                                            {{ $index + 1 }}
-                                        @endif
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="font-medium {{ $isCurrent ? 'text-primary' : '' }}">
-                                            {{ $step['department_name'] ?? 'Unknown' }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            @if($isCompleted && isset($step['completed_at']))
-                                                Completed: {{ \Carbon\Carbon::parse($step['completed_at'])->format('M d, Y h:i A') }}
-                                            @elseif($isCurrent)
-                                                <span class="text-primary font-medium">Currently processing</span>
+                                
+                                {{-- Step Item --}}
+                                <div class="flex items-center {{ $index < count($workflowProgress['steps']) - 1 ? 'flex-1' : '' }}">
+                                    <div class="flex flex-col items-center min-w-[120px]">
+                                        {{-- Step Circle --}}
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 shadow-sm
+                                            {{ $isCompleted ? 'bg-blue-500 border-blue-500 text-white' : '' }}
+                                            {{ $isCurrent ? 'bg-blue-600 border-blue-600 text-white ring-4 ring-blue-200 animate-pulse' : '' }}
+                                            {{ $isReturned ? 'bg-yellow-500 border-yellow-500 text-white' : '' }}
+                                            {{ !$isCompleted && !$isCurrent && !$isReturned ? 'bg-gray-100 border-gray-300 text-gray-400' : '' }}">
+                                            @if($isCompleted)
+                                                <i data-lucide="check" class="w-5 h-5"></i>
+                                            @elseif($isReturned)
+                                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                                             @else
-                                                Pending
+                                                {{ $index + 1 }}
+                                            @endif
+                                        </div>
+                                        
+                                        {{-- Step Label --}}
+                                        <div class="mt-2 px-3 py-1.5 rounded-lg text-center max-w-[140px]
+                                            {{ $isCompleted ? 'bg-blue-50 border border-blue-200' : '' }}
+                                            {{ $isCurrent ? 'bg-blue-100 border-2 border-blue-400 shadow-md' : '' }}
+                                            {{ $isReturned ? 'bg-yellow-50 border border-yellow-300' : '' }}
+                                            {{ !$isCompleted && !$isCurrent && !$isReturned ? 'bg-gray-50 border border-gray-200' : '' }}">
+                                            <div class="font-medium text-xs leading-tight
+                                                {{ $isCompleted ? 'text-blue-700' : '' }}
+                                                {{ $isCurrent ? 'text-blue-800' : '' }}
+                                                {{ $isReturned ? 'text-yellow-700' : '' }}
+                                                {{ !$isCompleted && !$isCurrent && !$isReturned ? 'text-gray-400' : '' }}">
+                                                {{ $step['department_name'] ?? 'Unknown' }}
+                                            </div>
+                                            @if($isCurrent)
+                                                <span class="badge badge-primary badge-xs mt-1">Current</span>
+                                            @elseif($isReturned)
+                                                <span class="badge badge-warning badge-xs mt-1">Returned</span>
+                                            @elseif($isCompleted)
+                                                <span class="text-[10px] text-blue-500 mt-0.5">✓ Done</span>
                                             @endif
                                         </div>
                                     </div>
-                                    @if($isCurrent)
-                                        <span class="badge badge-primary badge-sm">Current</span>
+                                    
+                                    {{-- Arrow Connector --}}
+                                    @if($index < count($workflowProgress['steps']) - 1)
+                                        <div class="hidden lg:flex flex-1 items-center justify-center px-2">
+                                            <div class="h-0.5 flex-1 {{ $isCompleted ? 'bg-blue-400' : 'bg-gray-200' }}"></div>
+                                            <i data-lucide="chevron-right" class="w-5 h-5 mx-1 {{ $isCompleted ? 'text-blue-400' : 'text-gray-300' }}"></i>
+                                            <div class="h-0.5 flex-1 {{ $isCompleted ? 'bg-blue-400' : 'bg-gray-200' }}"></div>
+                                        </div>
+                                        {{-- Mobile Arrow --}}
+                                        <div class="lg:hidden flex justify-center w-full py-1">
+                                            <i data-lucide="chevron-down" class="w-5 h-5 {{ $isCompleted ? 'text-blue-400' : 'text-gray-300' }}"></i>
+                                        </div>
                                     @endif
                                 </div>
                             @endforeach

@@ -16,14 +16,17 @@ class Transaction extends Model
         'workflow_snapshot',
         'total_workflow_steps',
         'assign_staff_id',
-        'department_id',        
+        'department_id',
+        'origin_department_id',
         'current_workflow_step', 
         'transaction_status',
+        'receiving_status',
         'current_state',
         'revision_number',
         'created_by',
         'submitted_at',
         'completed_at',
+        'received_at',
         'workflow_history',    
     ];
 
@@ -32,6 +35,7 @@ class Transaction extends Model
         return [
             'submitted_at' => 'datetime',
             'completed_at' => 'datetime',
+            'received_at' => 'datetime',
             'workflow_snapshot' => 'array',
             'workflow_history' => 'array'
         ];
@@ -75,6 +79,25 @@ class Transaction extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function originDepartment() {
+        return $this->belongsTo(Department::class, 'origin_department_id');
+    }
+
+    // Receiving status helpers
+    public function isPendingReceiving(): bool
+    {
+        return $this->receiving_status === 'pending';
+    }
+
+    public function isReceived(): bool
+    {
+        return $this->receiving_status === 'received';
+    }
+
+    public function isNotReceived(): bool
+    {
+        return $this->receiving_status === 'not_received';
+    }
 
     // Scopes
     public function scopeInProgress($query)

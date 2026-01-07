@@ -87,9 +87,25 @@
 
                     <li class="mb-1">
                         <a href="{{ route('transactions.index') }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'transactions') && !Str::contains(request()->route()->getName(), 'reviews') ? 'bg-white/20' : '' }}">
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'transactions.index' || request()->route()->getName() === 'transactions.create' ? 'bg-white/20' : '' }}">
                             <i data-lucide="file-text" class="w-5 h-5"></i>
                             <span>Transactions</span>
+                        </a>
+                    </li>
+
+                    <li class="mb-1">
+                        <a href="{{ route('transactions.my') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'transactions.my' ? 'bg-white/20' : '' }}">
+                            <i data-lucide="folder-open" class="w-5 h-5"></i>
+                            <span>My Transactions</span>
+                            @php
+                                $myTransactionsCount = \App\Models\Transaction::where('created_by', $user->id)
+                                    ->where('transaction_status', 'in_progress')
+                                    ->count();
+                            @endphp
+                            @if($myTransactionsCount > 0)
+                                <span class="badge badge-info badge-sm">{{ $myTransactionsCount }}</span>
+                            @endif
                         </a>
                     </li>
 
@@ -105,6 +121,23 @@
                             @endphp
                             @if($pendingReviewsCount > 0)
                                 <span class="badge badge-warning badge-sm">{{ $pendingReviewsCount }}</span>
+                            @endif
+                        </a>
+                    </li>
+
+                    <li class="mb-1">
+                        <a href="{{ route('transactions.my', ['tab' => 'pending_receipt']) }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->get('tab') === 'pending_receipt' ? 'bg-white/20' : '' }}">
+                            <i data-lucide="package-check" class="w-5 h-5"></i>
+                            <span>Completed Transactions</span>
+                            @php
+                                $pendingReceiptCount = \App\Models\Transaction::where('origin_department_id', $user->department_id)
+                                    ->where('transaction_status', 'completed')
+                                    ->where('receiving_status', 'pending')
+                                    ->count();
+                            @endphp
+                            @if($pendingReceiptCount > 0)
+                                <span class="badge badge-success badge-sm">{{ $pendingReceiptCount }}</span>
                             @endif
                         </a>
                     </li>

@@ -107,8 +107,15 @@
                 <x-card title="Workflow Timeline">
                     @if(isset($workflowProgress['steps']) && count($workflowProgress['steps']) > 0)
                         <div class="relative">
-                            {{-- Vertical Line --}}
-                            <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                            {{-- Vertical Line - Blue for completed portion, gray for pending --}}
+                            @php
+                                $completedSteps = collect($workflowProgress['steps'])->filter(fn($s) => $s['status'] === 'completed')->count();
+                                $totalSteps = count($workflowProgress['steps']);
+                                $progressPercentage = $totalSteps > 0 ? ($completedSteps / $totalSteps) * 100 : 0;
+                            @endphp
+                            <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200">
+                                <div class="w-full bg-blue-500 transition-all duration-500" style="height: {{ $progressPercentage }}%"></div>
+                            </div>
 
                             <div class="space-y-6">
                                 @foreach($workflowProgress['steps'] as $index => $step)
@@ -121,7 +128,7 @@
                                     <div class="relative flex items-start gap-4 pl-2">
                                         {{-- Step Indicator --}}
                                         <div class="relative z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center
-                                            {{ $isCompleted ? 'bg-success text-white' : ($isCurrent ? 'bg-primary text-white animate-pulse' : 'bg-gray-200 text-gray-500') }}">
+                                            {{ $isCompleted ? 'bg-blue-500 text-white' : ($isCurrent ? 'bg-blue-600 text-white animate-pulse ring-4 ring-blue-200' : 'bg-gray-300 text-gray-500') }}">
                                             @if($isCompleted)
                                                 <i data-lucide="check" class="w-5 h-5"></i>
                                             @elseif($isCurrent)
@@ -133,21 +140,21 @@
 
                                         {{-- Step Content --}}
                                         <div class="flex-1 pb-6">
-                                            <div class="p-4 rounded-lg border {{ $isCurrent ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white' }}">
+                                            <div class="p-4 rounded-lg border {{ $isCurrent ? 'border-blue-500 bg-blue-50 shadow-md' : ($isCompleted ? 'border-blue-300 bg-blue-50/50' : 'border-gray-200 bg-gray-50') }}">
                                                 <div class="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
                                                     <div>
-                                                        <h4 class="font-semibold {{ $isCurrent ? 'text-primary' : '' }}">
+                                                        <h4 class="font-semibold {{ $isCurrent ? 'text-blue-700' : ($isCompleted ? 'text-blue-600' : 'text-gray-500') }}">
                                                             {{ $step['department_name'] ?? 'Unknown Department' }}
                                                         </h4>
-                                                        <p class="text-sm text-gray-500">Step {{ $index + 1 }} of {{ count($workflowProgress['steps']) }}</p>
+                                                        <p class="text-sm {{ $isCurrent ? 'text-blue-500' : 'text-gray-500' }}">Step {{ $index + 1 }} of {{ count($workflowProgress['steps']) }}</p>
                                                     </div>
                                                     <div>
                                                         @if($isCompleted)
-                                                            <span class="badge badge-success">Completed</span>
+                                                            <span class="badge bg-blue-500 text-white border-blue-500">Completed</span>
                                                         @elseif($isCurrent)
-                                                            <span class="badge badge-primary">In Progress</span>
+                                                            <span class="badge bg-blue-600 text-white border-blue-600 animate-pulse">In Progress</span>
                                                         @else
-                                                            <span class="badge badge-ghost">Pending</span>
+                                                            <span class="badge bg-gray-300 text-gray-600 border-gray-300">Pending</span>
                                                         @endif
                                                     </div>
                                                 </div>

@@ -139,6 +139,12 @@ class TransactionReviewerController extends Controller
         // Execute the workflow action to move to next department
         try {
             $transaction = $reviewer->transaction;
+            $workflow = $transaction->workflow;
+            $steps = $workflow->getWorkflowSteps();
+            $currentStep = $transaction->current_workflow_step;
+            $isLastStep = $currentStep >= count($steps);
+
+            // Execute the workflow state transition
             $this->workflowEngine->executeAction(
                 $transaction,
                 'approve',
@@ -146,61 +152,79 @@ class TransactionReviewerController extends Controller
                 $validated['remarks'] ?? null
             );
 
-            // Update the current workflow step
-            $transaction->increment('current_workflow_step');
-
-            // Assign the next reviewer based on workflow
-            $this->assignNextReviewer($transaction);
+            // Check if this is the final step (workflow completed)
+            if ($isLastStep) {
+                // Workflow is completed - set receiving status to pending for origin department
+                $transaction->update([
+                    'receiving_status' => 'pending',
+                    'department_id' => $transaction->origin_department_id, // Return to origin department
+                ]);
+            } else {
+                // Move to the next workflow step
+                $transaction->increment('current_workflow_step');
+                
+                // Refresh the transaction to get the updated current_workflow_step
+                $transaction->refresh();
+                
+                // Assign the next reviewer based on workflow configuration
+                $this->assignNextReviewer($transaction, $reviewer->iteration_number);
+            }
 
         } catch (\Exception $e) {
             return redirect()->route('transactions.reviews.index')
                 ->with('error', 'Failed to progress workflow: ' . $e->getMessage());
         }
 
+        $successMessage = $isLastStep 
+            ? 'Transaction approved and completed. Awaiting confirmation from origin department.'
+            : 'Transaction approved and forwarded to the next department.';
+
         return redirect()->route('transactions.reviews.index')
-            ->with('success', 'Transaction approved and forwarded to the next department.');
+            ->with('success', $successMessage);
     }
 
     /**
      * Assign the next reviewer based on workflow configuration
+     * 
+     * @param Transaction $transaction The transaction to assign reviewer for
+     * @param int $iterationNumber The current iteration number (for resubmissions)
      */
-    protected function assignNextReviewer(Transaction $transaction): void
+    protected function assignNextReviewer(Transaction $transaction, int $iterationNumber = 1): void
     {
         $workflow = $transaction->workflow;
         $steps = $workflow->getWorkflowSteps();
-        $currentStep = $transaction->current_workflow_step;
+        $currentStep = $transaction->current_workflow_step; // 1-indexed after increment
 
-        // Check if there's a next step
-        if ($currentStep > count($steps)) {
-            return; // No more steps, transaction completed
-        }
+        // The current step after increment points to the next department (1-indexed)
+        // So we need to use (currentStep - 1) as 0-indexed array access
+        $nextStepIndex = $currentStep - 1;
 
-        // Get the next step's department
-        $nextStepIndex = $currentStep - 1; // 0-indexed
+        // Check if the next step exists
         if (!isset($steps[$nextStepIndex])) {
-            return;
+            return; // No more steps, workflow should be completed
         }
 
         $nextStep = $steps[$nextStepIndex];
         $nextDepartmentId = $nextStep['department_id'];
 
+        // Calculate due date based on step's process time configuration
+        $processTimeValue = $nextStep['process_time_value'] ?? 3;
+        $processTimeUnit = $nextStep['process_time_unit'] ?? 'days';
+        $dueDate = $this->calculateDueDate($processTimeValue, $processTimeUnit);
+
         // Find the department head (or designated reviewer) for the next department
-        $nextReviewer = \App\Models\User::where('department_id', $nextDepartmentId)
+        $nextReviewerUser = \App\Models\User::where('department_id', $nextDepartmentId)
             ->where('type', 'Head')
             ->first();
 
-        if ($nextReviewer) {
-            // Get the current reviewer's iteration number to maintain continuity
-            $currentReviewerRecord = $transaction->reviewers()->latest()->first();
-            $iterationNumber = $currentReviewerRecord ? $currentReviewerRecord->iteration_number : 1;
-
+        if ($nextReviewerUser) {
             // Create a new reviewer entry for the next department
             TransactionReviewer::create([
                 'transaction_id' => $transaction->id,
-                'reviewer_id' => $nextReviewer->id,
+                'reviewer_id' => $nextReviewerUser->id,
                 'department_id' => $nextDepartmentId,
                 'status' => 'pending',
-                'due_date' => now()->addDays(3), // Default 3 days to review
+                'due_date' => $dueDate,
                 'iteration_number' => $iterationNumber,
             ]);
 
@@ -209,6 +233,18 @@ class TransactionReviewerController extends Controller
                 'department_id' => $nextDepartmentId,
             ]);
         }
+    }
+
+    /**
+     * Calculate due date based on process time configuration
+     */
+    protected function calculateDueDate(int $value, string $unit): \Carbon\Carbon
+    {
+        return match ($unit) {
+            'hours' => now()->addHours($value),
+            'weeks' => now()->addWeeks($value),
+            default => now()->addDays($value),
+        };
     }
 
     /**
@@ -232,7 +268,7 @@ class TransactionReviewerController extends Controller
             'resubmission_deadline' => 'nullable|date|after:today',
         ]);
 
-        // Update the reviewer record
+        // Update the reviewer record with rejection details
         $reviewer->update([
             'status' => 'rejected',
             'reviewed_at' => now(),
@@ -240,14 +276,17 @@ class TransactionReviewerController extends Controller
             'resubmission_deadline' => $validated['resubmission_deadline'] ?? null,
         ]);
 
-        // Execute the workflow rejection action
         try {
             $transaction = $reviewer->transaction;
+            $workflow = $transaction->workflow;
+            $steps = $workflow->getWorkflowSteps();
+            $currentStep = $transaction->current_workflow_step; // 1-indexed
             
-            // Get return department (previous step)
+            // Get the previous step (return destination)
             $returnOptions = $this->workflowEngine->getReturnOptions($transaction);
             $returnToDepartmentId = !empty($returnOptions) ? $returnOptions[0]['department_id'] : null;
 
+            // Execute the workflow state transition (reject)
             $this->workflowEngine->executeAction(
                 $transaction,
                 'reject',
@@ -256,17 +295,17 @@ class TransactionReviewerController extends Controller
                 $returnToDepartmentId
             );
 
-            // Decrement the workflow step (going back)
-            if ($transaction->current_workflow_step > 1) {
+            // Only decrement if we're not at the first step
+            if ($currentStep > 1) {
                 $transaction->decrement('current_workflow_step');
+                
+                // Assign the transaction back to the previous department for resubmission
+                $this->assignPreviousReviewer($transaction, $reviewer, $validated['resubmission_deadline'] ?? null);
             }
 
-            // Assign the transaction back to the previous reviewer for resubmission
-            $this->assignPreviousReviewer($transaction, $reviewer);
-
         } catch (\Exception $e) {
-            // If workflow action fails, still proceed with the rejection
-            // The reviewer status is already updated
+            // Log the error but continue - the reviewer status is already updated
+            \Log::error('Workflow rejection failed: ' . $e->getMessage());
         }
 
         return redirect()->route('transactions.reviews.index')
@@ -275,35 +314,52 @@ class TransactionReviewerController extends Controller
 
     /**
      * Assign the transaction back to the previous department for resubmission
+     * 
+     * @param Transaction $transaction The transaction being rejected
+     * @param TransactionReviewer $currentReviewer The reviewer who rejected
+     * @param string|null $resubmissionDeadline Optional deadline for resubmission
      */
-    protected function assignPreviousReviewer(Transaction $transaction, TransactionReviewer $currentReviewer): void
-    {
+    protected function assignPreviousReviewer(
+        Transaction $transaction, 
+        TransactionReviewer $currentReviewer,
+        ?string $resubmissionDeadline = null
+    ): void {
         $workflow = $transaction->workflow;
         $steps = $workflow->getWorkflowSteps();
-        $currentStep = $transaction->current_workflow_step;
+        $currentStep = $transaction->current_workflow_step; // 1-indexed, after decrement
 
-        // Get the previous step's department (which is now the current step after decrement)
-        $prevStepIndex = $currentStep - 1; // 0-indexed
+        // After decrement, current_workflow_step points to the previous department
+        // Use (currentStep - 1) for 0-indexed array access
+        $prevStepIndex = $currentStep - 1;
+        
         if (!isset($steps[$prevStepIndex])) {
-            return;
+            return; // Cannot go back further (at first step)
         }
 
         $prevStep = $steps[$prevStepIndex];
         $prevDepartmentId = $prevStep['department_id'];
 
+        // Calculate due date for resubmission
+        $dueDate = $resubmissionDeadline 
+            ? \Carbon\Carbon::parse($resubmissionDeadline)
+            : $this->calculateDueDate(
+                $prevStep['process_time_value'] ?? 3,
+                $prevStep['process_time_unit'] ?? 'days'
+            );
+
         // Find the department head for the previous department
-        $prevReviewer = \App\Models\User::where('department_id', $prevDepartmentId)
+        $prevReviewerUser = \App\Models\User::where('department_id', $prevDepartmentId)
             ->where('type', 'Head')
             ->first();
 
-        if ($prevReviewer) {
+        if ($prevReviewerUser) {
             // Create a new reviewer entry for resubmission with incremented iteration
             TransactionReviewer::create([
                 'transaction_id' => $transaction->id,
-                'reviewer_id' => $prevReviewer->id,
+                'reviewer_id' => $prevReviewerUser->id,
                 'department_id' => $prevDepartmentId,
                 'status' => 'pending',
-                'due_date' => $currentReviewer->resubmission_deadline ?? now()->addDays(3),
+                'due_date' => $dueDate,
                 'iteration_number' => ($currentReviewer->iteration_number ?? 1) + 1,
                 'previous_reviewer_id' => $currentReviewer->reviewer_id,
             ]);

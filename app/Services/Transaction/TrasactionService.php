@@ -108,6 +108,7 @@ class TrasactionService
                 'document_tags_id' => $data['document_tags_id'] ?? $workflow->documentTags()->first()?->id,
                 'assign_staff_id' => $data['assign_staff_id'],
                 'department_id' => $data['department_id'] ?? $creator->department_id,
+                'origin_department_id' => $data['department_id'] ?? $creator->department_id,
                 'level_of_urgency' => $data['level_of_urgency'] ?? 'normal',
                 'created_by' => $creator->id,
                 'current_workflow_step' => 1,

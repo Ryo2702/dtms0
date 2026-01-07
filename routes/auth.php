@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::prefix('transactions')->name('transactions.')->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index');
+        Route::get('/my', [TransactionController::class, 'my'])->name('my');
         Route::get('/create', [TransactionController::class, 'create'])->name('create');
         Route::post('/', [TransactionController::class, 'store'])->name('store');
 
@@ -59,6 +60,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{transaction}/tracker', [TransactionController::class, 'tracker'])->name('tracker');
         Route::get('/{transaction}/history', [TransactionController::class, 'history'])->name('history');
         Route::get('/{transaction}/workflow-config', [TransactionController::class, 'getDefaultWorkflowConfig'])->name('workflow-config');
+
+        // Receiving confirmation for completed transactions
+        Route::post('/{transaction}/confirm-received', [TransactionController::class, 'confirmReceived'])->name('confirm-received');
+        Route::post('/{transaction}/mark-not-received', [TransactionController::class, 'markNotReceived'])->name('mark-not-received');
 
         // Review history for a specific transaction
         Route::get('/{transaction}/reviews', [TransactionReviewerController::class, 'history'])->name('review-history');

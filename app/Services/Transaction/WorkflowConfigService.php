@@ -106,7 +106,7 @@ class WorkflowConfigService
      */
     protected function sanitizeDepartmentName(string $name): string
     {
-        return str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9\s]/', '', $name));
+        return strtolower(str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9\s]/', '', $name)));
     }
 
     /**
