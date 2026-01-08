@@ -41,9 +41,40 @@
                                 <p class="text-sm text-gray-600 mb-3">{{ Str::limit($workflow->description, 80) }}</p>
                             @endif
 
-                            <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                                <i data-lucide="layers" class="w-4 h-4"></i>
-                                <span>{{ count($workflow->getWorkflowSteps()) }} steps</span>
+                            @php
+                                $steps = $workflow->getWorkflowSteps();
+                                $stepCount = count($steps);
+                                $totalHours = collect($steps)->sum(function($step) {
+                                    $value = $step['process_time_value'] ?? 0;
+                                    $unit = $step['process_time_unit'] ?? 'days';
+                                    return match($unit) {
+                                        'hours' => $value,
+                                        'days' => $value * 24,
+                                        'weeks' => $value * 24 * 7,
+                                        default => $value * 24
+                                    };
+                                });
+                                
+                                $weeks = floor($totalHours / (24 * 7));
+                                $days = floor(($totalHours % (24 * 7)) / 24);
+                                $hours = $totalHours % 24;
+                                
+                                $estimatedTime = collect([
+                                    $weeks > 0 ? "$weeks week" . ($weeks != 1 ? 's' : '') : null,
+                                    $days > 0 ? "$days day" . ($days != 1 ? 's' : '') : null,
+                                    $hours > 0 ? "$hours hour" . ($hours != 1 ? 's' : '') : null,
+                                ])->filter()->join(', ') ?: '0 hours';
+                            @endphp
+
+                            <div class="space-y-2 mb-3">
+                                <div class="flex items-center gap-2 text-sm text-gray-500">
+                                    <i data-lucide="layers" class="w-4 h-4"></i>
+                                    <span>{{ $stepCount }} step{{ $stepCount != 1 ? 's' : '' }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-gray-500">
+                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                    <span>Est. {{ $estimatedTime }}</span>
+                                </div>
                             </div>
 
                             @if($workflow->documentTags->count() > 0)

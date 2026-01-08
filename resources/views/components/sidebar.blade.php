@@ -89,7 +89,7 @@
                         <a href="{{ route('transactions.index') }}"
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'transactions.index' || request()->route()->getName() === 'transactions.create' ? 'bg-white/20' : '' }}">
                             <i data-lucide="file-text" class="w-5 h-5"></i>
-                            <span>Transactions</span>
+                            <span>Create Transactions</span>
                         </a>
                     </li>
 
@@ -97,7 +97,7 @@
                         <a href="{{ route('transactions.my') }}"
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->route()->getName() === 'transactions.my' ? 'bg-white/20' : '' }}">
                             <i data-lucide="folder-open" class="w-5 h-5"></i>
-                            <span>My Transactions</span>
+                            <span>Transactions</span>
                             @php
                                 $myTransactionsCount = \App\Models\Transaction::where('created_by', $user->id)
                                     ->where('transaction_status', 'in_progress')
@@ -113,7 +113,7 @@
                         <a href="{{ route('transactions.reviews.index') }}"
                             class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::contains(request()->route()->getName(), 'reviews') ? 'bg-white/20' : '' }}">
                             <i data-lucide="clipboard-check" class="w-5 h-5"></i>
-                            <span>My Reviews</span>
+                            <span>Reviews</span>
                             @php
                                 $pendingReviewsCount = \App\Models\TransactionReviewer::where('reviewer_id', $user->id)
                                     ->where('status', 'pending')

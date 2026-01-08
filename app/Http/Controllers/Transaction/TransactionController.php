@@ -126,12 +126,28 @@ class TransactionController extends Controller
         }
 
         $assignStaff = AssignStaff::active()->get();
+        
+        // Get departments with head information for workflow editing
+        $departments = Department::where('status', true)
+            ->with('head')
+            ->orderBy('name')
+            ->get()
+            ->map(function($dept) {
+                return [
+                    'id' => $dept->id,
+                    'name' => $dept->name,
+                    'code' => $dept->code,
+                    'head_name' => $dept->head ? $dept->head->name : null
+                ];
+            });
+        
         $workflowConfig = $workflow->workflow_config;
         $workflowSteps = $workflow->getWorkflowSteps();
 
         return view('transactions.create', compact(
             'workflow',
             'assignStaff',
+            'departments',
             'workflowConfig',
             'workflowSteps'
         ));
@@ -144,17 +160,35 @@ class TransactionController extends Controller
     {
         try {
             $validated = $request->validated();
+            $user = $request->user();
             
-            // If workflow_snapshot is provided with editable steps, use it
-            // Otherwise, get the default from the workflow
-            if (!isset($validated['workflow_snapshot'])) {
+            // Parse workflow_snapshot from JSON string if provided
+            if (isset($validated['workflow_snapshot']) && is_string($validated['workflow_snapshot'])) {
+                $validated['workflow_snapshot'] = json_decode($validated['workflow_snapshot'], true);
+            }
+            
+            // If workflow_snapshot is empty or not provided, use default from workflow
+            if (empty($validated['workflow_snapshot'])) {
                 $workflow = Workflow::findOrFail($validated['workflow_id']);
                 $validated['workflow_snapshot'] = $workflow->workflow_config;
+            } else {
+                // Check if user wants to update workflow default (Head users only)
+                if (isset($validated['update_workflow_default']) && $validated['update_workflow_default']) {
+                    $workflow = Workflow::findOrFail($validated['workflow_id']);
+                    
+                    // Verify user can update workflow
+                    if ($user->can('update', $workflow)) {
+                        // Update the workflow's default configuration
+                        $workflow->update([
+                            'workflow_config' => $validated['workflow_snapshot']
+                        ]);
+                    }
+                }
             }
 
             $transaction = $this->transactionService->createTransaction(
                 $validated,
-                $request->user()
+                $user
             );
 
             return redirect()

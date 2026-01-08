@@ -49,6 +49,8 @@ import {
     Trash2,
     Settings,
     GitBranch,
+    PackageCheck,
+    ClipboardCheck,
 } from "lucide";
 
 createIcons({
@@ -151,6 +153,8 @@ window.lucide = {
             Trash2,
             Settings,
             GitBranch,
+            PackageCheck,
+            ClipboardCheck
         },
     })
 };
