@@ -74,17 +74,17 @@ class TransactionController extends Controller
         // Filter by status tab
         $transactions = match($tab) {
             'in_progress' => $query->clone()->where('transaction_status', 'in_progress'),
-            'completed' => $query->clone()->where('transaction_status', 'completed')->where('receiving_status', 'received'),
+            'completed' => $query->clone()->where('transaction_status', 'completed'),
             'pending_receipt' => $query->clone()->where('transaction_status', 'completed')->where('receiving_status', 'pending'),
             'cancelled' => $query->clone()->where('transaction_status', 'cancelled'),
-            default => $query->clone(),
+            default => $query->clone()->where('transaction_status', '!=', 'completed'),
         };
 
         $transactions = $transactions->orderBy('created_at', 'desc')->paginate(15);
 
         // Stats for tabs
         $stats = [
-            'all' => Transaction::where('created_by', $user->id)->count(),
+            'all' => Transaction::where('created_by', $user->id)->where('transaction_status', '!=', 'completed')->count(),
             'in_progress' => Transaction::where('created_by', $user->id)->where('transaction_status', 'in_progress')->count(),
             'pending_receipt' => Transaction::where('created_by', $user->id)
                 ->where('transaction_status', 'completed')
@@ -92,7 +92,6 @@ class TransactionController extends Controller
                 ->count(),
             'completed' => Transaction::where('created_by', $user->id)
                 ->where('transaction_status', 'completed')
-                ->where('receiving_status', 'received')
                 ->count(),
             'cancelled' => Transaction::where('created_by', $user->id)->where('transaction_status', 'cancelled')->count(),
         ];
@@ -162,28 +161,35 @@ class TransactionController extends Controller
             $validated = $request->validated();
             $user = $request->user();
             
-            // Parse workflow_snapshot from JSON string if provided
-            if (isset($validated['workflow_snapshot']) && is_string($validated['workflow_snapshot'])) {
-                $validated['workflow_snapshot'] = json_decode($validated['workflow_snapshot'], true);
-            }
+            $workflow = Workflow::findOrFail($validated['workflow_id']);
             
-            // If workflow_snapshot is empty or not provided, use default from workflow
-            if (empty($validated['workflow_snapshot'])) {
-                $workflow = Workflow::findOrFail($validated['workflow_id']);
-                $validated['workflow_snapshot'] = $workflow->workflow_config;
-            } else {
-                // Check if user wants to update workflow default (Head users only)
-                if (isset($validated['update_workflow_default']) && $validated['update_workflow_default']) {
-                    $workflow = Workflow::findOrFail($validated['workflow_id']);
+            // Parse workflow_snapshot from JSON string if provided
+            if (isset($validated['workflow_snapshot']) && is_string($validated['workflow_snapshot']) && !empty($validated['workflow_snapshot'])) {
+                $validated['workflow_snapshot'] = json_decode($validated['workflow_snapshot'], true);
+                
+                // Check if it's marked as custom and has steps
+                if (isset($validated['workflow_snapshot']['is_custom']) && 
+                    $validated['workflow_snapshot']['is_custom'] && 
+                    !empty($validated['workflow_snapshot']['steps'])) {
                     
-                    // Verify user can update workflow
-                    if ($user->can('update', $workflow)) {
-                        // Update the workflow's default configuration
-                        $workflow->update([
-                            'workflow_config' => $validated['workflow_snapshot']
-                        ]);
+                    // This is a CUSTOM workflow route
+                    // Check if user wants to update workflow default (Head users only)
+                    if (isset($validated['update_workflow_default']) && $validated['update_workflow_default']) {
+                        // Verify user can update workflow
+                        if ($user->can('update', $workflow)) {
+                            // Update the workflow's default configuration
+                            $workflow->update([
+                                'workflow_config' => $validated['workflow_snapshot']
+                            ]);
+                        }
                     }
+                } else {
+                    // Invalid custom workflow, fall back to default
+                    $validated['workflow_snapshot'] = $workflow->workflow_config;
                 }
+            } else {
+                // No workflow_snapshot or empty string - use default from workflow template
+                $validated['workflow_snapshot'] = $workflow->workflow_config;
             }
 
             $transaction = $this->transactionService->createTransaction(
@@ -399,6 +405,46 @@ class TransactionController extends Controller
                 'document_tags' => $workflow->documentTags,
             ],
         ]);
+    }
+
+    /**
+     * Cancel a transaction
+     */
+    public function cancel(Request $request, Transaction $transaction)
+    {
+        $user = $request->user();
+
+        // Check if user is the creator of the transaction
+        if ($user->id !== $transaction->created_by) {
+            abort(403, 'You are not authorized to cancel this transaction.');
+        }
+
+        // Check if transaction is in_progress
+        if ($transaction->transaction_status !== 'in_progress') {
+            return redirect()->back()
+                ->with('error', 'Only in-progress transactions can be cancelled.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $transaction->update([
+            'transaction_status' => 'cancelled',
+        ]);
+
+        // Log the cancellation
+        \App\Models\TransactionLog::create([
+            'transaction_id' => $transaction->id,
+            'from_state' => 'in_progress',
+            'to_state' => 'cancelled',
+            'action' => 'cancel',
+            'action_by' => $user->id,
+            'remarks' => $validated['reason'],
+        ]);
+
+        return redirect()->route('transactions.my')
+            ->with('success', 'Transaction has been cancelled successfully.');
     }
 
     /**

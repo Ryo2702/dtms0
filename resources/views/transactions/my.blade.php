@@ -155,38 +155,83 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex gap-1">
+                                {{-- View Details - Always available --}}
                                 <a href="{{ route('transactions.show', $transaction) }}" 
                                    class="btn btn-sm btn-ghost" title="View Details">
                                     <i data-lucide="eye" class="w-4 h-4"></i>
                                 </a>
-                                <a href="{{ route('transactions.tracker', $transaction) }}" 
-                                   class="btn btn-sm btn-ghost" title="Track Progress">
-                                    <i data-lucide="map-pin" class="w-4 h-4"></i>
-                                </a>
-                                <a href="{{ route('transactions.history', $transaction) }}" 
-                                   class="btn btn-sm btn-ghost" title="View History">
-                                    <i data-lucide="history" class="w-4 h-4"></i>
-                                </a>
-                                @if(!$transaction->isCompleted() && !$transaction->isCancelled())
-                                    <a href="{{ route('transactions.edit', $transaction) }}" 
-                                       class="btn btn-sm btn-ghost" title="Edit">
-                                        <i data-lucide="edit" class="w-4 h-4"></i>
+
+                                @if($transaction->transaction_status === 'in_progress')
+                                    {{-- For in_progress: Only Cancel button --}}
+                                    <button onclick="window['cancel-modal-{{ $transaction->id }}'].showModal()" 
+                                            class="btn btn-sm btn-error" title="Cancel Transaction">
+                                        <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                    </button>
+                                @else
+                                    {{-- For other statuses: Show all other actions --}}
+                                    <a href="{{ route('transactions.tracker', $transaction) }}" 
+                                       class="btn btn-sm btn-ghost" title="Track Progress">
+                                        <i data-lucide="map-pin" class="w-4 h-4"></i>
                                     </a>
-                                @endif
-                                {{-- Receiving confirmation buttons for completed transactions --}}
-                                @if($transaction->transaction_status === 'completed' && 
-                                    $transaction->receiving_status === 'pending' && 
-                                    auth()->user()->department_id === $transaction->origin_department_id)
-                                    <button onclick="document.getElementById('confirm-modal-{{ $transaction->id }}').showModal()" 
-                                            class="btn btn-sm btn-success" title="Confirm Received">
-                                        <i data-lucide="check" class="w-4 h-4"></i>
-                                    </button>
-                                    <button onclick="document.getElementById('not-received-modal-{{ $transaction->id }}').showModal()" 
-                                            class="btn btn-sm btn-error" title="Mark Not Received">
-                                        <i data-lucide="x" class="w-4 h-4"></i>
-                                    </button>
+                                    <a href="{{ route('transactions.history', $transaction) }}" 
+                                       class="btn btn-sm btn-ghost" title="View History">
+                                        <i data-lucide="history" class="w-4 h-4"></i>
+                                    </a>
+                                    @if(!$transaction->isCompleted() && !$transaction->isCancelled())
+                                        <a href="{{ route('transactions.edit', $transaction) }}" 
+                                           class="btn btn-sm btn-ghost" title="Edit">
+                                            <i data-lucide="edit" class="w-4 h-4"></i>
+                                        </a>
+                                    @endif
+                                    {{-- Receiving confirmation buttons for completed transactions --}}
+                                    @if($transaction->transaction_status === 'completed' && 
+                                        $transaction->receiving_status === 'pending' && 
+                                        auth()->user()->department_id === $transaction->origin_department_id)
+                                        <button onclick="document.getElementById('confirm-modal-{{ $transaction->id }}').showModal()" 
+                                                class="btn btn-sm btn-success" title="Confirm Received">
+                                            <i data-lucide="check" class="w-4 h-4"></i>
+                                        </button>
+                                        <button onclick="document.getElementById('not-received-modal-{{ $transaction->id }}').showModal()" 
+                                                class="btn btn-sm btn-error" title="Mark Not Received">
+                                            <i data-lucide="x" class="w-4 h-4"></i>
+                                        </button>
+                                    @endif
                                 @endif
                             </div>
+
+                            {{-- Cancel Transaction Modal --}}
+                            @if($transaction->transaction_status === 'in_progress')
+                                <x-modal id="cancel-modal-{{ $transaction->id }}" size="md">
+                                    <h3 class="font-bold text-lg text-error mb-4">Cancel Transaction</h3>
+                                    <p class="mb-2">Are you sure you want to cancel this transaction?</p>
+                                    <p class="text-sm text-gray-500 mb-4">Transaction: <strong>{{ $transaction->transaction_code }}</strong></p>
+                                    
+                                    <form id="cancel-form-{{ $transaction->id }}" action="{{ route('transactions.cancel', $transaction) }}" method="POST">
+                                        @csrf
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Reason for Cancellation <span class="text-error">*</span>
+                                            </label>
+                                            <textarea 
+                                                name="reason" 
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                                rows="3" 
+                                                placeholder="Explain why you are cancelling this transaction..." 
+                                                required></textarea>
+                                        </div>
+                                        
+                                        <div class="flex justify-end gap-3 mt-6">
+                                            <button type="button" class="btn btn-ghost" onclick="window['cancel-modal-{{ $transaction->id }}'].close()">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" class="btn btn-error">
+                                                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                                                Confirm Cancellation
+                                            </button>
+                                        </div>
+                                    </form>
+                                </x-modal>
+                            @endif
 
                             {{-- Confirm Received Modal --}}
                             @if($transaction->transaction_status === 'completed' && $transaction->receiving_status === 'pending')

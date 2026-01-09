@@ -41,7 +41,7 @@
 
                             <div class="form-control">
                                 <label class="label">
-                                    <span class="label-text">Assign Staff (Optional)</span>
+                                    <span class="label-text">Assign Staff</span>
                                 </label>
                                 <select name="assign_staff_id" class="select select-bordered w-full">
                                     <option value="">-- Select Staff --</option>
@@ -153,6 +153,22 @@
                                 <dt class="text-sm text-gray-500">Status</dt>
                                 <dd><span class="badge badge-ghost badge-sm" id="workflowStatusBadge">Default Route</span></dd>
                             </div>
+                            @if($workflow->documentTags->count() > 0)
+                                <div>
+                                    <dt class="text-sm text-gray-500 mb-2">Document Tags</dt>
+                                    <dd class="flex flex-wrap gap-1">
+                                        @foreach($workflow->documentTags as $tag)
+                                            <span class="badge badge-sm" style="background-color: #10b981; color: white;">{{ $tag->name }}</span>
+                                        @endforeach
+                                    </dd>
+                                </div>
+                            @endif
+                            <div id="departmentHeadsContainer">
+                                <dt class="text-sm text-gray-500 mb-2">Department Heads</dt>
+                                <dd id="departmentHeadsList" class="text-sm space-y-1">
+                                    <span class="text-gray-400">Loading...</span>
+                                </dd>
+                            </div>
                             @if($workflow->difficulty)
                                 <div>
                                     <dt class="text-sm text-gray-500">Difficulty</dt>
@@ -172,10 +188,12 @@
                     <x-card>
                         <div class="space-y-3">
                             @can('update', $workflow)
-                                <label class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
-                                    <input type="checkbox" id="makeDefaultRoute" class="checkbox checkbox-sm">
-                                    <span class="text-sm">Make this the default route</span>
-                                </label>
+                                <div id="makeDefaultContainer" class="hidden">
+                                    <label class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
+                                        <input type="checkbox" id="makeDefaultRoute" class="checkbox checkbox-sm">
+                                        <span class="text-sm">Update workflow template with this custom route</span>
+                                    </label>
+                                </div>
                             @endcan
                             <button type="submit" class="btn btn-primary w-full">
                                 <i data-lucide="send" class="w-4 h-4 mr-2"></i>
@@ -201,7 +219,19 @@
         const canUpdateWorkflow = {{ auth()->user()->can('update', $workflow) ? 'true' : 'false' }};
         
         // Load saved workflow from localStorage or use default
-        let currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
+        let currentWorkflowConfig;
+        try {
+            const savedConfig = localStorage.getItem(storageKey);
+            if (savedConfig) {
+                currentWorkflowConfig = JSON.parse(savedConfig);
+                console.log('Loaded custom workflow from localStorage');
+            } else {
+                currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
+            }
+        } catch (e) {
+            console.error('Error loading saved workflow:', e);
+            currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
+        }
         
         // Edit mode state
         let isEditMode = false;
@@ -220,8 +250,16 @@
         const makeDefaultCheckbox = document.getElementById('makeDefaultRoute');
         const updateWorkflowDefaultInput = document.getElementById('updateWorkflowDefault');
 
-        // Initialize estimated time display
-        updateWorkflowInfo();
+        // Initialize: Update preview if custom workflow exists, otherwise use default
+        const hasCustomWorkflow = JSON.stringify(currentWorkflowConfig) !== JSON.stringify(defaultWorkflowConfig);
+        if (hasCustomWorkflow) {
+            // Custom workflow exists in localStorage - update preview to show it
+            updatePreview();
+            console.log('Using custom workflow from localStorage');
+        } else {
+            // Use default workflow - just update info
+            updateWorkflowInfo();
+        }
 
         // Toggle edit mode
         editBtn.addEventListener('click', () => {
@@ -238,23 +276,32 @@
                 return;
             }
             
-            // Confirmation dialog
-            const hasChanges = JSON.stringify(currentWorkflowConfig) !== JSON.stringify(defaultWorkflowConfig);
-            const message = hasChanges 
-                ? 'Are you sure you want to save these workflow changes? The modified route will be used for this transaction.'
-                : 'No changes detected. Exit edit mode?';
-            
-            if (confirm(message)) {
-                isEditMode = false;
-                exitEditMode();
+            // Save to localStorage - this becomes the active workflow for this transaction
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(currentWorkflowConfig));
+                console.log('Workflow saved to localStorage');
+            } catch (e) {
+                console.error('Error saving workflow to localStorage:', e);
             }
+            
+            isEditMode = false;
+            exitEditMode();
         });
 
         // Cancel edit mode
         cancelBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-                // Revert to default
-                currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
+                // Reload from localStorage or revert to default
+                try {
+                    const savedConfig = localStorage.getItem(storageKey);
+                    if (savedConfig) {
+                        currentWorkflowConfig = JSON.parse(savedConfig);
+                    } else {
+                        currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
+                    }
+                } catch (e) {
+                    currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
+                }
                 isEditMode = false;
                 exitEditMode();
             }
@@ -264,6 +311,13 @@
         resetBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to reset to the default workflow? All changes will be lost.')) {
                 currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
+                // Clear localStorage
+                try {
+                    localStorage.removeItem(storageKey);
+                    console.log('Custom workflow cleared from localStorage');
+                } catch (e) {
+                    console.error('Error clearing localStorage:', e);
+                }
                 renderEditableSteps();
                 updateStepCount();
             }
@@ -318,6 +372,7 @@
             
             if (!currentWorkflowConfig.steps || currentWorkflowConfig.steps.length === 0) {
                 stepsList.innerHTML = '<p class="text-gray-500 text-center py-4">No steps added yet. Click "Add Step" to begin.</p>';
+                updateWorkflowInfo();
                 return;
             }
 
@@ -330,6 +385,9 @@
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+            
+            // Update workflow info after rendering
+            updateWorkflowInfo();
         }
 
         // Create editable step element
@@ -540,6 +598,8 @@
             const sidebarCount = document.getElementById('sidebarStepCount');
             const statusBadge = document.getElementById('workflowStatusBadge');
             const estimatedTimeEl = document.getElementById('estimatedTime');
+            const makeDefaultContainer = document.getElementById('makeDefaultContainer');
+            const departmentHeadsList = document.getElementById('departmentHeadsList');
             
             if (sidebarCount) {
                 sidebarCount.textContent = count;
@@ -550,9 +610,10 @@
                 estimatedTimeEl.textContent = formatEstimatedTime(totalHours);
             }
             
+            const isCustomRoute = JSON.stringify(currentWorkflowConfig) !== JSON.stringify(defaultWorkflowConfig);
+            
             if (statusBadge) {
-                const hasChanges = JSON.stringify(currentWorkflowConfig) !== JSON.stringify(defaultWorkflowConfig);
-                if (hasChanges) {
+                if (isCustomRoute) {
                     statusBadge.textContent = 'Custom Route';
                     statusBadge.className = 'badge badge-warning badge-sm';
                 } else {
@@ -560,47 +621,94 @@
                     statusBadge.className = 'badge badge-ghost badge-sm';
                 }
             }
+            
+            // Show/hide "Make default" checkbox based on whether route is custom
+            if (makeDefaultContainer && canUpdateWorkflow) {
+                if (isCustomRoute) {
+                    makeDefaultContainer.classList.remove('hidden');
+                } else {
+                    makeDefaultContainer.classList.add('hidden');
+                }
+            }
+            
+            // Update department heads list
+            if (departmentHeadsList) {
+                const uniqueDepartments = new Map();
+                currentWorkflowConfig.steps.forEach(step => {
+                    if (step.department_id && step.department_name) {
+                        uniqueDepartments.set(step.department_id, {
+                            name: step.department_name,
+                            head: step.department_head || 'Not assigned'
+                        });
+                    }
+                });
+                
+                if (uniqueDepartments.size === 0) {
+                    departmentHeadsList.innerHTML = '<span class="text-gray-400">No departments yet</span>';
+                } else {
+                    departmentHeadsList.innerHTML = Array.from(uniqueDepartments.values())
+                        .map(dept => `
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="user" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium text-gray-700">${dept.name}</div>
+                                    <div class="text-xs text-gray-500">${dept.head}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    
+                    // Reinitialize Lucide icons
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                }
+            }
         }
 
         // Before form submission, set the workflow snapshot
         document.getElementById('createTransactionForm').addEventListener('submit', function(e) {
-            const hasChanges = JSON.stringify(currentWorkflowConfig) !== JSON.stringify(defaultWorkflowConfig);
+            // Always use currentWorkflowConfig (which is either custom from localStorage or default)
+            // Check if it's different from the workflow template
+            const isCustomRoute = JSON.stringify(currentWorkflowConfig) !== JSON.stringify(defaultWorkflowConfig);
             
-            if (hasChanges) {
-                // Check for invalid steps
-                const invalidSteps = currentWorkflowConfig.steps.filter(step => !step.department_id);
-                if (invalidSteps.length > 0) {
-                    e.preventDefault();
-                    alert('Please ensure all workflow steps have a department selected.');
-                    return false;
-                }
-                
-                // Prepare workflow snapshot with complete data
-                const workflowSnapshot = {
-                    workflow_id: workflowId,
-                    steps: currentWorkflowConfig.steps.map((step, index) => ({
-                        step_order: index + 1,
-                        department_id: step.department_id,
-                        department_name: step.department_name,
-                        department_head: step.department_head || '',
-                        process_time_value: step.process_time_value || 1,
-                        process_time_unit: step.process_time_unit || 'days'
-                    }))
-                };
-                
-                workflowSnapshotInput.value = JSON.stringify(workflowSnapshot);
-                
-                // Check if user wants to update workflow default
-                if (canUpdateWorkflow && makeDefaultCheckbox && makeDefaultCheckbox.checked) {
-                    updateWorkflowDefaultInput.value = '1';
-                }
-                
-                console.log('Submitting custom workflow:', workflowSnapshot);
-            } else {
-                // Use default workflow - empty snapshot means use workflow template
-                workflowSnapshotInput.value = '';
-                console.log('Submitting with default workflow');
+            // Validate all steps have departments
+            const invalidSteps = currentWorkflowConfig.steps.filter(step => !step.department_id);
+            if (invalidSteps.length > 0) {
+                e.preventDefault();
+                alert('Please ensure all workflow steps have a department selected.');
+                return false;
             }
+            
+            // Prepare workflow snapshot
+            const workflowSnapshot = {
+                workflow_id: workflowId,
+                is_custom: isCustomRoute,
+                steps: currentWorkflowConfig.steps.map((step, index) => ({
+                    step_order: index + 1,
+                    department_id: step.department_id,
+                    department_name: step.department_name,
+                    department_head: step.department_head || '',
+                    process_time_value: step.process_time_value || 1,
+                    process_time_unit: step.process_time_unit || 'days'
+                }))
+            };
+            
+            workflowSnapshotInput.value = JSON.stringify(workflowSnapshot);
+            
+            // Check if user wants to update workflow template default
+            if (canUpdateWorkflow && makeDefaultCheckbox && makeDefaultCheckbox.checked) {
+                updateWorkflowDefaultInput.value = '1';
+            }
+            
+            // Clear localStorage after submission
+            try {
+                localStorage.removeItem(storageKey);
+                console.log('Cleared localStorage after submission');
+            } catch (e) {
+                console.error('Error clearing localStorage:', e);
+            }
+            
+            console.log(isCustomRoute ? 'Submitting custom workflow' : 'Submitting default workflow', workflowSnapshot);
         });
     </script>
     @endpush

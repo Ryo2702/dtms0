@@ -25,7 +25,12 @@
                         <i data-lucide="history" class="w-4 h-4 mr-2"></i>
                         History
                     </a>
-                    @if(!$transaction->isCompleted() && !$transaction->isCancelled())
+                    @if($transaction->transaction_status === 'in_progress')
+                        <button onclick="window['cancel-modal'].showModal()" class="btn btn-error">
+                            <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                            Cancel Transaction
+                        </button>
+                    @elseif(!$transaction->isCompleted() && !$transaction->isCancelled())
                         <a href="{{ route('transactions.edit', $transaction) }}" class="btn btn-primary">
                             <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
                             Edit
@@ -282,24 +287,6 @@
                     </x-card>
                 @endif
 
-                {{-- Quick Links --}}
-                <x-card title="Quick Links">
-                    <div class="space-y-2">
-                        <a href="{{ route('transactions.tracker', $transaction) }}" class="btn btn-ghost btn-block justify-start">
-                            <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
-                            Track Progress
-                        </a>
-                        <a href="{{ route('transactions.history', $transaction) }}" class="btn btn-ghost btn-block justify-start">
-                            <i data-lucide="history" class="w-4 h-4 mr-2"></i>
-                            View History
-                        </a>
-                        <a href="{{ route('transactions.review-history', $transaction) }}" class="btn btn-ghost btn-block justify-start">
-                            <i data-lucide="users" class="w-4 h-4 mr-2"></i>
-                            Review History
-                        </a>
-                    </div>
-                </x-card>
-
                 {{-- Revision Info --}}
                 @if($transaction->revision_number > 0)
                     <x-card title="Revision Info">
@@ -311,5 +298,39 @@
                 @endif
             </div>
         </div>
+
+        {{-- Cancel Transaction Modal --}}
+        @if($transaction->transaction_status === 'in_progress')
+            <x-modal id="cancel-modal" size="md">
+                <h3 class="font-bold text-lg text-error mb-4">Cancel Transaction</h3>
+                <p class="mb-2">Are you sure you want to cancel this transaction?</p>
+                <p class="text-sm text-gray-500 mb-4">Transaction: <strong>{{ $transaction->transaction_code }}</strong></p>
+                
+                <form action="{{ route('transactions.cancel', $transaction) }}" method="POST">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Reason for Cancellation <span class="text-error">*</span>
+                        </label>
+                        <textarea 
+                            name="reason" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                            rows="3" 
+                            placeholder="Explain why you are cancelling this transaction..." 
+                            required></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" class="btn btn-ghost" onclick="window['cancel-modal'].close()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-error">
+                            <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                            Confirm Cancellation
+                        </button>
+                    </div>
+                </form>
+            </x-modal>
+        @endif
     </x-container>
 @endsection

@@ -69,11 +69,11 @@
                             <div class="space-y-2 mb-3">
                                 <div class="flex items-center gap-2 text-sm text-gray-500">
                                     <i data-lucide="layers" class="w-4 h-4"></i>
-                                    <span>{{ $stepCount }} step{{ $stepCount != 1 ? 's' : '' }}</span>
+                                    <span class="workflow-step-count" data-workflow-id="{{ $workflow->id }}">{{ $stepCount }} step{{ $stepCount != 1 ? 's' : '' }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-gray-500">
                                     <i data-lucide="clock" class="w-4 h-4"></i>
-                                    <span>Est. {{ $estimatedTime }}</span>
+                                    <span class="workflow-estimated-time" data-workflow-id="{{ $workflow->id }}">Est. {{ $estimatedTime }}</span>
                                 </div>
                             </div>
 
@@ -105,4 +105,82 @@
         </x-card>
 
     </x-container>
+
+    @push('scripts')
+    <script>
+        // Update workflow info if custom routes exist in localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const stepCountElements = document.querySelectorAll('.workflow-step-count');
+            const estimatedTimeElements = document.querySelectorAll('.workflow-estimated-time');
+            
+            // Check each workflow for custom configuration
+            stepCountElements.forEach(element => {
+                const workflowId = element.getAttribute('data-workflow-id');
+                const storageKey = `workflow_custom_${workflowId}`;
+                
+                try {
+                    const savedConfig = localStorage.getItem(storageKey);
+                    if (savedConfig) {
+                        const customWorkflow = JSON.parse(savedConfig);
+                        
+                        if (customWorkflow.steps && Array.isArray(customWorkflow.steps)) {
+                            // Update step count
+                            const stepCount = customWorkflow.steps.length;
+                            element.textContent = `${stepCount} step${stepCount !== 1 ? 's' : ''}`;
+                            
+                            // Calculate and update estimated time
+                            const totalHours = calculateWorkflowTime(customWorkflow.steps);
+                            const formattedTime = formatEstimatedTime(totalHours);
+                            
+                            const timeElement = document.querySelector(`.workflow-estimated-time[data-workflow-id="${workflowId}"]`);
+                            if (timeElement) {
+                                timeElement.innerHTML = `Est. ${formattedTime} <span class="badge badge-xs badge-warning ml-1">Custom</span>`;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading custom workflow:', e);
+                }
+            });
+        });
+        
+        // Calculate total hours from workflow steps
+        function calculateWorkflowTime(steps) {
+            let totalHours = 0;
+            steps.forEach(step => {
+                const value = parseInt(step.process_time_value) || 0;
+                const unit = step.process_time_unit || 'days';
+                
+                switch(unit) {
+                    case 'hours':
+                        totalHours += value;
+                        break;
+                    case 'days':
+                        totalHours += value * 24;
+                        break;
+                    case 'weeks':
+                        totalHours += value * 24 * 7;
+                        break;
+                }
+            });
+            return totalHours;
+        }
+        
+        // Format hours into readable time
+        function formatEstimatedTime(hours) {
+            if (hours === 0) return '0 hours';
+            
+            const weeks = Math.floor(hours / (24 * 7));
+            const days = Math.floor((hours % (24 * 7)) / 24);
+            const remainingHours = hours % 24;
+            
+            const parts = [];
+            if (weeks > 0) parts.push(`${weeks} week${weeks !== 1 ? 's' : ''}`);
+            if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+            if (remainingHours > 0) parts.push(`${remainingHours} hour${remainingHours !== 1 ? 's' : ''}`);
+            
+            return parts.join(', ') || '0 hours';
+        }
+    </script>
+    @endpush
 @endsection

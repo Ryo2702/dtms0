@@ -61,6 +61,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{transaction}/history', [TransactionController::class, 'history'])->name('history');
         Route::get('/{transaction}/workflow-config', [TransactionController::class, 'getDefaultWorkflowConfig'])->name('workflow-config');
 
+        // Transaction cancellation
+        Route::post('/{transaction}/cancel', [TransactionController::class, 'cancel'])->name('cancel');
+
         // Receiving confirmation for completed transactions
         Route::post('/{transaction}/confirm-received', [TransactionController::class, 'confirmReceived'])->name('confirm-received');
         Route::post('/{transaction}/mark-not-received', [TransactionController::class, 'markNotReceived'])->name('mark-not-received');
