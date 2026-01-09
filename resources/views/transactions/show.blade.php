@@ -26,7 +26,7 @@
                         History
                     </a>
                     @if($transaction->transaction_status === 'in_progress')
-                        <button onclick="window['cancel-modal'].showModal()" class="btn btn-error">
+                        <button onclick="window['cancel-modal'].showModal()" class="btn btn-error text-white">
                             <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
                             Cancel Transaction
                         </button>
@@ -106,6 +106,19 @@
                             <div>
                                 <dt class="text-sm text-gray-500">Assigned Staff</dt>
                                 <dd class="font-medium">{{ $transaction->assignStaff->full_name }}</dd>
+                            </div>
+                        @endif
+                        @if($transaction->workflow && $transaction->workflow->documentTags && $transaction->workflow->documentTags->count() > 0)
+                            <div class="md:col-span-2">
+                                <dt class="text-sm text-gray-500">Document Tags</dt>
+                                <dd class="flex flex-wrap gap-2 mt-1">
+                                    @foreach($transaction->workflow->documentTags as $tag)
+                                        <span class="badge badge-primary badge-sm">
+                                            <i data-lucide="tag" class="w-3 h-3 mr-1"></i>
+                                            {{ $tag->name }}
+                                        </span>
+                                    @endforeach
+                                </dd>
                             </div>
                         @endif
                         <div>
@@ -264,10 +277,20 @@
                     <x-card title="Current Reviewer">
                         <div class="space-y-3">
                             <div class="flex items-center gap-3">
-                                <div class="avatar placeholder">
-                                    <div class="bg-primary text-white rounded-full w-10">
-                                        <span>{{ substr($transaction->currentReviewer->reviewer->full_name ?? 'U', 0, 1) }}</span>
-                                    </div>
+                                <div class="avatar">
+                                    @if($transaction->currentReviewer->department->logo)
+                                        <div class="w-12 h-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                                            <img src="{{ asset('storage/' . $transaction->currentReviewer->department->logo) }}" 
+                                                 alt="{{ $transaction->currentReviewer->department->name ?? 'Department' }} Logo" 
+                                                 class="rounded-full object-cover" />
+                                        </div>
+                                    @else
+                                        <div class="placeholder">
+                                            <div class="bg-primary text-white rounded-full w-12 h-12 flex items-center justify-center">
+                                                <span class="text-xl">{{ substr($transaction->currentReviewer->department->name ?? 'D', 0, 1) }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                                 <div>
                                     <div class="font-medium">{{ $transaction->currentReviewer->reviewer->full_name ?? 'Unknown' }}</div>
@@ -275,12 +298,22 @@
                                 </div>
                             </div>
                             @if($transaction->currentReviewer->due_date)
-                                <div class="flex items-center gap-2 text-sm {{ $transaction->currentReviewer->isOverdue() ? 'text-error' : 'text-gray-500' }}">
-                                    <i data-lucide="clock" class="w-4 h-4"></i>
-                                    <span>Due: {{ $transaction->currentReviewer->due_date->format('M d, Y') }}</span>
-                                    @if($transaction->currentReviewer->isOverdue())
-                                        <span class="badge badge-error badge-sm">Overdue</span>
-                                    @endif
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2 text-sm {{ $transaction->currentReviewer->isOverdue() ? 'text-error' : 'text-gray-500' }}">
+                                        <i data-lucide="clock" class="w-4 h-4"></i>
+                                        <span>Due: {{ $transaction->currentReviewer->due_date->format('M d, Y h:i A') }}</span>
+                                        @if($transaction->currentReviewer->isOverdue())
+                                            <span class="badge badge-error badge-sm">Overdue</span>
+                                        @endif
+                                    </div>
+                                    <div class="bg-base-200 rounded-lg p-3">
+                                        <div class="text-xs text-gray-500 mb-1">Time Remaining</div>
+                                        <div id="countdown-timer" 
+                                             data-due-date="{{ $transaction->currentReviewer->due_date->toIso8601String() }}"
+                                             class="font-mono font-semibold {{ $transaction->currentReviewer->isOverdue() ? 'text-error' : 'text-primary' }}">
+                                            <span class="loading loading-spinner loading-xs"></span> Calculating...
+                                        </div>
+                                    </div>
                                 </div>
                             @endif
                         </div>
@@ -333,4 +366,66 @@
             </x-modal>
         @endif
     </x-container>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const countdownElement = document.getElementById('countdown-timer');
+            
+            if (!countdownElement) return;
+            
+            const dueDate = new Date(countdownElement.dataset.dueDate);
+            
+            function updateCountdown() {
+                const now = new Date();
+                const diff = dueDate - now;
+                
+                if (diff <= 0) {
+                    countdownElement.innerHTML = '<span class="text-error font-bold">⏰ OVERDUE</span>';
+                    countdownElement.classList.remove('text-primary');
+                    countdownElement.classList.add('text-error');
+                    return;
+                }
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                let timeString = '';
+                
+                if (days > 0) {
+                    timeString += `<span class="text-lg">${days}</span><span class="text-xs ml-0.5">d</span> `;
+                }
+                if (days > 0 || hours > 0) {
+                    timeString += `<span class="text-lg">${hours}</span><span class="text-xs ml-0.5">h</span> `;
+                }
+                if (days === 0) {
+                    timeString += `<span class="text-lg">${minutes}</span><span class="text-xs ml-0.5">m</span> `;
+                    timeString += `<span class="text-lg">${seconds}</span><span class="text-xs ml-0.5">s</span>`;
+                }
+                
+                countdownElement.innerHTML = timeString || '0s';
+                
+                // Change color based on urgency
+                if (days === 0 && hours < 6) {
+                    countdownElement.classList.remove('text-primary');
+                    countdownElement.classList.add('text-error');
+                } else if (days === 0 && hours < 24) {
+                    countdownElement.classList.remove('text-primary');
+                    countdownElement.classList.add('text-warning');
+                } else {
+                    countdownElement.classList.remove('text-error', 'text-warning');
+                    countdownElement.classList.add('text-primary');
+                }
+            }
+            
+            // Update immediately
+            updateCountdown();
+            
+            // Update every second
+            setInterval(updateCountdown, 1000);
+        });
+    </script>
+    @endpush
 @endsection

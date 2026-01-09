@@ -111,6 +111,13 @@
                             <span id="originDeptCount" class="badge badge-info badge-sm">0 selected</span>
                         </div>
                         
+                        <div class="mb-2">
+                            <label class="flex items-center gap-2 p-2 bg-blue-100 rounded border border-blue-300 hover:border-blue-500 transition-colors cursor-pointer">
+                                <input type="checkbox" id="selectAllOriginDepts" class="checkbox checkbox-sm checkbox-info">
+                                <span class="text-sm font-medium text-blue-900">Select All</span>
+                            </label>
+                        </div>
+                        
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
                             @foreach($departments as $department)
                                 <label class="flex items-center gap-2 p-2 bg-white rounded border border-gray-200 hover:border-blue-400 transition-colors cursor-pointer">
@@ -186,6 +193,13 @@
                                             Available Document Tags
                                         </h4>
                                         <span class="badge badge-ghost badge-sm">{{ $documentTags->count() }} tags</span>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <label class="flex items-center gap-2 p-2 bg-primary/10 rounded border border-primary/30 hover:border-primary/50 transition-colors cursor-pointer">
+                                            <input type="checkbox" id="selectAllDocTags" class="checkbox checkbox-sm checkbox-primary">
+                                            <span class="text-sm font-medium text-gray-900">Select All</span>
+                                        </label>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -311,6 +325,7 @@
 
             // Document Tags functionality
             function initDocumentTags() {
+                // Handle individual checkboxes
                 document.querySelectorAll('.document-tag-checkbox').forEach(checkbox => {
                     checkbox.addEventListener('change', function() {
                         const tagId = this.dataset.tagId;
@@ -325,12 +340,48 @@
                         
                         updateSelectedTagsSummary();
                         updateConnectedDepartments();
+                        updateDocTagsSelectAllState();
                     });
                 });
+                
+                // Handle select all checkbox
+                const selectAllCheckbox = document.getElementById('selectAllDocTags');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('.document-tag-checkbox');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = this.checked;
+                            
+                            // Enable/disable required checkboxes based on selection
+                            const tagId = checkbox.dataset.tagId;
+                            const requiredCheckbox = document.querySelector(`.required-checkbox[data-tag-id="${tagId}"]`);
+                            if (requiredCheckbox) {
+                                requiredCheckbox.disabled = !this.checked;
+                                if (!this.checked) {
+                                    requiredCheckbox.checked = false;
+                                }
+                            }
+                        });
+                        updateSelectedTagsSummary();
+                        updateConnectedDepartments();
+                    });
+                }
 
                 // Initialize summary on page load
                 updateSelectedTagsSummary();
                 updateConnectedDepartments();
+                updateDocTagsSelectAllState();
+            }
+            
+            function updateDocTagsSelectAllState() {
+                const selectAllCheckbox = document.getElementById('selectAllDocTags');
+                const checkboxes = document.querySelectorAll('.document-tag-checkbox');
+                const checkedCount = document.querySelectorAll('.document-tag-checkbox:checked').length;
+                
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+                    selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+                }
             }
 
             function updateSelectedTagsSummary() {
@@ -582,10 +633,39 @@
 
             // Origin Departments functionality
             function initOriginDepartments() {
+                // Handle individual checkboxes
                 document.querySelectorAll('.origin-dept-checkbox').forEach(checkbox => {
-                    checkbox.addEventListener('change', updateOriginDeptSummary);
+                    checkbox.addEventListener('change', function() {
+                        updateOriginDeptSummary();
+                        updateSelectAllState();
+                    });
                 });
+                
+                // Handle select all checkbox
+                const selectAllCheckbox = document.getElementById('selectAllOriginDepts');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('.origin-dept-checkbox');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = this.checked;
+                        });
+                        updateOriginDeptSummary();
+                    });
+                }
+                
                 updateOriginDeptSummary();
+                updateSelectAllState();
+            }
+            
+            function updateSelectAllState() {
+                const selectAllCheckbox = document.getElementById('selectAllOriginDepts');
+                const checkboxes = document.querySelectorAll('.origin-dept-checkbox');
+                const checkedCount = document.querySelectorAll('.origin-dept-checkbox:checked').length;
+                
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+                    selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+                }
             }
 
             function updateOriginDeptSummary() {

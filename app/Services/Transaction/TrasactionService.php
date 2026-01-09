@@ -220,6 +220,8 @@ class TrasactionService
             'assignStaff',
             'reviewers.reviewer',
             'reviewers.department',
+            'currentReviewer.reviewer',
+            'currentReviewer.department',
             'transactionLogs.actionBy'
         ]);
     }
@@ -256,7 +258,7 @@ class TrasactionService
     public function getAvailableActions(Transaction $transaction, User $user)
     {
         $currentReviewer = $transaction->currentReviewer;
-        if (!$currentReviewer || $currentReviewer->reviewed_id !== $user->id) {
+        if (!$currentReviewer || $currentReviewer->reviewer_id !== $user->id) {
             return [];
         }
 

@@ -121,12 +121,6 @@ class WorkflowConfigService
             return $errors;
         }
 
-        // Check for duplicate departments
-        $deptIds = array_column($config['steps'], 'department_id');
-        if (count($deptIds) !== count(array_unique($deptIds))) {
-            $errors[] = 'Each department can only appear once in the workflow.';
-        }
-
         // Check final step leads to completed
         $lastStep = end($config['steps']);
         $lastDept = $this->sanitizeDepartmentName($lastStep['department_name']);

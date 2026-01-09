@@ -131,6 +131,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the full name attribute
+     */
+    public function getFullNameAttribute(): string
+    {
+        return $this->name;
+    }
+
+    /**
      * Get the department name attribute
      */
     public function getDepartmentNameAttribute(): ?string
