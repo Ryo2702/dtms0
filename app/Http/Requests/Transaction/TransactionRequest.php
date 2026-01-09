@@ -26,7 +26,6 @@ class TransactionRequest extends FormRequest
         return [
             // Required on create, optional on update
             'workflow_id' => $isUpdate ? 'sometimes|string|exists:workflows,id' : 'required|string|exists:workflows,id',
-            'document_tags_id' => $isUpdate ? 'sometimes|exists:document_tags,id' : 'nullable|exists:document_tags,id',
             'assign_staff_id' => $isUpdate ? 'sometimes|exists:assign_staff,id' : 'required|exists:assign_staff,id',
 
             // Always optional
@@ -46,8 +45,6 @@ class TransactionRequest extends FormRequest
         return [
             'workflow_id.required' => 'Please select a workflow/transaction type.',
             'workflow_id.exists' => 'The selected workflow is invalid.',
-            'document_tags_id.required' => 'Please select a document tag.',
-            'document_tags_id.exists' => 'The selected document tag is invalid.',
             'assign_staff_id.required' => 'Please assign a staff member.',
             'assign_staff_id.exists' => 'The selected staff member is invalid.',
             'level_of_urgency.in' => 'Invalid urgency level selected.',

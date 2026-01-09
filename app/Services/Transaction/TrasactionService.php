@@ -105,7 +105,6 @@ class TrasactionService
                 'workflow_id' => $data['workflow_id'],
                 'workflow_snapshot' => $workflowSnapshot,
                 'total_workflow_steps' => $totalSteps,
-                'document_tags_id' => $data['document_tags_id'] ?? $workflow->documentTags()->first()?->id,
                 'assign_staff_id' => $data['assign_staff_id'],
                 'department_id' => $data['department_id'] ?? $creator->department_id,
                 'origin_department_id' => $data['department_id'] ?? $creator->department_id,
@@ -143,10 +142,6 @@ class TrasactionService
 
             if (isset($data['department_id'])) {
                 $updateData['department_id'] = $data['department_id'];
-            }
-
-            if (isset($data['document_tags_id'])) {
-                $updateData['document_tags_id'] = $data['document_tags_id'];
             }
 
             // Allow workflow_snapshot update only if transaction is still at initial state (step 1)

@@ -11,7 +11,6 @@ class Transaction extends Model
     protected $fillable = [
         'transaction_code',
         'level_of_urgency',
-        'document_tags_id',
         'workflow_id',
         'workflow_snapshot',
         'total_workflow_steps',

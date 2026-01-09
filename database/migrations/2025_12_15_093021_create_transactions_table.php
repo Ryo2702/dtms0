@@ -18,11 +18,12 @@ return new class extends Migration
             $table->enum('level_of_urgency', ['normal', 'urgent', 'highly_urgent'])->default('normal');
 
             $table->string('workflow_id');
-            $table->foreignId('document_tags_id')->constrained('document_tags');
             $table->foreignId('assign_staff_id')->constrained('assign_staff');
             $table->foreignId('department_id')->constrained('departments');
+            $table->foreignId('origin_department_id')->constrained('departments');
 
-            $table->enum('transaction_status', ['in_progress', 'completed', 'overdue'])->default('in_progress');
+            $table->enum('transaction_status', ['draft', 'in_progress', 'completed', 'cancelled', 'overdue'])->default('in_progress');
+            $table->enum('receiving_status', ['pending', 'received', 'not_received'])->nullable();
 
             // Current state: pending_{dept}_review, returned_to_{dept}, completed, cancelled
             $table->string('current_state')->default('pending');
@@ -33,10 +34,11 @@ return new class extends Migration
             $table->integer('total_workflow_steps')->default(1);
             $table->timestamp('submitted_at')->useCurrent();
             $table->timestamp('completed_at')->nullable();
+            $table->timestamp('received_at')->nullable();
 
 
             $table->json('workflow_history')->nullable();
-            $table->json('workflow_snapshot')->nullable(); 
+            $table->json('workflow_snapshot')->nullable();
             $table->timestamps();
 
             $table->foreign('workflow_id')->references('id')->on('workflows')->cascadeOnDelete();

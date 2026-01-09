@@ -72,7 +72,7 @@ class DepartmentSeeder extends Seeder
             ],
             [
                 'name' => 'Territorial Integrity Sanggui',
-                'code' => 'SANG',
+                'code' => 'TIS',
                 'description' => 'Legislative and territorial functions',
             ],
             [
@@ -84,11 +84,6 @@ class DepartmentSeeder extends Seeder
                 'name' => 'Information Office Municipal',
                 'code' => 'INFO',
                 'description' => 'Public information and communications',
-            ],
-            [
-                'name' => 'Banasud Office',
-                'code' => 'BAN',
-                'description' => 'Local administrative office',
             ],
             [
                 'name' => 'General Services Office',

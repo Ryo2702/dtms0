@@ -66,25 +66,30 @@
                                 <p class="text-sm text-gray-500" id="stepCount">{{ count($workflowSteps) }} steps</p>
                             </div>
                             <div class="flex gap-2">
-                                {{-- Preview Mode Buttons --}}
-                                <button type="button" id="editWorkflowBtn" class="btn btn-sm btn-outline" style="display: inline-flex;">
-                                    <i data-lucide="edit-2" class="w-4 h-4 mr-1"></i>
-                                    Edit
-                                </button>
+                                {{-- Preview Mode --}}
+                                <div id="previewModeButtons">
+                                    <details class="dropdown dropdown-end">
+                                        <summary class="btn btn-sm btn-square btn-ghost list-none" id="dropdownEditBtn">
+                                            <i data-lucide="ellipsis-vertical" class="w-5 h-5"></i>
+                                        </summary>
+                                        <ul class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 mt-1">
+                                            <li><a id="editWorkflowBtn" href="#"><i data-lucide="edit-2" class="w-4 h-4"></i> Edit Workflow</a></li>
+                                            <li><a id="resetWorkflowBtn" href="#"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset to Default</a></li>
+                                        </ul>
+                                    </details>
+                                </div>
                                 
                                 {{-- Edit Mode Buttons --}}
-                                <button type="button" id="saveWorkflowBtn" class="btn btn-sm btn-primary" style="display: none;">
-                                    <i data-lucide="check" class="w-4 h-4 mr-1"></i>
-                                    Save
-                                </button>
-                                <button type="button" id="resetWorkflowBtn" class="btn btn-sm btn-outline" style="display: none;">
-                                    <i data-lucide="rotate-ccw" class="w-4 h-4 mr-1"></i>
-                                    Reset
-                                </button>
-                                <button type="button" id="cancelEditBtn" class="btn btn-sm btn-ghost" style="display: none;">
-                                    <i data-lucide="x" class="w-4 h-4 mr-1"></i>
-                                    Cancel
-                                </button>
+                                <div id="editModeButtons" style="display: none;" class="flex gap-2">
+                                    <button type="button" id="saveWorkflowBtn" class="btn btn-sm btn-primary">
+                                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
+                                        Save
+                                    </button>
+                                    <button type="button" id="cancelEditBtn" class="btn btn-sm btn-ghost">
+                                        <i data-lucide="x" class="w-4 h-4 mr-1"></i>
+                                        Cancel
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -237,10 +242,13 @@
         let isEditMode = false;
 
         // DOM elements
+        const dropdownEditBtn = document.getElementById('dropdownEditBtn');
         const editBtn = document.getElementById('editWorkflowBtn');
         const saveBtn = document.getElementById('saveWorkflowBtn');
         const cancelBtn = document.getElementById('cancelEditBtn');
         const resetBtn = document.getElementById('resetWorkflowBtn');
+        const previewModeButtons = document.getElementById('previewModeButtons');
+        const editModeButtons = document.getElementById('editModeButtons');
         const previewSection = document.getElementById('workflowPreview');
         const editSection = document.getElementById('workflowEdit');
         const stepsList = document.getElementById('workflowStepsList');
@@ -262,7 +270,13 @@
         }
 
         // Toggle edit mode
-        editBtn.addEventListener('click', () => {
+        editBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Close dropdown by finding parent details element
+            const detailsElement = editBtn.closest('details');
+            if (detailsElement) {
+                detailsElement.removeAttribute('open');
+            }
             isEditMode = true;
             enterEditMode();
         });
@@ -308,7 +322,13 @@
         });
 
         // Reset to default workflow
-        resetBtn.addEventListener('click', () => {
+        resetBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Close dropdown by finding parent details element
+            const detailsElement = resetBtn.closest('details');
+            if (detailsElement) {
+                detailsElement.removeAttribute('open');
+            }
             if (confirm('Are you sure you want to reset to the default workflow? All changes will be lost.')) {
                 currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
                 // Clear localStorage
@@ -318,8 +338,8 @@
                 } catch (e) {
                     console.error('Error clearing localStorage:', e);
                 }
-                renderEditableSteps();
-                updateStepCount();
+                updatePreview();
+                updateWorkflowInfo();
             }
         });
 
@@ -342,11 +362,9 @@
             previewSection.classList.add('hidden');
             editSection.classList.remove('hidden');
             
-            // Toggle button visibility using inline styles
-            editBtn.style.display = 'none';
-            saveBtn.style.display = 'inline-flex';
-            resetBtn.style.display = 'inline-flex';
-            cancelBtn.style.display = 'inline-flex';
+            // Toggle button visibility
+            previewModeButtons.style.display = 'none';
+            editModeButtons.style.display = 'flex';
             
             renderEditableSteps();
         }
@@ -356,11 +374,9 @@
             previewSection.classList.remove('hidden');
             editSection.classList.add('hidden');
             
-            // Toggle button visibility using inline styles
-            editBtn.style.display = 'inline-flex';
-            saveBtn.style.display = 'none';
-            resetBtn.style.display = 'none';
-            cancelBtn.style.display = 'none';
+            // Toggle button visibility
+            previewModeButtons.style.display = 'block';
+            editModeButtons.style.display = 'none';
             
             updatePreview();
             updateWorkflowInfo();
@@ -429,6 +445,7 @@
                                 </label>
                                 <select class="select select-bordered select-sm w-full" 
                                     onchange="updateStepProcessTime(${index}, ${step.process_time_value}, this.value)">
+                                    <option value="minutes" ${step.process_time_unit === 'minutes' ? 'selected' : ''}>Minutes</option>
                                     <option value="hours" ${step.process_time_unit === 'hours' ? 'selected' : ''}>Hours</option>
                                     <option value="days" ${step.process_time_unit === 'days' ? 'selected' : ''}>Days</option>
                                     <option value="weeks" ${step.process_time_unit === 'weeks' ? 'selected' : ''}>Weeks</option>
@@ -554,6 +571,9 @@
                 const unit = step.process_time_unit || 'days';
                 
                 switch(unit) {
+                    case 'minutes':
+                        totalHours += value / 60;
+                        break;
                     case 'hours':
                         totalHours += value;
                         break;
@@ -571,18 +591,20 @@
         
         // Format estimated time for display
         function formatEstimatedTime(hours) {
-            if (hours === 0) return '0 hours';
+            if (hours === 0) return '0 minutes';
             
             const weeks = Math.floor(hours / (24 * 7));
             const days = Math.floor((hours % (24 * 7)) / 24);
-            const remainingHours = hours % 24;
+            const remainingHours = Math.floor(hours % 24);
+            const minutes = Math.round((hours % 1) * 60);
             
             const parts = [];
             if (weeks > 0) parts.push(`${weeks} week${weeks !== 1 ? 's' : ''}`);
             if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
             if (remainingHours > 0) parts.push(`${remainingHours} hour${remainingHours !== 1 ? 's' : ''}`);
+            if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
             
-            return parts.join(', ') || '0 hours';
+            return parts.join(', ') || '0 minutes';
         }
 
         // Update step count
@@ -698,15 +720,17 @@
             // Check if user wants to update workflow template default
             if (canUpdateWorkflow && makeDefaultCheckbox && makeDefaultCheckbox.checked) {
                 updateWorkflowDefaultInput.value = '1';
+                // If updating workflow template, clear the custom route from localStorage
+                // so the new default will be used on next load
+                try {
+                    localStorage.removeItem(storageKey);
+                    console.log('Cleared custom workflow from localStorage (updating template default)');
+                } catch (e) {
+                    console.error('Error clearing localStorage:', e);
+                }
             }
-            
-            // Clear localStorage after submission
-            try {
-                localStorage.removeItem(storageKey);
-                console.log('Cleared localStorage after submission');
-            } catch (e) {
-                console.error('Error clearing localStorage:', e);
-            }
+            // Note: Custom workflows persist in localStorage for reuse
+            // Users can explicitly reset using the "Reset" button if needed
             
             console.log(isCustomRoute ? 'Submitting custom workflow' : 'Submitting default workflow', workflowSnapshot);
         });
