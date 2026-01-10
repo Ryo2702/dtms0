@@ -19,12 +19,16 @@ class TransactionReviewer extends Model
         'rejection_reason',
         'resubmission_deadline',
         'previous_reviewer_id',
+        'received_status',
+        'received_by',
+        'received_at',
     ];
 
     protected $casts = [
         'due_date' => 'datetime',
         'reviewed_at' => 'datetime',
         'resubmission_deadline' => 'datetime',
+        'received_at' => 'datetime',
         'is_overdue' => 'boolean',
     ];
 
@@ -46,6 +50,11 @@ class TransactionReviewer extends Model
     public function previousReviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'previous_reviewer_id');
+    }
+
+    public function receivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
     }
 
     // Scopes
@@ -78,5 +87,20 @@ class TransactionReviewer extends Model
     public function markAsOverdue(): void
     {
         $this->update(['is_overdue' => true]);
+    }
+
+    public function isReceived(): bool
+    {
+        return $this->received_status === 'received';
+    }
+
+    public function isNotReceived(): bool
+    {
+        return $this->received_status === 'not_received';
+    }
+
+    public function isPendingReceive(): bool
+    {
+        return $this->received_status === 'pending';
     }
 }

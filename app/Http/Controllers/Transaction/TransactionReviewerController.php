@@ -25,35 +25,37 @@ class TransactionReviewerController extends Controller
         $userId = $request->user()->id;
         $tab = $request->get('tab', 'pending');
 
-        // Pending reviews - transactions awaiting my review
-        $pendingReviews = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department'])
+        // Pending reviews - ALL transactions assigned to this reviewer (pending, approved, rejected)
+        // This ensures transactions stay visible even after approval/rejection
+        $pendingReviews = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department', 'receivedBy'])
             ->forReviewer($userId)
-            ->pending()
             ->orderBy('due_date', 'asc')
+            ->orderBy('reviewed_at', 'desc')
             ->get();
 
         // Reviewed by me - transactions I've already reviewed (approved/rejected)
-        $reviewedByMe = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department'])
+        $reviewedByMe = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department', 'receivedBy'])
             ->forReviewer($userId)
             ->whereIn('status', ['approved', 'rejected'])
             ->orderBy('reviewed_at', 'desc')
             ->limit(20)
             ->get();
 
-        // Resubmissions - transactions that were rejected and resubmitted for re-review
-        $resubmissions = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department'])
+        // Resubmissions - ALL resubmissions (including approved/rejected ones)
+        $resubmissions = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department', 'receivedBy'])
             ->forReviewer($userId)
-            ->pending()
             ->where('iteration_number', '>', 1)
             ->orderBy('due_date', 'asc')
+            ->orderBy('reviewed_at', 'desc')
             ->get();
 
-        // Stats
+        // Stats - count only pending for accurate stats
+        $pendingCount = $pendingReviews->where('status', 'pending')->count();
         $stats = [
-            'pending' => $pendingReviews->count(),
-            'due_today' => $pendingReviews->filter(fn($r) => $r->due_date && $r->due_date->isToday())->count(),
-            'overdue' => $pendingReviews->filter(fn($r) => $r->isOverdue())->count(),
-            'resubmissions' => $resubmissions->count(),
+            'pending' => $pendingCount,
+            'due_today' => $pendingReviews->where('status', 'pending')->filter(fn($r) => $r->due_date && $r->due_date->isToday())->count(),
+            'overdue' => $pendingReviews->where('status', 'pending')->filter(fn($r) => $r->isOverdue())->count(),
+            'resubmissions' => $resubmissions->where('status', 'pending')->count(),
             'reviewed' => $reviewedByMe->count(),
         ];
 
@@ -416,5 +418,38 @@ class TransactionReviewerController extends Controller
             ->get();
 
         return view('transactions.reviews.history', compact('transaction', 'reviewHistory'));
+    }
+
+    /**
+     * Mark transaction as received or not received
+     */
+    public function receive(Request $request, TransactionReviewer $reviewer)
+    {
+        // Check if user is authorized (must be head or staff)
+        $user = $request->user();
+        if (!$user->isHead() && $user->type !== 'Staff') {
+            return back()->with('error', 'Only department heads or staff can receive transactions.');
+        }
+
+        // Check if user is the assigned reviewer
+        if ($reviewer->reviewer_id !== $user->id) {
+            return back()->with('error', 'You are not authorized to receive this transaction.');
+        }
+
+        $validated = $request->validate([
+            'received_status' => 'required|in:received,not_received',
+        ]);
+
+        $reviewer->update([
+            'received_status' => $validated['received_status'],
+            'received_by' => $user->id,
+            'received_at' => now(),
+        ]);
+
+        $message = $validated['received_status'] === 'received' 
+            ? 'Transaction marked as received successfully. Timer started.' 
+            : 'Transaction marked as not received.';
+
+        return back()->with('success', $message);
     }
 }

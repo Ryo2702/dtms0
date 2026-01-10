@@ -56,6 +56,11 @@ return new class extends Migration
             $table->boolean('is_overdue')->default(0);
             $table->timestamp('reviewed_at')->nullable();
 
+            // Receiving tracking
+            $table->enum('received_status', ['pending', 'received', 'not_received'])->default('pending');
+            $table->foreignId('received_by')->nullable()->constrained('users');
+            $table->timestamp('received_at')->nullable();
+
             $table->timestamps();
 
             $table->integer('iteration_number')->default(1);
@@ -66,6 +71,7 @@ return new class extends Migration
             $table->index(['transaction_id', 'status']);
             $table->index(['is_overdue', 'status']);
             $table->index('due_date');
+            $table->index('received_status');
         });
 
         Schema::create('transaction_logs', function (Blueprint $table) {

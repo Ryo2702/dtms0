@@ -78,6 +78,69 @@
                                 @endif
                             </dd>
                         </div>
+
+                        {{-- Receiving Status --}}
+                        <div>
+                            <dt class="text-sm text-gray-500">Receiving Status</dt>
+                            <dd>
+                                @if($reviewer->received_status === 'received')
+                                    <span class="badge badge-success">
+                                        <i data-lucide="package-check" class="w-3 h-3 mr-1"></i>
+                                        Received
+                                    </span>
+                                    @if($reviewer->receivedBy)
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            by {{ $reviewer->receivedBy->name }} at {{ $reviewer->received_at->format('M d, Y h:i A') }}
+                                        </div>
+                                    @endif
+                                @elseif($reviewer->received_status === 'not_received')
+                                    <span class="badge badge-error">
+                                        <i data-lucide="package-x" class="w-3 h-3 mr-1"></i>
+                                        Not Received
+                                    </span>
+                                @else
+                                    <span class="badge badge-warning">
+                                        <i data-lucide="package" class="w-3 h-3 mr-1"></i>
+                                        Pending Receipt
+                                    </span>
+                                @endif
+                            </dd>
+                        </div>
+
+                        {{-- Time Remaining (Only if received) --}}
+                        @if($reviewer->received_status === 'received' && $reviewer->due_date && !$reviewer->reviewed_at)
+                            <div class="col-span-full">
+                                <dt class="text-sm text-gray-500 mb-2">Time Remaining</dt>
+                                <dd>
+                                    <div id="countdown-timer" class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-sm font-semibold text-blue-900">Review Deadline Countdown</span>
+                                            <i data-lucide="timer" class="w-5 h-5 text-blue-600"></i>
+                                        </div>
+                                        <div id="countdown-display" class="grid grid-cols-4 gap-2 text-center">
+                                            <div class="bg-white rounded-lg p-3 shadow">
+                                                <div id="days" class="text-2xl font-bold text-blue-600">--</div>
+                                                <div class="text-xs text-gray-600 uppercase">Days</div>
+                                            </div>
+                                            <div class="bg-white rounded-lg p-3 shadow">
+                                                <div id="hours" class="text-2xl font-bold text-blue-600">--</div>
+                                                <div class="text-xs text-gray-600 uppercase">Hours</div>
+                                            </div>
+                                            <div class="bg-white rounded-lg p-3 shadow">
+                                                <div id="minutes" class="text-2xl font-bold text-blue-600">--</div>
+                                                <div class="text-xs text-gray-600 uppercase">Minutes</div>
+                                            </div>
+                                            <div class="bg-white rounded-lg p-3 shadow">
+                                                <div id="seconds" class="text-2xl font-bold text-blue-600">--</div>
+                                                <div class="text-xs text-gray-600 uppercase">Seconds</div>
+                                            </div>
+                                        </div>
+                                        <div id="countdown-message" class="mt-3 text-center text-sm"></div>
+                                    </div>
+                                </dd>
+                            </div>
+                        @endif
+
                         <div>
                             <dt class="text-sm text-gray-500">Iteration</dt>
                             <dd class="font-medium">{{ $reviewer->iteration_number ?? 1 }}</dd>
@@ -255,4 +318,97 @@
             </div>
         </div>
     </x-container>
+
+    @if($reviewer->received_status === 'received' && $reviewer->due_date && !$reviewer->reviewed_at)
+        @push('scripts')
+        <script>
+            // Countdown Timer - Only starts if transaction is received
+            (function() {
+                const dueDate = new Date('{{ $reviewer->due_date->toIso8601String() }}').getTime();
+                
+                function updateCountdown() {
+                    const now = new Date().getTime();
+                    const distance = dueDate - now;
+                    
+                    if (distance < 0) {
+                        // Timer expired
+                        document.getElementById('countdown-timer').classList.remove('from-blue-50', 'to-indigo-50', 'border-blue-200');
+                        document.getElementById('countdown-timer').classList.add('from-red-50', 'to-red-100', 'border-red-300');
+                        
+                        document.getElementById('days').textContent = '00';
+                        document.getElementById('hours').textContent = '00';
+                        document.getElementById('minutes').textContent = '00';
+                        document.getElementById('seconds').textContent = '00';
+                        
+                        document.querySelectorAll('#countdown-display .text-blue-600').forEach(el => {
+                            el.classList.remove('text-blue-600');
+                            el.classList.add('text-red-600');
+                        });
+                        
+                        document.getElementById('countdown-message').innerHTML = 
+                            '<span class="text-red-600 font-bold"><i data-lucide="alert-circle" class="w-4 h-4 inline mr-1"></i>DEADLINE EXCEEDED!</span>';
+                        
+                        // Re-render lucide icons
+                        if (typeof lucide !== 'undefined') {
+                            lucide.createIcons();
+                        }
+                        
+                        clearInterval(countdownInterval);
+                        return;
+                    }
+                    
+                    // Calculate time units
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    
+                    // Update display
+                    document.getElementById('days').textContent = String(days).padStart(2, '0');
+                    document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+                    document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+                    document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+                    
+                    // Update message based on time remaining
+                    let message = '';
+                    let colorClass = 'text-blue-600';
+                    
+                    if (days === 0 && hours < 1) {
+                        message = '<span class="text-red-600 font-semibold animate-pulse">⚠️ URGENT: Less than 1 hour remaining!</span>';
+                        document.getElementById('countdown-timer').classList.remove('from-blue-50', 'to-indigo-50', 'border-blue-200');
+                        document.getElementById('countdown-timer').classList.add('from-red-50', 'to-red-100', 'border-red-300');
+                        
+                        document.querySelectorAll('#countdown-display .text-blue-600').forEach(el => {
+                            el.classList.remove('text-blue-600');
+                            el.classList.add('text-red-600');
+                        });
+                    } else if (days === 0 && hours < 6) {
+                        message = '<span class="text-orange-600 font-semibold">⏰ Less than 6 hours remaining</span>';
+                        document.getElementById('countdown-timer').classList.remove('from-blue-50', 'to-indigo-50', 'border-blue-200');
+                        document.getElementById('countdown-timer').classList.add('from-orange-50', 'to-yellow-50', 'border-orange-200');
+                        
+                        document.querySelectorAll('#countdown-display .text-blue-600').forEach(el => {
+                            el.classList.remove('text-blue-600');
+                            el.classList.add('text-orange-600');
+                        });
+                    } else if (days === 0) {
+                        message = '<span class="text-yellow-600 font-semibold">📅 Due today</span>';
+                    } else if (days === 1) {
+                        message = '<span class="text-blue-600">📅 Due tomorrow</span>';
+                    } else {
+                        message = `<span class="${colorClass}">Timer started since receipt on {{ $reviewer->received_at->format('M d, Y h:i A') }}</span>`;
+                    }
+                    
+                    document.getElementById('countdown-message').innerHTML = message;
+                }
+                
+                // Update immediately
+                updateCountdown();
+                
+                // Update every second
+                const countdownInterval = setInterval(updateCountdown, 1000);
+            })();
+        </script>
+        @endpush
+    @endif
 @endsection
