@@ -100,6 +100,19 @@ class TrasactionService
             $workflowSteps = $workflowSnapshot['steps'] ?? $workflow->getWorkflowSteps();
             $totalSteps = count($workflowSteps);
 
+            // Prepare custom document tags data if provided
+            $customDocumentTags = null;
+            if (isset($data['document_tag_ids']) && is_array($data['document_tag_ids']) && count($data['document_tag_ids']) > 0) {
+                $documentTags = \App\Models\DocumentTag::whereIn('id', $data['document_tag_ids'])->get();
+                $customDocumentTags = $documentTags->map(function($tag) {
+                    return [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                        'description' => $tag->description ?? null
+                    ];
+                })->toArray();
+            }
+
             $transaction = Transaction::create([
                 'transaction_code' => Transaction::generateTransactionCode(),
                 'workflow_id' => $data['workflow_id'],
@@ -111,7 +124,8 @@ class TrasactionService
                 'level_of_urgency' => $data['level_of_urgency'] ?? 'normal',
                 'created_by' => $creator->id,
                 'current_workflow_step' => 1,
-                'submitted_at' => now()
+                'submitted_at' => now(),
+                'custom_document_tags' => $customDocumentTags
             ]);
 
             $this->workflowEngine->initializeTransaction($transaction);

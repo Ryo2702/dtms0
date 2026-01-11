@@ -39,6 +39,7 @@ return new class extends Migration
 
             $table->json('workflow_history')->nullable();
             $table->json('workflow_snapshot')->nullable();
+            $table->json('custom_document_tags')->nullable();
             $table->timestamps();
 
             $table->foreign('workflow_id')->references('id')->on('workflows')->cascadeOnDelete();
@@ -67,6 +68,7 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
             $table->timestamp('resubmission_deadline')->nullable();
             $table->foreignId('previous_reviewer_id')->nullable()->references('id')->on('users');
+            $table->json('custom_document_tags')->nullable();
 
             $table->index(['transaction_id', 'status']);
             $table->index(['is_overdue', 'status']);

@@ -69,14 +69,15 @@ class DocumentTagController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:document_tags,slug',
             'description' => 'nullable|string',
             'department_ids' => 'nullable|array',
             'department_ids.*' => 'exists:departments,id',
-            'status' => 'boolean',
         ]);
 
         try {
-            $slug = Str::slug($request->input('name'));
+            // Generate slug from name if not provided
+            $slug = $request->input('slug') ?: Str::slug($request->input('name'));
             
             // Ensure unique slug
             $originalSlug = $slug;
@@ -90,7 +91,7 @@ class DocumentTagController extends Controller
                 'name' => $request->input('name'),
                 'slug' => $slug,
                 'description' => $request->input('description'),
-                'status' => $request->boolean('status', true),
+                'status' => $request->has('status') ? true : false,
             ]);
 
             // Sync departments (many-to-many)
@@ -104,7 +105,7 @@ class DocumentTagController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Document tag created successfully.',
-                    'data' => $documentTag->load('departments')
+                    'tag' => $documentTag->load('departments')
                 ]);
             }
 
@@ -112,7 +113,10 @@ class DocumentTagController extends Controller
                 ->route('admin.document-tags.index')
                 ->with('success', 'Document tag created successfully.');
         } catch (\Exception $e) {
-            Log::error('Document tag creation failed: ' . $e->getMessage());
+            Log::error('Document tag creation failed: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             // Return JSON error for AJAX/modal request
             if ($request->wantsJson() || $request->ajax()) {
@@ -125,7 +129,7 @@ class DocumentTagController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Document tag creation failed.');
+                ->with('error', 'Document tag creation failed: ' . $e->getMessage());
         }
     }
 

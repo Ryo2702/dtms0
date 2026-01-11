@@ -35,6 +35,10 @@ class TransactionRequest extends FormRequest
             // Workflow snapshot rules - can be JSON string or array
             'workflow_snapshot' => 'nullable|json',
             
+            // Document tags - array of tag IDs
+            'document_tag_ids' => 'nullable|array',
+            'document_tag_ids.*' => 'nullable|exists:document_tags,id',
+            
             // Flag to update workflow default (Head users only)
             'update_workflow_default' => 'nullable|boolean',
         ];

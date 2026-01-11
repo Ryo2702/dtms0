@@ -11,7 +11,9 @@ class DocumentTag extends Model
         'name',
         'slug',
         'description',
-        'status'
+        'status',
+        'created_by_head',
+        'created_by_admin'
     ];
 
     protected function casts()

@@ -8,6 +8,8 @@ use App\Http\Controllers\Transaction\WorkflowConfigController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
+    // Allow authenticated users (including Heads) to create custom document tags
+    Route::post('admin/document-tags', [DocumentTagController::class, 'store'])->name('admin.document-tags.store');
 
     Route::prefix('admin')->name('admin.')->middleware(['role:Admin'])->group(function () {
 
@@ -29,7 +31,6 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('document-tags')->name('document-tags.')->group(function () {
             Route::get('/', [DocumentTagController::class, 'index'])->name('index');
             Route::get('/create', [DocumentTagController::class, 'create'])->name('create');
-            Route::post('/', [DocumentTagController::class, 'store'])->name('store');
             Route::get('/{documentTag}', [DocumentTagController::class, 'show'])->name('show');
             Route::get('/{documentTag}/edit', [DocumentTagController::class, 'edit'])->name('edit');
             Route::put('/{documentTag}', [DocumentTagController::class, 'update'])->name('update');

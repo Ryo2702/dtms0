@@ -26,7 +26,8 @@ class Transaction extends Model
         'submitted_at',
         'completed_at',
         'received_at',
-        'workflow_history',    
+        'workflow_history',
+        'custom_document_tags',
     ];
 
     protected function casts(): array
@@ -36,7 +37,8 @@ class Transaction extends Model
             'completed_at' => 'datetime',
             'received_at' => 'datetime',
             'workflow_snapshot' => 'array',
-            'workflow_history' => 'array'
+            'workflow_history' => 'array',
+            'custom_document_tags' => 'array'
         ];
     }
 

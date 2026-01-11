@@ -140,6 +140,11 @@ class TransactionController extends Controller
                 ];
             });
         
+        // Get all active document tags for heads to attach
+        $documentTags = \App\Models\DocumentTag::where('status', true)
+            ->orderBy('name')
+            ->get();
+        
         $workflowConfig = $workflow->workflow_config;
         $workflowSteps = $workflow->getWorkflowSteps();
 
@@ -147,6 +152,7 @@ class TransactionController extends Controller
             'workflow',
             'assignStaff',
             'departments',
+            'documentTags',
             'workflowConfig',
             'workflowSteps'
         ));

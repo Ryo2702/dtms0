@@ -19,7 +19,9 @@
             <select class="select select-bordered w-full max-w-xs" id="departmentFilter" onchange="filterByDepartment()">
                 <option value="">All Departments</option>
                 @foreach ($departments ?? [] as $dept)
-                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    @if ($dept->name !== 'System Administrator')
+                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    @endif
                 @endforeach
             </select>
 
@@ -169,13 +171,19 @@
                     <span class="label-text font-medium">Departments</span>
                     <span class="label-text-alt text-gray-500">Leave empty for all departments</span>
                 </label>
+                <label class="cursor-pointer label justify-start gap-2 mb-2">
+                    <input type="checkbox" id="selectAllDepts" class="checkbox checkbox-sm checkbox-secondary">
+                    <span class="label-text font-semibold">Select All</span>
+                </label>
                 <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg">
                     @foreach ($departments ?? [] as $dept)
-                        <label class="cursor-pointer label justify-start gap-2">
-                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}"
-                                class="checkbox checkbox-sm checkbox-primary">
-                            <span class="label-text">{{ $dept->name }}</span>
-                        </label>
+                        @if ($dept->name !== 'System Administrator')
+                            <label class="cursor-pointer label justify-start gap-2">
+                                <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}"
+                                    class="checkbox checkbox-sm checkbox-primary dept-checkbox">
+                                <span class="label-text">{{ $dept->name }}</span>
+                            </label>
+                        @endif
                     @endforeach
                 </div>
                 @error('department_ids')
@@ -259,14 +267,20 @@
                     <span class="label-text font-medium">Departments</span>
                     <span class="label-text-alt text-gray-500">Leave empty for all departments</span>
                 </label>
+                <label class="cursor-pointer label justify-start gap-2 mb-2">
+                    <input type="checkbox" id="selectAllEditDepts" class="checkbox checkbox-sm checkbox-secondary">
+                    <span class="label-text font-semibold">Select All</span>
+                </label>
                 <div id="edit_departments_container"
                     class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg">
                     @foreach ($departments ?? [] as $dept)
-                        <label class="cursor-pointer label justify-start gap-2">
-                            <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}"
-                                class="checkbox checkbox-sm checkbox-primary edit-dept-checkbox">
-                            <span class="label-text">{{ $dept->name }}</span>
-                        </label>
+                        @if ($dept->name !== 'System Administrator')
+                            <label class="cursor-pointer label justify-start gap-2">
+                                <input type="checkbox" name="department_ids[]" value="{{ $dept->id }}"
+                                    class="checkbox checkbox-sm checkbox-primary edit-dept-checkbox">
+                                <span class="label-text">{{ $dept->name }}</span>
+                            </label>
+                        @endif
                     @endforeach
                 </div>
                 @error('department_ids')
@@ -383,11 +397,53 @@
             const originalShowModal = tagModal.showModal;
             tagModal.showModal = function() {
                 document.getElementById('tag-form').reset();
+                document.getElementById('selectAllDepts').checked = false;
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Create Tag';
                 }
                 originalShowModal.call(this);
+            }
+        }
+
+        // Select All functionality for create modal
+        document.getElementById('selectAllDepts')?.addEventListener('change', function(e) {
+            const checkboxes = document.querySelectorAll('.dept-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        // Select All functionality for edit modal
+        document.getElementById('selectAllEditDepts')?.addEventListener('change', function(e) {
+            const checkboxes = document.querySelectorAll('.edit-dept-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        // Update Select All state when individual checkboxes change
+        document.querySelectorAll('.dept-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectAllState('selectAllDepts', '.dept-checkbox');
+            });
+        });
+
+        document.querySelectorAll('.edit-dept-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectAllState('selectAllEditDepts', '.edit-dept-checkbox');
+            });
+        });
+
+        function updateSelectAllState(selectAllId, checkboxSelector) {
+            const selectAll = document.getElementById(selectAllId);
+            const checkboxes = document.querySelectorAll(checkboxSelector);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+            
+            if (selectAll) {
+                selectAll.checked = allChecked;
+                selectAll.indeterminate = someChecked && !allChecked;
             }
         }
 
@@ -429,6 +485,10 @@
                     }
 
                     document.getElementById('edit_status').checked = data.status == 1;
+
+                    // Update Select All checkbox state
+                    document.getElementById('selectAllEditDepts').checked = false;
+                    updateSelectAllState('selectAllEditDepts', '.edit-dept-checkbox');
 
                     document.getElementById('edit-tag-form').action = `/admin/document-tags/${id}`;
 

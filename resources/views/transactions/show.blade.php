@@ -102,6 +102,10 @@
                             <dt class="text-sm text-gray-500">Current Department</dt>
                             <dd class="font-medium">{{ $transaction->department->name ?? 'N/A' }}</dd>
                         </div>
+                        <div>
+                            <dt class="text-sm text-gray-500">Origin Department</dt>
+                            <dd class="font-medium">{{ $transaction->originDepartment->name ?? 'N/A' }}</dd>
+                        </div>
                         @if($transaction->assignStaff)
                             <div>
                                 <dt class="text-sm text-gray-500">Assigned Staff</dt>
@@ -110,10 +114,10 @@
                         @endif
                         @if($transaction->workflow && $transaction->workflow->documentTags && $transaction->workflow->documentTags->count() > 0)
                             <div class="md:col-span-2">
-                                <dt class="text-sm text-gray-500">Document Attachment</dt>
-                                <dd class="flex flex-wrap gap-2 mt-1">
+                                <dt class="text-sm text-gray-500 mb-2">Default Document Attachment</dt>
+                                <dd class="flex flex-wrap gap-2">
                                     @foreach($transaction->workflow->documentTags as $tag)
-                                        <span class="badge badge-primary badge-sm" style="background-color: #10b981; color: white;">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500 text-white">
                                             <i data-lucide="tag" class="w-3 h-3 mr-1"></i>
                                             {{ $tag->name }}
                                         </span>
@@ -121,6 +125,26 @@
                                 </dd>
                             </div>
                         @endif
+                        <div class="md:col-span-2">
+                            <dt class="text-sm text-gray-500 mb-2">Custom Document Attachment</dt>
+                            <dd class="flex flex-wrap gap-2">
+                                @php
+                                    $customTags = is_string($transaction->custom_document_tags) 
+                                        ? json_decode($transaction->custom_document_tags, true) 
+                                        : $transaction->custom_document_tags;
+                                @endphp
+                                @if(is_array($customTags) && count($customTags) > 0)
+                                    @foreach($customTags as $tag)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
+                                            <i data-lucide="tag" class="w-3 h-3 mr-1"></i>
+                                            {{ is_array($tag) ? ($tag['name'] ?? $tag) : $tag }}
+                                        </span>
+                                    @endforeach
+                                @else
+                                    <span class="text-gray-400 text-xs">No custom tags</span>
+                                @endif
+                            </dd>
+                        </div>
                         <div>
                             <dt class="text-sm text-gray-500">Created By</dt>
                             <dd class="font-medium">{{ $transaction->creator->full_name ?? 'N/A' }}</dd>
