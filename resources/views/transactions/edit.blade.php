@@ -75,7 +75,7 @@
                                             {{ $index + 1 }}
                                         </div>
                                         <div class="flex-1">
-                                            <select name="workflow_snapshot[steps][{{ $index }}][department_id]" class="select select-bordered select-sm w-full">
+                                            <select name="workflow_snapshot[steps][{{ $index }}][department_id]" class="select select-bordered select-sm w-full mb-2 department-select">
                                                 @foreach($departments as $dept)
                                                     <option value="{{ $dept->id }}" {{ ($step['department_id'] ?? '') == $dept->id ? 'selected' : '' }}>
                                                         {{ $dept->name }}
@@ -85,6 +85,55 @@
                                             <input type="hidden" name="workflow_snapshot[steps][{{ $index }}][department_name]" value="{{ $step['department_name'] ?? '' }}">
                                             <input type="hidden" name="workflow_snapshot[steps][{{ $index }}][process_time_value]" value="{{ $step['process_time_value'] ?? 1 }}">
                                             <input type="hidden" name="workflow_snapshot[steps][{{ $index }}][process_time_unit]" value="{{ $step['process_time_unit'] ?? 'days' }}">
+                                            
+                                            {{-- Document Tags Section --}}
+                                            <div class="collapse collapse-arrow bg-base-200 rounded-box mt-2">
+                                                <input type="checkbox" id="collapse-tags-{{ $index }}" />
+                                                <div class="collapse-title text-sm font-medium flex items-center justify-between pr-12">
+                                                    <span>Document Tags</span>
+                                                    <span class="badge badge-sm badge-outline step-tag-count" data-step-index="{{ $index }}">
+                                                        {{ isset($step['document_tags']) ? count($step['document_tags']) : 0 }} tags selected
+                                                    </span>
+                                                </div>
+                                                <div class="collapse-content">
+                                                    @if($documentTags && $documentTags->count() > 0)
+                                                        <div class="mb-2">
+                                                            <label class="cursor-pointer label justify-start gap-2 py-1">
+                                                                <input type="checkbox" class="checkbox checkbox-xs select-all-tags" data-step-index="{{ $index }}" />
+                                                                <span class="label-text text-xs font-medium">Select All Tags</span>
+                                                            </label>
+                                                        </div>
+                                                        <div class="space-y-1 max-h-48 overflow-y-auto">
+                                                            @foreach($documentTags as $tag)
+                                                                <label class="cursor-pointer label justify-start gap-2 py-1 hover:bg-base-300 rounded">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        name="workflow_snapshot[steps][{{ $index }}][document_tags][]" 
+                                                                        value="{{ $tag->id }}"
+                                                                        class="checkbox checkbox-xs step-tag-checkbox"
+                                                                        data-step-index="{{ $index }}"
+                                                                        data-tag-id="{{ $tag->id }}"
+                                                                        {{ isset($step['document_tags']) && in_array($tag->id, $step['document_tags']) ? 'checked' : '' }}
+                                                                    />
+                                                                    <span class="label-text text-xs flex-1">{{ $tag->name }}</span>
+                                                                    @if($tag->departments && $tag->departments->count() > 0)
+                                                                        <div class="flex gap-1 flex-wrap">
+                                                                            @foreach($tag->departments->take(2) as $dept)
+                                                                                <span class="badge badge-xs">{{ $dept->name }}</span>
+                                                                            @endforeach
+                                                                            @if($tag->departments->count() > 2)
+                                                                                <span class="badge badge-xs">+{{ $tag->departments->count() - 2 }}</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    @endif
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                    @else
+                                                        <p class="text-xs text-gray-500">No document tags available</p>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach
@@ -191,6 +240,63 @@
 
 @push('scripts')
 <script>
+    const documentTags = @json($documentTags ?? []);
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDocumentTags();
+    });
+    
+    function initializeDocumentTags() {
+        // Initialize tag counts for all steps
+        document.querySelectorAll('.workflow-step').forEach(step => {
+            const stepIndex = step.dataset.index;
+            updateStepTagCount(stepIndex);
+            updateStepSelectAllState(stepIndex);
+        });
+        
+        // Add event listeners for tag checkboxes
+        document.querySelectorAll('.step-tag-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const stepIndex = this.dataset.stepIndex;
+                updateStepTagCount(stepIndex);
+                updateStepSelectAllState(stepIndex);
+            });
+        });
+        
+        // Add event listeners for select all checkboxes
+        document.querySelectorAll('.select-all-tags').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const stepIndex = this.dataset.stepIndex;
+                const checkboxes = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]`);
+                checkboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                });
+                updateStepTagCount(stepIndex);
+            });
+        });
+    }
+    
+    function updateStepTagCount(stepIndex) {
+        const checkboxes = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]:checked`);
+        const countElement = document.querySelector(`.step-tag-count[data-step-index="${stepIndex}"]`);
+        if (countElement) {
+            const count = checkboxes.length;
+            countElement.textContent = `${count} tag${count !== 1 ? 's' : ''} selected`;
+        }
+    }
+    
+    function updateStepSelectAllState(stepIndex) {
+        const selectAllCheckbox = document.querySelector(`.select-all-tags[data-step-index="${stepIndex}"]`);
+        const checkboxes = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]`);
+        const checkedCount = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]:checked`).length;
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        }
+    }
+    
     function resetWorkflowRoute() {
         if (confirm('Are you sure you want to reset the workflow route to default?')) {
             fetch('{{ route('transactions.workflow-config', $transaction) }}')

@@ -110,10 +110,10 @@
                         @endif
                         @if($transaction->workflow && $transaction->workflow->documentTags && $transaction->workflow->documentTags->count() > 0)
                             <div class="md:col-span-2">
-                                <dt class="text-sm text-gray-500">Document Tags</dt>
+                                <dt class="text-sm text-gray-500">Document Attachment</dt>
                                 <dd class="flex flex-wrap gap-2 mt-1">
                                     @foreach($transaction->workflow->documentTags as $tag)
-                                        <span class="badge badge-primary badge-sm">
+                                        <span class="badge badge-primary badge-sm" style="background-color: #10b981; color: white;">
                                             <i data-lucide="tag" class="w-3 h-3 mr-1"></i>
                                             {{ $tag->name }}
                                         </span>
@@ -188,10 +188,25 @@
                                             </div>
                                             @if($isCurrent)
                                                 <span class="badge badge-primary badge-xs mt-1">Current</span>
+                                                @if(isset($step['received_by']) && $step['received_by'])
+                                                    <div class="text-[10px] text-blue-600 mt-1">
+                                                        Received by: {{ $step['received_by'] }}
+                                                    </div>
+                                                @endif
                                             @elseif($isReturned)
                                                 <span class="badge badge-warning badge-xs mt-1">Returned</span>
+                                                @if(isset($step['received_by']) && $step['received_by'])
+                                                    <div class="text-[10px] text-yellow-600 mt-1">
+                                                        Received by: {{ $step['received_by'] }}
+                                                    </div>
+                                                @endif
                                             @elseif($isCompleted)
                                                 <span class="text-[10px] text-blue-500 mt-0.5">✓ Done</span>
+                                                @if(isset($step['received_by']) && $step['received_by'])
+                                                    <div class="text-[10px] text-blue-600 mt-1">
+                                                        Received by: {{ $step['received_by'] }}
+                                                    </div>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>

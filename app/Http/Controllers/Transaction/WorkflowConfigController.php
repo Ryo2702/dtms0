@@ -58,16 +58,16 @@ class WorkflowConfigController extends Controller
             'difficulty' => 'required|in:simple,complex,highly_technical',
             'steps' => 'required|array|min:1',
             'steps.*.department_id' => 'required|exists:departments,id',
-            'document_tags' => 'nullable|array',
-            'document_tags.*.id' => 'exists:document_tags,id',
-            'document_tags.*.is_required' => 'boolean'
+            'steps.*.document_tags' => 'nullable|array',
+            'steps.*.document_tags.*' => 'exists:document_tags,id',
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Build the workflow configuration
-            $config = $this->configService->buildWorkflowConfig($request->input('steps'));
+            // Build the workflow configuration with document tags per step
+            $steps = $request->input('steps');
+            $config = $this->configService->buildWorkflowConfig($steps);
             $config['difficulty'] = $request->input('difficulty');
 
             // Validate the configuration
@@ -89,16 +89,25 @@ class WorkflowConfigController extends Controller
                 'status' => true,
             ]);
 
-            if ($request->has('document_tags') && !empty($request->input('document_tags'))) {
-                // Filter to only include tags that have an 'id' key (checked checkboxes)
-                $tags = collect($request->input('document_tags'))
-                    ->filter(fn($tag) => isset($tag['id']) && !empty($tag['id']))
-                    ->values()
-                    ->toArray();
-
-                if (!empty($tags)) {
-                    $workflow->syncDocumentTags($tags);
+            // Collect all document tags from all steps
+            $allDocumentTags = [];
+            foreach ($steps as $stepIndex => $step) {
+                if (isset($step['document_tags']) && is_array($step['document_tags'])) {
+                    foreach ($step['document_tags'] as $tagId) {
+                        if (!isset($allDocumentTags[$tagId])) {
+                            $allDocumentTags[$tagId] = [
+                                'id' => $tagId,
+                                'is_required' => true, // Tags selected in steps are considered required
+                                'steps' => []
+                            ];
+                        }
+                        $allDocumentTags[$tagId]['steps'][] = $stepIndex + 1; // Store which step uses this tag
+                    }
                 }
+            }
+
+            if (!empty($allDocumentTags)) {
+                $workflow->syncDocumentTags(array_values($allDocumentTags));
             }
 
             DB::commit();
@@ -144,18 +153,18 @@ class WorkflowConfigController extends Controller
             'difficulty' => 'required|in:simple,complex,highly_technical',
             'steps' => 'required|array|min:1',
             'steps.*.department_id' => 'required|exists:departments,id',
+            'steps.*.document_tags' => 'nullable|array',
+            'steps.*.document_tags.*' => 'exists:document_tags,id',
             'origin_departments' => 'nullable|array',
             'origin_departments.*' => 'exists:departments,id',
-            'document_tags' => 'nullable|array',
-            'document_tags.*.id' => 'exists:document_tags,id',
-            'document_tags.*.is_required' => 'boolean'
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Build the workflow configuration
-            $config = $this->configService->buildWorkflowConfig($request->input('steps'));
+            // Build the workflow configuration with document tags per step
+            $steps = $request->input('steps');
+            $config = $this->configService->buildWorkflowConfig($steps);
             $config['difficulty'] = $request->input('difficulty');
 
             // Validate the configuration
@@ -175,14 +184,25 @@ class WorkflowConfigController extends Controller
                 'origin_departments' => $originDepartments,
             ]);
 
-            if ($request->has('document_tags')) {
-                // Filter to only include tags that have an 'id' key (checked checkboxes)
-                $tags = collect($request->input('document_tags', []))
-                    ->filter(fn($tag) => isset($tag['id']) && !empty($tag['id']))
-                    ->values()
-                    ->toArray();
+            // Collect all document tags from all steps
+            $allDocumentTags = [];
+            foreach ($steps as $stepIndex => $step) {
+                if (isset($step['document_tags']) && is_array($step['document_tags'])) {
+                    foreach ($step['document_tags'] as $tagId) {
+                        if (!isset($allDocumentTags[$tagId])) {
+                            $allDocumentTags[$tagId] = [
+                                'id' => $tagId,
+                                'is_required' => true, // Tags selected in steps are considered required
+                                'steps' => []
+                            ];
+                        }
+                        $allDocumentTags[$tagId]['steps'][] = $stepIndex + 1; // Store which step uses this tag
+                    }
+                }
+            }
 
-                $workflow->syncDocumentTags($tags);
+            if (!empty($allDocumentTags)) {
+                $workflow->syncDocumentTags(array_values($allDocumentTags));
             } else {
                 $workflow->documentTags()->detach();
             }

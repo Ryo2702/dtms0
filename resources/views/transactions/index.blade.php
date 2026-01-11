@@ -80,7 +80,7 @@
                             @if($workflow->documentTags->count() > 0)
                                 <div class="flex flex-wrap gap-1 mb-3">
                                     @foreach($workflow->documentTags->take(3) as $tag)
-                                        <span class="badge badge-sm badge-ghost">{{ $tag->name }}</span>
+                                        <span class="badge badge-sm badge-ghost" style="background-color: #10b981; color: white;">{{ $tag->name }}</span>
                                     @endforeach
                                     @if($workflow->documentTags->count() > 3)
                                         <span class="badge badge-sm badge-ghost">+{{ $workflow->documentTags->count() - 3 }}</span>

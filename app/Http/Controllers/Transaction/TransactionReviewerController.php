@@ -431,9 +431,9 @@ class TransactionReviewerController extends Controller
             return back()->with('error', 'Only department heads or staff can receive transactions.');
         }
 
-        // Check if user is the assigned reviewer
-        if ($reviewer->reviewer_id !== $user->id) {
-            return back()->with('error', 'You are not authorized to receive this transaction.');
+        // Check if user is from the same department as the reviewer
+        if ($reviewer->reviewer->department_id !== $user->department_id) {
+            return back()->with('error', 'You can only receive transactions assigned to your department.');
         }
 
         $validated = $request->validate([

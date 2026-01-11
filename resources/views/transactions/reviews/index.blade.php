@@ -592,6 +592,7 @@
                     Cancel
                 </button>
                 <button type="submit" 
+                        form="receiveForm"
                         class="btn btn-success">
                     <i data-lucide="check" class="w-4 h-4 mr-1"></i>
                     Confirm Receipt
@@ -657,6 +658,7 @@
                     Cancel
                 </button>
                 <button type="submit" 
+                        form="notReceivedForm"
                         class="btn btn-error">
                     <i data-lucide="x" class="w-4 h-4 mr-1"></i>
                     Mark Not Received

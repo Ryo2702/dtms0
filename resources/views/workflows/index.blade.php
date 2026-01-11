@@ -154,7 +154,7 @@
                                                 @if ($workflowTags->count() > 0)
                                                     <div class="flex flex-wrap gap-1 max-w-[200px]">
                                                         @foreach ($workflowTags->take(3) as $tag)
-                                                            <span class="badge badge-sm badge-ghost"
+                                                            <span class="badge badge-sm badge-ghost" style="background-color: #10b981; color: white;"
                                                                 title="{{ $tag->description }}">
                                                                 {{ Str::limit($tag->name, 15) }}
                                                             </span>

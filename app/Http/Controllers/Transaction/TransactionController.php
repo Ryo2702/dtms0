@@ -261,6 +261,7 @@ class TransactionController extends Controller
         $transaction = $this->transactionService->getTransactionDetails($transaction);
         $assignStaff = AssignStaff::active()->get();
         $departments = Department::where('status', true)->orderBy('name')->get();
+        $documentTags = \App\Models\DocumentTag::with('departments')->where('status', true)->orderBy('name')->get();
 
         $canEditWorkflow = (int) $transaction->current_workflow_step === 1;
         $workflowConfig = $transaction->workflow_snapshot ?? $transaction->workflow->workflow_config;
@@ -272,6 +273,7 @@ class TransactionController extends Controller
                 'transaction',
                 'assignStaff',
                 'departments',
+                'documentTags',
                 'canEditWorkflow',
                 'workflowConfig',
                 'workflowSteps'
@@ -288,6 +290,7 @@ class TransactionController extends Controller
             'transaction',
             'assignStaff',
             'departments',
+            'documentTags',
             'canEditWorkflow',
             'workflowConfig',
             'workflowSteps'

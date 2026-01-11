@@ -21,7 +21,7 @@
                         <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
                         Back to Reviews
                     </a>
-                    <a href="{{ route('transactions.show', $reviewer->transaction) }}" class="btn btn-primary">
+                    <a href="{{ route('transactions.show', $reviewer->transaction) }}" class="btn btn-primary" >
                         <i data-lucide="eye" class="w-4 h-4 mr-2"></i>
                         View Transaction
                     </a>

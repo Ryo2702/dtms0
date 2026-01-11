@@ -311,6 +311,78 @@
             const currentConfig = @json($currentConfig);
             let stepIndex = 0;
 
+            // Update step tag count
+            function updateStepTagCount(stepIndex) {
+                const checkboxes = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]:checked`);
+                const countElement = document.querySelector(`.step-tag-count[data-step-index="${stepIndex}"]`);
+                if (countElement) {
+                    countElement.textContent = `${checkboxes.length} tag${checkboxes.length !== 1 ? 's' : ''} selected`;
+                }
+            }
+
+            // Toggle collapse for document tags
+            function toggleCollapse(index) {
+                const content = document.querySelector(`.collapse-content-${index}`);
+                const chevron = document.querySelector(`.chevron-icon-${index}`);
+                
+                if (content && chevron) {
+                    content.classList.toggle('hidden');
+                    chevron.classList.toggle('rotate-180');
+                }
+            }
+
+            // Update connected departments based on all selected tags from all steps
+            function updateConnectedDepartments() {
+                const selectedCheckboxes = document.querySelectorAll('.step-tag-checkbox:checked');
+                const container = document.getElementById('connectedDepartments');
+
+                if (!container || selectedCheckboxes.length === 0) {
+                    if (container) container.innerHTML = '<span class="text-gray-400 text-sm">Select document tags to see connected departments</span>';
+                    return;
+                }
+
+                const departmentTagMap = new Map();
+                
+                selectedCheckboxes.forEach(checkbox => {
+                    const tagId = checkbox.dataset.tagId;
+                    const stepIndex = checkbox.dataset.stepIndex;
+                    const tag = documentTags.find(t => t.id == tagId);
+                    
+                    if (tag && tag.departments && tag.departments.length > 0) {
+                        tag.departments.forEach(dept => {
+                            if (!departmentTagMap.has(dept.id)) {
+                                departmentTagMap.set(dept.id, {
+                                    dept: dept,
+                                    steps: new Set(),
+                                    tags: new Set()
+                                });
+                            }
+                            const info = departmentTagMap.get(dept.id);
+                            info.steps.add(parseInt(stepIndex) + 1);
+                            info.tags.add(tag.name);
+                        });
+                    }
+                });
+
+                let html = '';
+                departmentTagMap.forEach((info, deptId) => {
+                    const stepsArray = Array.from(info.steps).sort((a, b) => a - b);
+                    const stepsText = stepsArray.map(s => `Step ${s}`).join(', ');
+                    
+                    html += `
+                        <div class="p-2 bg-white rounded border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">${info.dept.name}</span>
+                                <span class="badge badge-sm badge-ghost">${info.tags.size} tag${info.tags.size !== 1 ? 's' : ''}</span>
+                            </div>
+                            <span class="text-xs text-gray-500">${stepsText}</span>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html || '<span class="text-gray-400 text-sm">No departments connected</span>';
+            }
+
             // Document Tags functionality
             function initDocumentTags() {
                 document.querySelectorAll('.document-tag-checkbox').forEach(checkbox => {
@@ -377,10 +449,84 @@
             }
 
             function createStepHtml(index, departmentId = '', processTimeValue = 3, processTimeUnit = 'minutes',
-                notes = '') {
+                notes = '', selectedTags = []) {
                 const deptOptions = departments.map(d =>
                     `<option value="${d.id}" ${departmentId == d.id ? 'selected' : ''}>${d.name}</option>`
                 ).join('');
+
+                // Generate document tags checkboxes
+                let tagsHtml = '';
+                if (documentTags && documentTags.length > 0) {
+                    const tagCheckboxes = documentTags.map(tag => {
+                        const isChecked = selectedTags.includes(tag.id);
+                        const deptBadges = tag.departments && tag.departments.length > 0 
+                            ? tag.departments.slice(0, 2).map(d => `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">${d.name}</span>`).join('') +
+                              (tag.departments.length > 2 ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">+${tag.departments.length - 2}</span>` : '')
+                            : '';
+                        
+                        return `
+                            <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:border-blue-400 transition-colors">
+                                <label class="flex items-center gap-2 cursor-pointer flex-1">
+                                    <input type="checkbox" 
+                                           name="steps[${index}][document_tags][]" 
+                                           value="${tag.id}" 
+                                           class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 step-tag-checkbox"
+                                           data-step-index="${index}"
+                                           data-tag-id="${tag.id}"
+                                           ${isChecked ? 'checked' : ''}>
+                                    <div class="flex-1">
+                                        <span class="text-sm text-gray-900">${tag.name}</span>
+                                        ${deptBadges ? `<div class="flex flex-wrap gap-1 mt-1">${deptBadges}</div>` : ''}
+                                    </div>
+                                </label>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    tagsHtml = `
+                        <div class="mt-3 bg-gray-100 rounded-lg border border-gray-200">
+                            <button type="button" 
+                                    class="w-full px-4 py-3 text-sm font-medium flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors rounded-t-lg"
+                                    onclick="toggleCollapse(${index})">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                    </svg>
+                                    <span>Required Document Tags</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500 step-tag-count" data-step-index="${index}">0 tags selected</span>
+                                    <svg class="w-5 h-5 text-gray-600 transform transition-transform duration-200 chevron-icon-${index}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </div>
+                            </button>
+                            <div class="hidden px-4 pb-4 pt-2 collapse-content-${index}">
+                                <div class="flex items-center justify-end mb-2">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 select-all-tags" data-step-index="${index}">
+                                        <span class="text-xs text-gray-600">Select All</span>
+                                    </label>
+                                </div>
+                                <div class="max-h-48 overflow-y-auto space-y-1">
+                                    ${tagCheckboxes}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tagsHtml = `
+                        <div class="mt-3 p-4 bg-gray-100 rounded-lg border border-gray-300">
+                            <div class="text-center py-4">
+                                <svg class="w-10 h-10 mx-auto mb-2 text-gray-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                </svg>
+                                <p class="text-sm text-gray-500 mb-2">No document tags available</p>
+                                <p class="text-xs text-gray-400">Create document tags first to assign them to workflow steps</p>
+                            </div>
+                        </div>
+                    `;
+                }
 
                 return `
                     <div class="step-item border rounded-lg p-4 bg-gray-50" data-index="${index}">
@@ -441,7 +587,7 @@
                             </div>
                         </div>
 
-                        <div class="form-control">
+                        <div class="form-control mb-3">
                             <label class="label">
                                 <span class="label-text font-medium">Instructions/Notes</span>
                                 <span class="label-text-alt text-gray-400">Optional</span>
@@ -451,6 +597,8 @@
                                       rows="2" 
                                       placeholder="e.g., Review budget allocation and verify fund availability...">${notes}</textarea>
                         </div>
+                        
+                        ${tagsHtml}
                     </div>
                 `;
             }
@@ -585,7 +733,8 @@
                             step.department_id,
                             step.process_time_value || 3,
                             step.process_time_unit || 'days',
-                            step.notes || ''
+                            step.notes || '',
+                            step.document_tags || []
                         ));
                         stepIndex = index + 1;
                     });
@@ -602,6 +751,9 @@
                 attachEventListeners();
                 attachDifficultyListeners();
                 updateStepCountAndDifficulty();
+                if (typeof updateConnectedDepartments === 'function') {
+                    updateConnectedDepartments();
+                }
             });
 
             // Origin Departments functionality
@@ -759,6 +911,51 @@
                         updateStepCountAndDifficulty();
                     }, 500);
                 });
+                
+                // Step tag checkboxes
+                document.querySelectorAll('.step-tag-checkbox').forEach(checkbox => {
+                    checkbox.onchange = function() {
+                        const stepIndex = this.dataset.stepIndex;
+                        updateStepTagCount(stepIndex);
+                        updateStepSelectAllState(stepIndex);
+                        if (typeof updateConnectedDepartments === 'function') {
+                            updateConnectedDepartments();
+                        }
+                    };
+                });
+                
+                // Select all tags per step
+                document.querySelectorAll('.select-all-tags').forEach(checkbox => {
+                    checkbox.onchange = function() {
+                        const stepIndex = this.dataset.stepIndex;
+                        const stepCheckboxes = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]`);
+                        stepCheckboxes.forEach(cb => {
+                            cb.checked = this.checked;
+                        });
+                        updateStepTagCount(stepIndex);
+                        if (typeof updateConnectedDepartments === 'function') {
+                            updateConnectedDepartments();
+                        }
+                    };
+                });
+                
+                // Initialize tag counts and select all states for existing steps
+                document.querySelectorAll('.step-item').forEach(item => {
+                    const stepIndex = item.dataset.index;
+                    updateStepTagCount(stepIndex);
+                    updateStepSelectAllState(stepIndex);
+                });
+            }
+
+            function updateStepSelectAllState(stepIndex) {
+                const selectAllCheckbox = document.querySelector(`.select-all-tags[data-step-index="${stepIndex}"]`);
+                const checkboxes = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]`);
+                const checkedCount = document.querySelectorAll(`.step-tag-checkbox[data-step-index="${stepIndex}"]:checked`).length;
+                
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+                    selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+                }
             }
 
             function debounce(func, wait) {
@@ -789,6 +986,29 @@
 
                     const notes = item.querySelector('.step-notes');
                     if (notes) notes.name = `steps[${index}][notes]`;
+                    
+                    // Update document tag inputs
+                    const tagCheckboxes = item.querySelectorAll('.step-tag-checkbox');
+                    tagCheckboxes.forEach(checkbox => {
+                        checkbox.name = `steps[${index}][document_tags][]`;
+                        checkbox.dataset.stepIndex = index;
+                    });
+                    
+                    // Update tag count element
+                    const tagCount = item.querySelector('.step-tag-count');
+                    if (tagCount) {
+                        tagCount.dataset.stepIndex = index;
+                    }
+                    
+                    // Update select all checkbox
+                    const selectAllTags = item.querySelector('.select-all-tags');
+                    if (selectAllTags) {
+                        selectAllTags.dataset.stepIndex = index;
+                    }
+                    
+                    // Re-initialize tag count for this step
+                    updateStepTagCount(index);
+                    updateStepSelectAllState(index);
                 });
             }
 
