@@ -23,68 +23,31 @@
             </div>
         </div>
 
-        {{-- Stats --}}
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div class="stat bg-white rounded-lg shadow">
-                <div class="stat-figure text-primary">
-                    <i data-lucide="clipboard-list" class="w-8 h-8"></i>
-                </div>
-                <div class="stat-title">Pending</div>
-                <div class="stat-value text-primary">{{ $stats['pending'] }}</div>
-            </div>
-            <div class="stat bg-white rounded-lg shadow">
-                <div class="stat-figure text-info">
-                    <i data-lucide="refresh-cw" class="w-8 h-8"></i>
-                </div>
-                <div class="stat-title">Resubmissions</div>
-                <div class="stat-value text-info">{{ $stats['resubmissions'] }}</div>
-            </div>
-            <div class="stat bg-white rounded-lg shadow">
-                <div class="stat-figure text-warning">
-                    <i data-lucide="clock" class="w-8 h-8"></i>
-                </div>
-                <div class="stat-title">Due Today</div>
-                <div class="stat-value text-warning">{{ $stats['due_today'] }}</div>
-            </div>
-            <div class="stat bg-white rounded-lg shadow">
-                <div class="stat-figure text-error">
-                    <i data-lucide="alert-circle" class="w-8 h-8"></i>
-                </div>
-                <div class="stat-title">Overdue</div>
-                <div class="stat-value text-error">{{ $stats['overdue'] }}</div>
-            </div>
-            <div class="stat bg-white rounded-lg shadow">
-                <div class="stat-figure text-success">
-                    <i data-lucide="check-circle" class="w-8 h-8"></i>
-                </div>
-                <div class="stat-title">Reviewed</div>
-                <div class="stat-value text-success">{{ $stats['reviewed'] }}</div>
-            </div>
-        </div>
-
         {{-- Tabs --}}
-        <div class="tabs tabs-boxed bg-white p-2 mb-6 rounded-lg shadow">
-            <a href="{{ route('transactions.reviews.index', ['tab' => 'pending']) }}"
-                class="tab {{ $tab === 'pending' ? 'tab-active' : '' }}">
-                <i data-lucide="inbox" class="w-4 h-4 mr-2"></i>
-                Pending Reviews
-                @if ($stats['pending'] > 0)
-                    <span class="badge badge-primary badge-sm ml-2">{{ $stats['pending'] }}</span>
-                @endif
-            </a>
-            <a href="{{ route('transactions.reviews.index', ['tab' => 'resubmissions']) }}"
-                class="tab {{ $tab === 'resubmissions' ? 'tab-active' : '' }}">
-                <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
-                Resubmissions
-                @if ($stats['resubmissions'] > 0)
-                    <span class="badge badge-info badge-sm ml-2">{{ $stats['resubmissions'] }}</span>
-                @endif
-            </a>
-            <a href="{{ route('transactions.reviews.index', ['tab' => 'reviewed']) }}"
-                class="tab {{ $tab === 'reviewed' ? 'tab-active' : '' }}">
-                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
-                Already Reviewed
-            </a>
+        <div class="bg-white rounded-lg shadow mb-6 border border-gray-200">
+            <div class="flex border-b border-gray-200">
+                <a href="{{ route('transactions.reviews.index', ['tab' => 'pending']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors {{ $tab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="inbox" class="w-4 h-4"></i>
+                    <span>Pending Reviews</span>
+                    @if ($stats['pending'] > 0)
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">{{ $stats['pending'] }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('transactions.reviews.index', ['tab' => 'resubmissions']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors {{ $tab === 'resubmissions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span>Resubmissions</span>
+                    @if ($stats['resubmissions'] > 0)
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-cyan-600 rounded-full">{{ $stats['resubmissions'] }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('transactions.reviews.index', ['tab' => 'reviewed']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors {{ $tab === 'reviewed' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>Already Reviewed</span>
+                </a>
+            </div>
         </div>
 
         {{-- Content based on active tab --}}
@@ -150,17 +113,17 @@
                                             <div class="flex items-center gap-2">
                                                 <div class="avatar">
                                                     <div class="w-8 rounded-full">
-                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->transaction->creator->name ?? 'Unknown') }}&background=random"
+                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown')) }}&background=random"
                                                             alt="" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div class="text-sm font-medium">
-                                                        {{ $review->transaction->creator->name ?? 'Unknown' }}</div>
+                                                        {{ $review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown') }}</div>
                                                     <div class="text-xs text-gray-500">
                                                         <span class="badge badge-outline badge-xs">
                                                             <i data-lucide="building-2" class="w-3 h-3 mr-1"></i>
-                                                            {{ $review->transaction->department->name ?? 'N/A' }}
+                                                            {{ $review->previousReviewer ? ($review->previousReviewer->department->name ?? 'N/A') : ($review->transaction->department->name ?? 'N/A') }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -356,17 +319,17 @@
                                             <div class="flex items-center gap-2">
                                                 <div class="avatar">
                                                     <div class="w-8 rounded-full">
-                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->transaction->creator->name ?? 'Unknown') }}&background=random"
+                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown')) }}&background=random"
                                                             alt="" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div class="text-sm font-medium">
-                                                        {{ $review->transaction->creator->name ?? 'Unknown' }}</div>
+                                                        {{ $review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown') }}</div>
                                                     <div class="text-xs text-gray-500">
                                                         <span class="badge badge-outline badge-xs">
                                                             <i data-lucide="building-2" class="w-3 h-3 mr-1"></i>
-                                                            {{ $review->transaction->department->name ?? 'N/A' }}
+                                                            {{ $review->previousReviewer ? ($review->previousReviewer->department->name ?? 'N/A') : ($review->transaction->department->name ?? 'N/A') }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -549,6 +512,10 @@
                                                 class="font-mono font-bold text-primary hover:underline">
                                                 {{ $review->transaction->transaction_code }}
                                             </a>
+                                            @if ($review->iteration_number > 1)
+                                                <span class="badge badge-info badge-sm ml-1">Resubmission
+                                                    #{{ $review->iteration_number }}</span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3">
                                             <div class="font-medium">
@@ -564,17 +531,17 @@
                                             <div class="flex items-center gap-2">
                                                 <div class="avatar">
                                                     <div class="w-8 rounded-full">
-                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->transaction->creator->name ?? 'Unknown') }}&background=random"
+                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown')) }}&background=random"
                                                             alt="" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div class="text-sm font-medium">
-                                                        {{ $review->transaction->creator->name ?? 'Unknown' }}</div>
+                                                        {{ $review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown') }}</div>
                                                     <div class="text-xs text-gray-500">
                                                         <span class="badge badge-outline badge-xs">
                                                             <i data-lucide="building-2" class="w-3 h-3 mr-1"></i>
-                                                            {{ $review->transaction->department->name ?? 'N/A' }}
+                                                            {{ $review->previousReviewer ? ($review->previousReviewer->department->name ?? 'N/A') : ($review->transaction->department->name ?? 'N/A') }}
                                                         </span>
                                                     </div>
                                                 </div>

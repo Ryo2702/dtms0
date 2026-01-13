@@ -125,22 +125,6 @@
                         </a>
                     </li>
 
-                    <li class="mb-1">
-                        <a href="{{ route('transactions.my', ['tab' => 'pending_receipt']) }}"
-                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ request()->get('tab') === 'pending_receipt' ? 'bg-white/20' : '' }}">
-                            <i data-lucide="package-check" class="w-5 h-5"></i>
-                            <span>Completed Transactions</span>
-                            @php
-                                $pendingReceiptCount = \App\Models\Transaction::where('origin_department_id', $user->department_id)
-                                    ->where('transaction_status', 'completed')
-                                    ->where('receiving_status', 'pending')
-                                    ->count();
-                            @endphp
-                            @if($pendingReceiptCount > 0)
-                                <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-medium bg-green-500 text-white rounded-full">{{ $pendingReceiptCount }}</span>
-                            @endif
-                        </a>
-                    </li>
 
                     <li class="px-3 pt-4 pb-2">
                         <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Department</span>
