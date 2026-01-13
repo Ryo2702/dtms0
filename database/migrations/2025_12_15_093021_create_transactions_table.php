@@ -53,6 +53,17 @@ return new class extends Migration
             $table->foreignId('reviewer_id')->constrained('users');
             $table->foreignId('department_id')->constrained('departments');
             $table->enum('status', ['pending', 're_submit', 'return_to_orginating', 'approved', 'rejected', 'cancelled'])->default('pending');
+            $table->enum('action_type', [
+                'review',           // Checks correctness without assuming liability
+                'validate',         // Confirms compliance with rules, plans, or law
+                'approve',          // Exercises legal authority. This is a binding signature
+                'certify',          // Attests to a specific fact (funds, delivery, inspection)
+                'return_revision',  // Sends document back with findings; keeps it alive
+                'resubmit'          // Re-enters the approval path after corrections
+            ])->nullable();
+    
+            // Add remarks field
+            $table->text('remarks')->nullable();
             $table->timestamp('due_date');
             $table->boolean('is_overdue')->default(0);
             $table->timestamp('reviewed_at')->nullable();

@@ -25,17 +25,19 @@ class TransactionReviewerController extends Controller
         $userId = $request->user()->id;
         $tab = $request->get('tab', 'pending');
 
-        // Pending reviews - ALL transactions assigned to this reviewer (pending, approved, rejected)
-        // This ensures transactions stay visible even after approval/rejection
+        // Pending reviews - only transactions with pending status
         $pendingReviews = TransactionReviewer::with([
             'transaction.workflow', 
             'transaction.creator', 
             'transaction.department',
             'transaction.originDepartment',
             'department', 
-            'receivedBy'
+            'receivedBy',
+            'previousReviewer',
+            'previousReviewer.department'
         ])
             ->forReviewer($userId)
+            ->where('status', 'pending')
             ->orderBy('due_date', 'asc')
             ->orderBy('reviewed_at', 'desc')
             ->get();
@@ -47,7 +49,9 @@ class TransactionReviewerController extends Controller
             'transaction.department',
             'transaction.originDepartment',
             'department', 
-            'receivedBy'
+            'receivedBy',
+            'previousReviewer',
+            'previousReviewer.department'
         ])
             ->forReviewer($userId)
             ->whereIn('status', ['approved', 'rejected'])
@@ -55,16 +59,19 @@ class TransactionReviewerController extends Controller
             ->limit(20)
             ->get();
 
-        // Resubmissions - ALL resubmissions (including approved/rejected ones)
+        // Resubmissions - only pending resubmissions
         $resubmissions = TransactionReviewer::with([
             'transaction.workflow', 
             'transaction.creator', 
             'transaction.department',
             'transaction.originDepartment',
             'department', 
-            'receivedBy'
+            'receivedBy',
+            'previousReviewer',
+            'previousReviewer.department'
         ])
             ->forReviewer($userId)
+            ->where('status', 'pending')
             ->where('iteration_number', '>', 1)
             ->orderBy('due_date', 'asc')
             ->orderBy('reviewed_at', 'desc')
@@ -215,7 +222,7 @@ class TransactionReviewerController extends Controller
                 $transaction->refresh();
                 
                 // Assign the next reviewer based on workflow configuration
-                $this->assignNextReviewer($transaction, $reviewer->iteration_number);
+                $this->assignNextReviewer($transaction, $reviewer, $reviewer->iteration_number);
             }
 
         } catch (\Exception $e) {
@@ -235,9 +242,10 @@ class TransactionReviewerController extends Controller
      * Assign the next reviewer based on workflow configuration
      * 
      * @param Transaction $transaction The transaction to assign reviewer for
+     * @param TransactionReviewer $currentReviewer The reviewer who just approved
      * @param int $iterationNumber The current iteration number (for resubmissions)
      */
-    protected function assignNextReviewer(Transaction $transaction, int $iterationNumber = 1): void
+    protected function assignNextReviewer(Transaction $transaction, TransactionReviewer $currentReviewer, int $iterationNumber = 1): void
     {
         $workflow = $transaction->workflow;
         $steps = $workflow->getWorkflowSteps();
@@ -267,13 +275,19 @@ class TransactionReviewerController extends Controller
 
         if ($nextReviewerUser) {
             // Create a new reviewer entry for the next department
+            // Set received_status to 'received' since it's automatically forwarded from the previous step
+            // Set previous_reviewer_id to track who approved it before
             TransactionReviewer::create([
                 'transaction_id' => $transaction->id,
                 'reviewer_id' => $nextReviewerUser->id,
                 'department_id' => $nextDepartmentId,
                 'status' => 'pending',
+                'received_status' => 'received',
+                'received_by' => $nextReviewerUser->id,
+                'received_at' => now(),
                 'due_date' => $dueDate,
                 'iteration_number' => $iterationNumber,
+                'previous_reviewer_id' => $currentReviewer->reviewer_id,
             ]);
 
             // Update transaction's current department
