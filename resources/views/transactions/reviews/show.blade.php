@@ -21,10 +21,6 @@
                         <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
                         Back to Reviews
                     </a>
-                    <a href="{{ route('transactions.show', $reviewer->transaction) }}" class="btn btn-primary" >
-                        <i data-lucide="eye" class="w-4 h-4 mr-2"></i>
-                        View Transaction
-                    </a>
                 </div>
             </div>
         </div>
@@ -48,6 +44,15 @@
                             <dd class="font-medium">{{ $reviewer->transaction->workflow->transaction_name ?? 'N/A' }}</dd>
                         </div>
                         <div>
+                            <dt class="text-sm text-gray-500">Origin Department</dt>
+                            <dd>
+                                <span class="badge badge-outline">
+                                    <i data-lucide="building-2" class="w-3 h-3 mr-1"></i>
+                                    {{ $reviewer->transaction->originDepartment->name ?? 'N/A' }}
+                                </span>
+                            </dd>
+                        </div>
+                        <div>
                             <dt class="text-sm text-gray-500">Status</dt>
                             <dd>
                                 <x-status-badge 
@@ -61,7 +66,7 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-sm text-gray-500">Department</dt>
+                            <dt class="text-sm text-gray-500">Reviewer Department</dt>
                             <dd class="font-medium">{{ $reviewer->department->name ?? 'N/A' }}</dd>
                         </div>
                         <div>
@@ -173,6 +178,168 @@
                     </x-card>
                 @endif
 
+                {{-- Workflow Progress --}}
+                <x-card title="Workflow Progress">
+                    @if(isset($workflowProgress['steps']) && count($workflowProgress['steps']) > 0)
+                        <div class="flex flex-col lg:flex-row items-start lg:items-center gap-2 lg:gap-0 w-full overflow-x-auto py-4">
+                            @foreach($workflowProgress['steps'] as $index => $step)
+                                @php
+                                    $isCompleted = $step['status'] === 'completed';
+                                    $isCurrent = $step['status'] === 'current';
+                                    $isReturned = $step['status'] === 'returned';
+                                @endphp
+                                
+                                {{-- Step Item --}}
+                                <div class="flex items-center {{ $index < count($workflowProgress['steps']) - 1 ? 'flex-1' : '' }}">
+                                    <div class="flex flex-col items-center min-w-[120px]">
+                                        {{-- Step Circle --}}
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 shadow-sm
+                                            {{ $isCompleted ? 'bg-blue-500 border-blue-500 text-white' : '' }}
+                                            {{ $isCurrent ? 'bg-blue-600 border-blue-600 text-white ring-4 ring-blue-200 animate-pulse' : '' }}
+                                            {{ $isReturned ? 'bg-yellow-500 border-yellow-500 text-white' : '' }}
+                                            {{ !$isCompleted && !$isCurrent && !$isReturned ? 'bg-gray-100 border-gray-300 text-gray-400' : '' }}">
+                                            @if($isCompleted)
+                                                <i data-lucide="check" class="w-5 h-5"></i>
+                                            @elseif($isReturned)
+                                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                                            @else
+                                                {{ $index + 1 }}
+                                            @endif
+                                        </div>
+                                        
+                                        {{-- Step Label --}}
+                                        <div class="mt-2 px-3 py-1.5 rounded-lg text-center max-w-[140px]
+                                            {{ $isCompleted ? 'bg-blue-50 border border-blue-200' : '' }}
+                                            {{ $isCurrent ? 'bg-blue-100 border-2 border-blue-400 shadow-md' : '' }}
+                                            {{ $isReturned ? 'bg-yellow-50 border border-yellow-300' : '' }}
+                                            {{ !$isCompleted && !$isCurrent && !$isReturned ? 'bg-gray-50 border border-gray-200' : '' }}">
+                                            <div class="font-medium text-xs leading-tight
+                                                {{ $isCompleted ? 'text-blue-700' : '' }}
+                                                {{ $isCurrent ? 'text-blue-800' : '' }}
+                                                {{ $isReturned ? 'text-yellow-700' : '' }}
+                                                {{ !$isCompleted && !$isCurrent && !$isReturned ? 'text-gray-400' : '' }}">
+                                                {{ $step['department_name'] ?? 'Unknown' }}
+                                            </div>
+                                            @if($isCurrent)
+                                                <span class="inline-block px-2 py-0.5 bg-blue-600 text-white text-xs font-medium rounded-full mt-1">Current</span>
+                                                @if(isset($step['received_by']) && $step['received_by'])
+                                                    <div class="text-[10px] text-blue-600 mt-1">
+                                                        Received by: {{ is_array($step['received_by']) ? ($step['received_by']['name'] ?? 'Unknown') : $step['received_by'] }}
+                                                    </div>
+                                                @endif
+                                            @elseif($isReturned)
+                                                <span class="inline-block px-2 py-0.5 bg-yellow-500 text-white text-xs font-medium rounded-full mt-1">Returned</span>
+                                            @elseif($isCompleted)
+                                                <span class="text-[10px] text-blue-500 mt-0.5">✓ Done</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    {{-- Arrow Connector --}}
+                                    @if($index < count($workflowProgress['steps']) - 1)
+                                        <div class="hidden lg:flex flex-1 items-center justify-center px-2">
+                                            <div class="h-0.5 flex-1 {{ $isCompleted ? 'bg-blue-400' : 'bg-gray-200' }}"></div>
+                                            <i data-lucide="chevron-right" class="w-5 h-5 mx-1 {{ $isCompleted ? 'text-blue-400' : 'text-gray-300' }}"></i>
+                                            <div class="h-0.5 flex-1 {{ $isCompleted ? 'bg-blue-400' : 'bg-gray-200' }}"></div>
+                                        </div>
+                                        {{-- Mobile Arrow --}}
+                                        <div class="lg:hidden flex justify-center w-full py-1">
+                                            <i data-lucide="chevron-down" class="w-5 h-5 {{ $isCompleted ? 'text-blue-400' : 'text-gray-300' }}"></i>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Step Actions/Instructions --}}
+                        <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                            <h4 class="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                                <i data-lucide="list-checks" class="w-5 h-5"></i>
+                                Review Actions Required
+                            </h4>
+                            <div class="space-y-3">
+                                @foreach($workflowProgress['steps'] as $index => $step)
+                                    @if($step['status'] === 'current')
+                                        <div class="p-3 bg-white rounded-lg border-l-4 border-blue-600 shadow-sm">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                                                    {{ $index + 1 }}
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="font-semibold text-gray-900 mb-1">{{ $step['department_name'] ?? 'Unknown' }}</div>
+                                                    <div class="text-sm text-gray-700">
+                                                        <strong>Action:</strong> {{ $step['action'] ?? 'Review and process this transaction' }}
+                                                    </div>
+                                                    @if(isset($step['process_time_value']) && isset($step['process_time_unit']))
+                                                        <div class="text-xs text-blue-600 mt-2 flex items-center gap-1">
+                                                            <i data-lucide="clock" class="w-3 h-3"></i>
+                                                            Expected processing time: {{ $step['process_time_value'] }} {{ $step['process_time_unit'] }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <p class="text-gray-500 text-center py-4">No workflow steps available.</p>
+                    @endif
+                </x-card>
+
+                {{-- Document Attachments --}}
+                <x-card title="Document Attachments">
+                    {{-- Required Attachment Documents --}}
+                    @if($reviewer->transaction->workflow && $reviewer->transaction->workflow->documentTags && $reviewer->transaction->workflow->documentTags->count() > 0)
+                        <div class="mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <i data-lucide="paperclip" class="w-4 h-4 text-green-600"></i>
+                                Required Attachment Documents
+                            </h4>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach($reviewer->transaction->workflow->documentTags as $tag)
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-300">
+                                        <i data-lucide="file-check" class="w-4 h-4 mr-1.5"></i>
+                                        {{ $tag->name }}
+                                        @if($tag->pivot && $tag->pivot->is_required)
+                                            <span class="ml-1.5 text-xs bg-green-600 text-white px-1.5 py-0.5 rounded">Required</span>
+                                        @endif
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Additional Attachments --}}
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i>
+                            Additional Attachments
+                        </h4>
+                        @php
+                            $customTags = is_string($reviewer->transaction->custom_document_tags) 
+                                ? json_decode($reviewer->transaction->custom_document_tags, true) 
+                                : $reviewer->transaction->custom_document_tags;
+                        @endphp
+                        @if(is_array($customTags) && count($customTags) > 0)
+                            <div class="flex flex-wrap gap-2">
+                                @foreach($customTags as $tag)
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 border border-blue-300">
+                                        <i data-lucide="file-plus" class="w-4 h-4 mr-1.5"></i>
+                                        {{ is_array($tag) ? ($tag['name'] ?? 'Unknown') : $tag }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                                <i data-lucide="inbox" class="w-8 h-8 text-gray-400 mx-auto mb-2"></i>
+                                <p class="text-gray-500 text-sm">No additional attachments</p>
+                            </div>
+                        @endif
+                    </div>
+                </x-card>
+
                 {{-- Previous Reviewer Info (if reassigned) --}}
                 @if($reviewer->previousReviewer)
                     <x-card title="Previous Reviewer">
@@ -188,18 +355,6 @@
                             </div>
                         </div>
                         <p class="mt-2 text-sm text-gray-500">This review was reassigned from the previous reviewer.</p>
-                    </x-card>
-                @endif
-
-                {{-- Quick Actions --}}
-                @if($reviewer->isPending())
-                    <x-card title="Quick Actions">
-                        <div class="flex flex-wrap gap-3">
-                            <a href="{{ route('transactions.show', $reviewer->transaction) }}" class="btn btn-primary">
-                                <i data-lucide="clipboard-check" class="w-4 h-4 mr-2"></i>
-                                Process Review
-                            </a>
-                        </div>
                     </x-card>
                 @endif
             </div>

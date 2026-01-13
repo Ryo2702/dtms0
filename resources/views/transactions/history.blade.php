@@ -217,6 +217,8 @@
                                         <th>Status</th>
                                         <th>Due Date</th>
                                         <th>Reviewed At</th>
+                                        <th>Received By</th>
+                                        <th>Receive Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -236,6 +238,18 @@
                                             </td>
                                             <td>{{ $reviewer->due_date ? $reviewer->due_date->format('M d, Y') : 'N/A' }}</td>
                                             <td>{{ $reviewer->reviewed_at ? $reviewer->reviewed_at->format('M d, Y h:i A') : '-' }}</td>
+                                            <td>{{ $reviewer->received_by ? $reviewer->receivedBy->full_name : '-' }}</td>
+                                            <td>
+                                                @if($reviewer->receive_status)
+                                                    <x-status-badge 
+                                                        :status="$reviewer->receive_status" 
+                                                        :labels="['pending' => 'Pending', 'received' => 'Received']"
+                                                        :variants="['pending' => 'badge-warning', 'received' => 'badge-success']"
+                                                    />
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>

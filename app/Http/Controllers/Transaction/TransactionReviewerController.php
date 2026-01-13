@@ -27,14 +27,28 @@ class TransactionReviewerController extends Controller
 
         // Pending reviews - ALL transactions assigned to this reviewer (pending, approved, rejected)
         // This ensures transactions stay visible even after approval/rejection
-        $pendingReviews = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department', 'receivedBy'])
+        $pendingReviews = TransactionReviewer::with([
+            'transaction.workflow', 
+            'transaction.creator', 
+            'transaction.department',
+            'transaction.originDepartment',
+            'department', 
+            'receivedBy'
+        ])
             ->forReviewer($userId)
             ->orderBy('due_date', 'asc')
             ->orderBy('reviewed_at', 'desc')
             ->get();
 
         // Reviewed by me - transactions I've already reviewed (approved/rejected)
-        $reviewedByMe = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department', 'receivedBy'])
+        $reviewedByMe = TransactionReviewer::with([
+            'transaction.workflow', 
+            'transaction.creator', 
+            'transaction.department',
+            'transaction.originDepartment',
+            'department', 
+            'receivedBy'
+        ])
             ->forReviewer($userId)
             ->whereIn('status', ['approved', 'rejected'])
             ->orderBy('reviewed_at', 'desc')
@@ -42,7 +56,14 @@ class TransactionReviewerController extends Controller
             ->get();
 
         // Resubmissions - ALL resubmissions (including approved/rejected ones)
-        $resubmissions = TransactionReviewer::with(['transaction.workflow', 'transaction.creator', 'department', 'receivedBy'])
+        $resubmissions = TransactionReviewer::with([
+            'transaction.workflow', 
+            'transaction.creator', 
+            'transaction.department',
+            'transaction.originDepartment',
+            'department', 
+            'receivedBy'
+        ])
             ->forReviewer($userId)
             ->where('iteration_number', '>', 1)
             ->orderBy('due_date', 'asc')
@@ -86,9 +107,19 @@ class TransactionReviewerController extends Controller
      */
     public function show(TransactionReviewer $reviewer)
     {
-        $reviewer->load(['transaction.workflow', 'reviewer', 'department', 'previousReviewer']);
+        $reviewer->load([
+            'transaction.workflow', 
+            'transaction.originDepartment',
+            'transaction.department',
+            'reviewer', 
+            'department', 
+            'previousReviewer'
+        ]);
 
-        return view('transactions.reviews.show', compact('reviewer'));
+        // Get workflow progress
+        $workflowProgress = $this->workflowEngine->getWorkflowProgress($reviewer->transaction);
+
+        return view('transactions.reviews.show', compact('reviewer', 'workflowProgress'));
     }
 
     /**
@@ -107,9 +138,18 @@ class TransactionReviewerController extends Controller
                 ->with('error', 'This review has already been processed.');
         }
 
+        // Ensure the transaction has been received
+        if ($reviewer->received_status !== 'received') {
+            return redirect()->route('transactions.reviews.index')
+                ->with('error', 'This transaction must be marked as received before it can be reviewed.');
+        }
+
         $reviewer->load(['transaction.workflow', 'transaction.creator', 'transaction.department', 'department', 'previousReviewer']);
 
-        return view('transactions.reviews.review', compact('reviewer'));
+        // Get workflow progress
+        $workflowProgress = $this->workflowEngine->getWorkflowProgress($reviewer->transaction);
+
+        return view('transactions.reviews.review', compact('reviewer', 'workflowProgress'));
     }
 
     /**
@@ -126,6 +166,12 @@ class TransactionReviewerController extends Controller
         if ($reviewer->status !== 'pending') {
             return redirect()->route('transactions.reviews.index')
                 ->with('error', 'This review has already been processed.');
+        }
+
+        // Ensure the transaction has been received
+        if ($reviewer->received_status !== 'received') {
+            return redirect()->route('transactions.reviews.index')
+                ->with('error', 'This transaction must be marked as received before it can be reviewed.');
         }
 
         $validated = $request->validate([
@@ -263,6 +309,12 @@ class TransactionReviewerController extends Controller
         if ($reviewer->status !== 'pending') {
             return redirect()->route('transactions.reviews.index')
                 ->with('error', 'This review has already been processed.');
+        }
+
+        // Ensure the transaction has been received
+        if ($reviewer->received_status !== 'received') {
+            return redirect()->route('transactions.reviews.index')
+                ->with('error', 'This transaction must be marked as received before it can be reviewed.');
         }
 
         $validated = $request->validate([

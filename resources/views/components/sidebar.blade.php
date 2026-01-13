@@ -10,7 +10,7 @@
             </div>
 
             <!-- Mobile Close Button -->
-            <button id="close-btn" class="btn btn-ghost btn-sm lg:hidden!">
+            <button id="close-btn" class="p-2 rounded-lg hover:bg-white/10 lg:hidden">
                 <i data-lucide="x" class="w-5 h-5 text-white"></i>
             </button>
         </div>
@@ -21,7 +21,7 @@
 
         <!-- Navigation Menu -->
         <div class="flex-1 overflow-y-auto p-2">
-            <ul class="menu menu-sm w-full">
+            <ul class="w-full space-y-1">
                 <!-- Dashboard -->
                 <li class="mb-1">
                     <a href="{{ route('dashboard') }}"
@@ -33,8 +33,8 @@
 
                 <!-- Admin Section -->
                 @if ($user->type === 'Admin')
-                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                        <span>Administration</span>
+                    <li class="px-3 pt-4 pb-2">
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Administration</span>
                     </li>
 
                     <li class="mb-1">
@@ -61,8 +61,8 @@
                         </a>
                     </li>
 
-                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                        <span>getWorkflowsWithTags</span>
+                    <li class="px-3 pt-4 pb-2">
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Workflow Management</span>
                     </li>
 
                     <li class="mb-1">
@@ -81,8 +81,8 @@
                         </a>
                     </li>
                 @else
-                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                        <span>Status</span>
+                    <li class="px-3 pt-4 pb-2">
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Status</span>
                     </li>
 
                     <li class="mb-1">
@@ -104,7 +104,7 @@
                                     ->count();
                             @endphp
                             @if($myTransactionsCount > 0)
-                                <span class="badge badge-info badge-sm">{{ $myTransactionsCount }}</span>
+                                <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-medium bg-blue-500 text-white rounded-full">{{ $myTransactionsCount }}</span>
                             @endif
                         </a>
                     </li>
@@ -120,7 +120,7 @@
                                     ->count();
                             @endphp
                             @if($pendingReviewsCount > 0)
-                                <span class="badge badge-warning badge-sm">{{ $pendingReviewsCount }}</span>
+                                <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-medium bg-yellow-500 text-white rounded-full">{{ $pendingReviewsCount }}</span>
                             @endif
                         </a>
                     </li>
@@ -137,13 +137,13 @@
                                     ->count();
                             @endphp
                             @if($pendingReceiptCount > 0)
-                                <span class="badge badge-success badge-sm">{{ $pendingReceiptCount }}</span>
+                                <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-medium bg-green-500 text-white rounded-full">{{ $pendingReceiptCount }}</span>
                             @endif
                         </a>
                     </li>
 
-                    <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                        <span>Department</span>
+                    <li class="px-3 pt-4 pb-2">
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Department</span>
                     </li>
 
 
@@ -159,8 +159,8 @@
                 @endif
 
                 <!-- Settings -->
-                <li class="menu-title text-white/70 text-xs font-semibold uppercase tracking-wider mt-4 mb-2">
-                    <span>Settings</span>
+                <li class="px-3 pt-4 pb-2">
+                    <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Settings</span>
                 </li>
 
                 <li class="mb-1">
@@ -176,11 +176,10 @@
         <!-- User Info & Logout -->
         <div class="p-4 border-t border-white/10">
             <div class="flex items-center gap-3 mb-3 p-3 bg-white/10 rounded-lg">
-                <div class="avatar">
-                    <div class="w-10 rounded-full">
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=random"
-                            alt="{{ $user->name }}" />
-                    </div>
+                <div class="flex-shrink-0">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=random"
+                        alt="{{ $user->name }}"
+                        class="w-10 h-10 rounded-full" />
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="text-sm font-medium text-white truncate">{{ $user->name }}</div>
@@ -190,7 +189,7 @@
 
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf
-                <button class="btn btn-outline btn-sm w-full text-white border-white/30 hover:bg-white hover:text-primary">
+                <button class="w-full inline-flex items-center justify-center px-4 py-2 border border-white/30 text-white text-sm font-medium rounded-lg hover:bg-white hover:text-blue-600 transition-colors">
                     <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
                     Logout
                 </button>

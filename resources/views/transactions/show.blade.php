@@ -17,24 +17,16 @@
                     <p class="text-gray-600 mt-1">{{ $transaction->workflow->transaction_name ?? 'Transaction Details' }}</p>
                 </div>
                 <div class="flex gap-2">
-                    <a href="{{ route('transactions.tracker', $transaction) }}" class="btn btn-outline btn-primary">
+                    <a href="{{ route('transactions.tracker', $transaction) }}" class="inline-flex items-center px-4 py-2 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors">
                         <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
                         Track Progress
                     </a>
-                    <a href="{{ route('transactions.history', $transaction) }}" class="btn btn-outline">
-                        <i data-lucide="history" class="w-4 h-4 mr-2"></i>
-                        History
-                    </a>
-                    @if($transaction->transaction_status === 'in_progress')
-                        <button onclick="window['cancel-modal'].showModal()" class="btn btn-error text-white">
+                    @if($transaction->transaction_status === 'in_progress' && Auth::check() && Auth::id() === $transaction->created_by)
+                        <button onclick="document.getElementById('cancel-modal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
                             <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
                             Cancel Transaction
                         </button>
-                    @elseif(!$transaction->isCompleted() && !$transaction->isCancelled())
-                        <a href="{{ route('transactions.edit', $transaction) }}" class="btn btn-primary">
-                            <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
-                            Edit
-                        </a>
+                
                     @endif
                 </div>
             </div>
@@ -137,7 +129,7 @@
                                     @foreach($customTags as $tag)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
                                             <i data-lucide="tag" class="w-3 h-3 mr-1"></i>
-                                            {{ is_array($tag) ? ($tag['name'] ?? $tag) : $tag }}
+                                            {{ is_array($tag) ? ($tag['name'] ?? 'Unknown') : $tag }}
                                         </span>
                                     @endforeach
                                 @else
@@ -211,24 +203,24 @@
                                                 {{ $step['department_name'] ?? 'Unknown' }}
                                             </div>
                                             @if($isCurrent)
-                                                <span class="badge badge-primary badge-xs mt-1">Current</span>
+                                                <span class="inline-block px-2 py-0.5 bg-blue-600 text-white text-xs font-medium rounded-full mt-1">Current</span>
                                                 @if(isset($step['received_by']) && $step['received_by'])
                                                     <div class="text-[10px] text-blue-600 mt-1">
-                                                        Received by: {{ $step['received_by'] }}
+                                                        Received by: {{ is_array($step['received_by']) ? ($step['received_by']['name'] ?? 'Unknown') : $step['received_by'] }}
                                                     </div>
                                                 @endif
                                             @elseif($isReturned)
-                                                <span class="badge badge-warning badge-xs mt-1">Returned</span>
+                                                <span class="inline-block px-2 py-0.5 bg-yellow-500 text-white text-xs font-medium rounded-full mt-1">Returned</span>
                                                 @if(isset($step['received_by']) && $step['received_by'])
                                                     <div class="text-[10px] text-yellow-600 mt-1">
-                                                        Received by: {{ $step['received_by'] }}
+                                                        Received by: {{ is_array($step['received_by']) ? ($step['received_by']['name'] ?? 'Unknown') : $step['received_by'] }}
                                                     </div>
                                                 @endif
                                             @elseif($isCompleted)
                                                 <span class="text-[10px] text-blue-500 mt-0.5">✓ Done</span>
                                                 @if(isset($step['received_by']) && $step['received_by'])
                                                     <div class="text-[10px] text-blue-600 mt-1">
-                                                        Received by: {{ $step['received_by'] }}
+                                                        Received by: {{ is_array($step['received_by']) ? ($step['received_by']['name'] ?? 'Unknown') : $step['received_by'] }}
                                                     </div>
                                                 @endif
                                             @endif
@@ -261,19 +253,20 @@
                         <form action="{{ route('transactions.execute-action', $transaction) }}" method="POST" id="actionForm">
                             @csrf
                             
-                            <div class="form-control mb-4">
-                                <label class="label">
-                                    <span class="label-text">Select Action</span>
+                            <div class="mb-4">
+                                <label class="block mb-2">
+                                    <span class="text-sm font-medium text-gray-700">Select Action</span>
                                 </label>
                                 <div class="flex flex-wrap gap-2">
                                     @foreach($availableActions as $action)
                                         <label class="cursor-pointer">
                                             <input type="radio" name="action" value="{{ $action }}" class="hidden peer" required>
-                                            <span class="btn peer-checked:btn-primary peer-checked:text-white
-                                                {{ $action === 'approve' ? 'btn-success' : '' }}
-                                                {{ $action === 'reject' ? 'btn-error' : '' }}
-                                                {{ $action === 'resubmit' ? 'btn-warning' : '' }}
-                                                {{ $action === 'cancel' ? 'btn-ghost' : '' }}
+                                            <span class="inline-flex items-center px-4 py-2 border rounded-lg font-medium transition-colors
+                                                {{ $action === 'approve' ? 'border-green-600 text-green-600 hover:bg-green-50' : '' }}
+                                                {{ $action === 'reject' ? 'border-red-600 text-red-600 hover:bg-red-50' : '' }}
+                                                {{ $action === 'resubmit' ? 'border-yellow-600 text-yellow-600 hover:bg-yellow-50' : '' }}
+                                                {{ $action === 'cancel' ? 'border-gray-300 text-gray-700 hover:bg-gray-50' : '' }}
+                                                peer-checked:bg-blue-600 peer-checked:border-blue-600 peer-checked:text-white
                                             ">
                                                 @if($action === 'approve')
                                                     <i data-lucide="check" class="w-4 h-4 mr-1"></i>
@@ -291,7 +284,7 @@
                                 </div>
                             </div>
 
-                            <div class="form-control mb-4">
+                            <div class="mb-4">
                                 <x-form.textarea 
                                     name="remarks" 
                                     label="Remarks (Optional)" 
@@ -300,7 +293,7 @@
                                 />
                             </div>
 
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
                                 <i data-lucide="send" class="w-4 h-4 mr-2"></i>
                                 Submit Action
                             </button>
@@ -316,18 +309,16 @@
                     <x-card title="Current Reviewer">
                         <div class="space-y-3">
                             <div class="flex items-center gap-3">
-                                <div class="avatar">
+                                <div class="relative">
                                     @if($transaction->currentReviewer->department->logo)
-                                        <div class="w-12 h-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                                        <div class="w-12 h-12 rounded-full ring-2 ring-blue-600 ring-offset-2">
                                             <img src="{{ asset('storage/' . $transaction->currentReviewer->department->logo) }}" 
                                                  alt="{{ $transaction->currentReviewer->department->name ?? 'Department' }} Logo" 
-                                                 class="rounded-full object-cover" />
+                                                 class="rounded-full object-cover w-full h-full" />
                                         </div>
                                     @else
-                                        <div class="placeholder">
-                                            <div class="bg-primary text-white rounded-full w-12 h-12 flex items-center justify-center">
-                                                <span class="text-xl">{{ substr($transaction->currentReviewer->department->name ?? 'D', 0, 1) }}</span>
-                                            </div>
+                                        <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                                            <span class="text-xl font-semibold">{{ substr($transaction->currentReviewer->department->name ?? 'D', 0, 1) }}</span>
                                         </div>
                                     @endif
                                 </div>
@@ -342,15 +333,18 @@
                                         <i data-lucide="clock" class="w-4 h-4"></i>
                                         <span>Due: {{ $transaction->currentReviewer->due_date->format('M d, Y h:i A') }}</span>
                                         @if($transaction->currentReviewer->isOverdue())
-                                            <span class="badge badge-error badge-sm">Overdue</span>
+                                            <span class="inline-block px-2 py-1 bg-red-600 text-white text-xs font-medium rounded">Overdue</span>
                                         @endif
                                     </div>
-                                    <div class="bg-base-200 rounded-lg p-3">
+                                    <div class="bg-gray-100 rounded-lg p-3">
                                         <div class="text-xs text-gray-500 mb-1">Time Remaining</div>
                                         <div id="countdown-timer" 
                                              data-due-date="{{ $transaction->currentReviewer->due_date->toIso8601String() }}"
-                                             class="font-mono font-semibold {{ $transaction->currentReviewer->isOverdue() ? 'text-error' : 'text-primary' }}">
-                                            <span class="loading loading-spinner loading-xs"></span> Calculating...
+                                             class="font-mono font-semibold {{ $transaction->currentReviewer->isOverdue() ? 'text-red-600' : 'text-blue-600' }}">
+                                            <svg class="animate-spin h-4 w-4 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg> Calculating...
                                         </div>
                                     </div>
                                 </div>
@@ -372,37 +366,39 @@
         </div>
 
         {{-- Cancel Transaction Modal --}}
-        @if($transaction->transaction_status === 'in_progress')
-            <x-modal id="cancel-modal" size="md">
-                <h3 class="font-bold text-lg text-error mb-4">Cancel Transaction</h3>
-                <p class="mb-2">Are you sure you want to cancel this transaction?</p>
-                <p class="text-sm text-gray-500 mb-4">Transaction: <strong>{{ $transaction->transaction_code }}</strong></p>
-                
-                <form action="{{ route('transactions.cancel', $transaction) }}" method="POST">
-                    @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Reason for Cancellation <span class="text-error">*</span>
-                        </label>
-                        <textarea 
-                            name="reason" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                            rows="3" 
-                            placeholder="Explain why you are cancelling this transaction..." 
-                            required></textarea>
-                    </div>
+        @if($transaction->transaction_status === 'in_progress' && Auth::check() && Auth::id() === $transaction->created_by)
+            <div id="cancel-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                    <h3 class="font-bold text-lg text-red-600 mb-4">Cancel Transaction</h3>
+                    <p class="mb-2">Are you sure you want to cancel this transaction?</p>
+                    <p class="text-sm text-gray-500 mb-4">Transaction: <strong>{{ $transaction->transaction_code }}</strong></p>
                     
-                    <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" class="btn btn-ghost" onclick="window['cancel-modal'].close()">
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-error">
-                            <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
-                            Confirm Cancellation
-                        </button>
-                    </div>
-                </form>
-            </x-modal>
+                    <form action="{{ route('transactions.cancel', $transaction) }}" method="POST">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Reason for Cancellation <span class="text-red-600">*</span>
+                            </label>
+                            <textarea 
+                                name="reason" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" 
+                                rows="3" 
+                                placeholder="Explain why you are cancelling this transaction..." 
+                                required></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button type="button" class="px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors" onclick="document.getElementById('cancel-modal').classList.add('hidden')">
+                                Cancel
+                            </button>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
+                                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                                Confirm Cancellation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         @endif
     </x-container>
 
@@ -420,9 +416,9 @@
                 const diff = dueDate - now;
                 
                 if (diff <= 0) {
-                    countdownElement.innerHTML = '<span class="text-error font-bold">⏰ OVERDUE</span>';
-                    countdownElement.classList.remove('text-primary');
-                    countdownElement.classList.add('text-error');
+                    countdownElement.innerHTML = '<span class="text-red-600 font-bold">⏰ OVERDUE</span>';
+                    countdownElement.classList.remove('text-blue-600');
+                    countdownElement.classList.add('text-red-600');
                     return;
                 }
                 
@@ -448,14 +444,14 @@
                 
                 // Change color based on urgency
                 if (days === 0 && hours < 6) {
-                    countdownElement.classList.remove('text-primary');
-                    countdownElement.classList.add('text-error');
+                    countdownElement.classList.remove('text-blue-600');
+                    countdownElement.classList.add('text-red-600');
                 } else if (days === 0 && hours < 24) {
-                    countdownElement.classList.remove('text-primary');
-                    countdownElement.classList.add('text-warning');
+                    countdownElement.classList.remove('text-blue-600');
+                    countdownElement.classList.add('text-yellow-600');
                 } else {
-                    countdownElement.classList.remove('text-error', 'text-warning');
-                    countdownElement.classList.add('text-primary');
+                    countdownElement.classList.remove('text-red-600', 'text-yellow-600');
+                    countdownElement.classList.add('text-blue-600');
                 }
             }
             

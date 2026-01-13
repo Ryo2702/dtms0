@@ -209,8 +209,8 @@
                                     <textarea name="remarks" class="textarea textarea-bordered" rows="3" 
                                         placeholder="Add any comments, notes, or recommendations..."></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-success w-full">
-                                    <i data-lucide="check" class="w-4 h-4 mr-2"></i>
+                                <button type="submit" class="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
                                     Submit Decision
                                 </button>
                             </form>
@@ -267,8 +267,8 @@
                                         <span class="label-text-alt text-gray-500">Set a deadline for corrections and resubmission</span>
                                     </label>
                                 </div>
-                                <button type="submit" class="btn btn-error w-full">
-                                    <i data-lucide="corner-up-left" class="w-4 h-4 mr-2"></i>
+                                <button type="submit" class="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                                    <i data-lucide="corner-up-left" class="w-4 h-4"></i>
                                     Return Transaction
                                 </button>
                             </form>
@@ -335,6 +335,91 @@
                             </dd>
                         </div>
                     </dl>
+                </x-card>
+
+                {{-- Workflow Progress (Vertical) --}}
+                <x-card title="Workflow Progress">
+                    @if(isset($workflowProgress['steps']) && count($workflowProgress['steps']) > 0)
+                        <div class="relative">
+                            @foreach($workflowProgress['steps'] as $index => $step)
+                                @php
+                                    $isCompleted = $step['status'] === 'completed';
+                                    $isCurrent = $step['status'] === 'current';
+                                    $isReturned = $step['status'] === 'returned';
+                                    $isPending = !$isCompleted && !$isCurrent && !$isReturned;
+                                @endphp
+                                
+                                <div class="flex gap-3 {{ $index < count($workflowProgress['steps']) - 1 ? 'mb-4' : '' }}">
+                                    {{-- Vertical Line & Circle --}}
+                                    <div class="flex flex-col items-center">
+                                        {{-- Circle --}}
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm flex-shrink-0
+                                            {{ $isCompleted ? 'bg-blue-500 border-blue-500 text-white' : '' }}
+                                            {{ $isCurrent ? 'bg-blue-600 border-blue-600 text-white ring-4 ring-blue-200' : '' }}
+                                            {{ $isReturned ? 'bg-yellow-500 border-yellow-500 text-white' : '' }}
+                                            {{ $isPending ? 'bg-gray-100 border-gray-300 text-gray-400' : '' }}">
+                                            @if($isCompleted)
+                                                <i data-lucide="check" class="w-4 h-4"></i>
+                                            @elseif($isReturned)
+                                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                                            @else
+                                                {{ $index + 1 }}
+                                            @endif
+                                        </div>
+                                        
+                                        {{-- Vertical Line --}}
+                                        @if($index < count($workflowProgress['steps']) - 1)
+                                            <div class="w-0.5 flex-1 h-8 {{ $isCompleted ? 'bg-blue-400' : 'bg-gray-200' }}"></div>
+                                        @endif
+                                    </div>
+                                    
+                                    {{-- Step Content --}}
+                                    <div class="flex-1 pb-2">
+                                        <div class="font-medium text-sm
+                                            {{ $isCompleted ? 'text-blue-700' : '' }}
+                                            {{ $isCurrent ? 'text-blue-800' : '' }}
+                                            {{ $isReturned ? 'text-yellow-700' : '' }}
+                                            {{ $isPending ? 'text-gray-400' : '' }}">
+                                            {{ $step['department_name'] ?? 'Unknown' }}
+                                        </div>
+                                        
+                                        @if($isCurrent)
+                                            <span class="inline-block px-2 py-0.5 bg-blue-600 text-white text-xs font-medium rounded-full mt-1">Current Step</span>
+                                            @if(isset($step['action']) && $step['action'])
+                                                <div class="text-xs text-gray-600 mt-1">
+                                                    {{ $step['action'] }}
+                                                </div>
+                                            @endif
+                                            @if(isset($step['received_by']) && $step['received_by'])
+                                                <div class="text-xs text-blue-600 mt-1">
+                                                    <i data-lucide="user-check" class="w-3 h-3 inline"></i>
+                                                    {{ is_array($step['received_by']) ? ($step['received_by']['name'] ?? 'Unknown') : $step['received_by'] }}
+                                                </div>
+                                            @endif
+                                        @elseif($isReturned)
+                                            <span class="inline-block px-2 py-0.5 bg-yellow-500 text-white text-xs font-medium rounded-full mt-1">Returned</span>
+                                        @elseif($isCompleted)
+                                            <div class="text-xs text-blue-500 mt-1">
+                                                <i data-lucide="check" class="w-3 h-3 inline"></i>
+                                                Completed
+                                            </div>
+                                        @else
+                                            <div class="text-xs text-gray-400 mt-1">Pending</div>
+                                        @endif
+                                        
+                                        @if(isset($step['process_time_value']) && isset($step['process_time_unit']) && ($isCurrent || $isPending))
+                                            <div class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                                {{ $step['process_time_value'] }} {{ $step['process_time_unit'] }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-gray-500 text-sm text-center py-4">No workflow steps available.</p>
+                    @endif
                 </x-card>
 
                 {{-- Previous Rejection (if resubmission) --}}
