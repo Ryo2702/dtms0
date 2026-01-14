@@ -24,9 +24,11 @@ class TransactionReviewerController extends Controller
     {
         $userId = $request->user()->id;
         $tab = $request->get('tab', 'pending');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
 
         // Pending reviews - only transactions with pending status
-        $pendingReviews = TransactionReviewer::with([
+        $pendingReviewsQuery = TransactionReviewer::with([
             'transaction.workflow', 
             'transaction.creator', 
             'transaction.department',
@@ -37,13 +39,23 @@ class TransactionReviewerController extends Controller
             'previousReviewer.department'
         ])
             ->forReviewer($userId)
-            ->where('status', 'pending')
+            ->where('status', 'pending');
+
+        // Apply date filters to pending reviews
+        if ($dateFrom) {
+            $pendingReviewsQuery->whereDate('transaction_reviewers.created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $pendingReviewsQuery->whereDate('transaction_reviewers.created_at', '<=', $dateTo);
+        }
+
+        $pendingReviews = $pendingReviewsQuery
             ->orderBy('due_date', 'asc')
             ->orderBy('reviewed_at', 'desc')
             ->get();
 
         // Reviewed by me - transactions I've already reviewed (approved/rejected)
-        $reviewedByMe = TransactionReviewer::with([
+        $reviewedByMeQuery = TransactionReviewer::with([
             'transaction.workflow', 
             'transaction.creator', 
             'transaction.department',
@@ -54,13 +66,23 @@ class TransactionReviewerController extends Controller
             'previousReviewer.department'
         ])
             ->forReviewer($userId)
-            ->whereIn('status', ['approved', 'rejected'])
+            ->whereIn('status', ['approved', 'rejected']);
+
+        // Apply date filters to reviewed by me
+        if ($dateFrom) {
+            $reviewedByMeQuery->whereDate('transaction_reviewers.created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $reviewedByMeQuery->whereDate('transaction_reviewers.created_at', '<=', $dateTo);
+        }
+
+        $reviewedByMe = $reviewedByMeQuery
             ->orderBy('reviewed_at', 'desc')
             ->limit(20)
             ->get();
 
         // Resubmissions - only pending resubmissions
-        $resubmissions = TransactionReviewer::with([
+        $resubmissionsQuery = TransactionReviewer::with([
             'transaction.workflow', 
             'transaction.creator', 
             'transaction.department',
@@ -72,7 +94,17 @@ class TransactionReviewerController extends Controller
         ])
             ->forReviewer($userId)
             ->where('status', 'pending')
-            ->where('iteration_number', '>', 1)
+            ->where('iteration_number', '>', 1);
+
+        // Apply date filters to resubmissions
+        if ($dateFrom) {
+            $resubmissionsQuery->whereDate('transaction_reviewers.created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $resubmissionsQuery->whereDate('transaction_reviewers.created_at', '<=', $dateTo);
+        }
+
+        $resubmissions = $resubmissionsQuery
             ->orderBy('due_date', 'asc')
             ->orderBy('reviewed_at', 'desc')
             ->get();

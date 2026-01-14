@@ -76,20 +76,6 @@
                         @endif
                     </dl>
                 </x-card>
-
-                {{-- Quick Links --}}
-                <x-card title="Quick Links" class="mt-6">
-                    <div class="space-y-2">
-                        <a href="{{ route('transactions.tracker', $transaction) }}" class="btn btn-ghost btn-block justify-start">
-                            <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
-                            Track Progress
-                        </a>
-                        <a href="{{ route('transactions.review-history', $transaction) }}" class="btn btn-ghost btn-block justify-start">
-                            <i data-lucide="users" class="w-4 h-4 mr-2"></i>
-                            Review History
-                        </a>
-                    </div>
-                </x-card>
             </div>
 
             {{-- Activity Log --}}
@@ -116,6 +102,7 @@
                                             'cancel' => 'bg-gray-500',
                                             'cancelled' => 'bg-gray-500',
                                             'completed' => 'bg-success',
+                                            'confirm_received' => 'bg-success',
                                         ];
                                         $actionIcons = [
                                             'created' => 'plus',
@@ -130,9 +117,29 @@
                                             'cancel' => 'ban',
                                             'cancelled' => 'ban',
                                             'completed' => 'check-circle',
+                                            'confirm_received' => 'package',
                                         ];
                                         $bgColor = $actionColors[strtolower($log->action)] ?? 'bg-gray-400';
                                         $icon = $actionIcons[strtolower($log->action)] ?? 'activity';
+                                        
+                                        // Determine card background and border color based on action
+                                        $bgCardColor = 'bg-white';
+                                        $borderColor = 'border-gray-200';
+                                        
+                                        $action = strtolower($log->action);
+                                        if (in_array($action, ['approve', 'approved', 'completed', 'confirm_received'])) {
+                                            $bgCardColor = 'bg-green-50';
+                                            $borderColor = 'border-green-200';
+                                        } elseif (in_array($action, ['reject', 'rejected', 'cancel', 'cancelled'])) {
+                                            $bgCardColor = 'bg-red-50';
+                                            $borderColor = 'border-red-200';
+                                        } elseif (in_array($action, ['returned', 'resubmit', 'resubmitted'])) {
+                                            $bgCardColor = 'bg-yellow-50';
+                                            $borderColor = 'border-yellow-200';
+                                        } elseif (in_array($action, ['submitted', 'created'])) {
+                                            $bgCardColor = 'bg-blue-50';
+                                            $borderColor = 'border-blue-200';
+                                        }
                                     @endphp
                                     
                                     <div class="relative flex items-start gap-4 pl-2">
@@ -143,7 +150,7 @@
 
                                         {{-- Content --}}
                                         <div class="flex-1 pb-4">
-                                            <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                                            <div class="p-4 {{ $bgCardColor }} border {{ $borderColor }} rounded-lg shadow-sm">
                                                 <div class="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
                                                     <div>
                                                         <h4 class="font-semibold capitalize">{{ str_replace('_', ' ', $log->action) }}</h4>
@@ -240,14 +247,14 @@
                                             <td>{{ $reviewer->reviewed_at ? $reviewer->reviewed_at->format('M d, Y h:i A') : '-' }}</td>
                                             <td>{{ $reviewer->received_by ? $reviewer->receivedBy->full_name : '-' }}</td>
                                             <td>
-                                                @if($reviewer->receive_status)
+                                                @if($reviewer->received_status)
                                                     <x-status-badge 
-                                                        :status="$reviewer->receive_status" 
+                                                        :status="$reviewer->received_status" 
                                                         :labels="['pending' => 'Pending', 'received' => 'Received']"
                                                         :variants="['pending' => 'badge-warning', 'received' => 'badge-success']"
                                                     />
                                                 @else
-                                                    -
+                                                    <span class="text-gray-400">-</span>
                                                 @endif
                                             </td>
                                         </tr>

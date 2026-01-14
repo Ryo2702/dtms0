@@ -12,4 +12,5 @@ Route::post('/login/check-lock', [LoginController::class, 'checkLock'])->name('l
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
+require __DIR__.'/reports.php';
 require __DIR__.'/api.php';

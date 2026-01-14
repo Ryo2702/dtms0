@@ -20,6 +20,218 @@
             </div>
         </div>
 
+        {{-- Tabs for All Transactions --}}
+        <div class="bg-white rounded-lg shadow mb-6 border border-gray-200">
+            <div class="flex border-b border-gray-200 overflow-x-auto">
+                <a href="{{ route('transactions.index', ['tab' => 'all']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ (request('tab', 'all') === 'all') ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="inbox" class="w-4 h-4"></i>
+                    <span>All Transactions</span>
+                </a>
+                <a href="{{ route('transactions.index', ['tab' => 'in_progress']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ (request('tab') === 'in_progress') ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                    <span>In Progress</span>
+                </a>
+                <a href="{{ route('transactions.index', ['tab' => 'rejected']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ (request('tab') === 'rejected') ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                    <span>Rejected</span>
+                </a>
+                <a href="{{ route('transactions.index', ['tab' => 'completed']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ (request('tab') === 'completed') ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>Completed</span>
+                </a>
+                <a href="{{ route('transactions.index', ['tab' => 'pending_receipt']) }}"
+                    class="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap {{ (request('tab') === 'pending_receipt') ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i data-lucide="hourglass" class="w-4 h-4"></i>
+                    <span>Pending Receipt</span>
+                </a>
+            </div>
+        </div>
+
+        {{-- Date Filter Section --}}
+        <x-card class="mb-6">
+            <div class="flex items-center gap-2 mb-4 pb-4 border-b">
+                <i data-lucide="list-filter" class="w-5 h-5 text-primary"></i>
+                <h3 class="text-lg font-semibold">Filter Transactions</h3>
+            </div>
+            <form method="GET" action="{{ route('transactions.index') }}" class="flex flex-col md:flex-row gap-4 items-end">
+                <input type="hidden" name="tab" value="{{ request('tab', 'all') }}" />
+                <div class="flex-1">
+                    <label for="date_from" class="label">
+                        <span class="label-text">From Date</span>
+                    </label>
+                    <input type="date" id="date_from" name="date_from" 
+                           value="{{ request('date_from') }}"
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex-1">
+                    <label for="date_to" class="label">
+                        <span class="label-text">To Date</span>
+                    </label>
+                    <input type="date" id="date_to" name="date_to" 
+                           value="{{ request('date_to') }}"
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="search" class="w-4 h-4 mr-2"></i>
+                        Filter
+                    </button>
+                    @if(request('date_from') || request('date_to'))
+                        <a href="{{ route('transactions.index', ['tab' => request('tab', 'all')]) }}" class="btn btn-outline">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </x-card>
+
+        {{-- My Transactions Section --}}
+        <x-card class="mb-6">
+            <div class="p-4 border-b">
+                <h2 class="text-lg font-semibold flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-primary"></i>
+                    My Transactions
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">Track and manage your submitted transactions</p>
+            </div>
+
+            @if ($transactions->isEmpty())
+                <div class="p-8 text-center text-gray-500">
+                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-4 text-gray-400"></i>
+                    <p class="text-lg font-medium">No transactions</p>
+                    <p class="text-sm">You haven't created any transactions yet.</p>
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="table w-full">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th class="px-4 py-3">Transaction Code</th>
+                                <th class="px-4 py-3">Workflow</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Progress</th>
+                                <th class="px-4 py-3">Urgency</th>
+                                <th class="px-4 py-3">Created</th>
+                                <th class="px-4 py-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($transactions as $transaction)
+                                <tr class="hover:bg-gray-50 {{ str_starts_with($transaction->current_state ?? '', 'returned_to_') ? 'bg-red-50' : '' }}">
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('transactions.show', $transaction) }}"
+                                            class="font-mono font-bold text-primary hover:underline">
+                                            {{ $transaction->transaction_code }}
+                                        </a>
+                                        @if(str_starts_with($transaction->current_state ?? '', 'returned_to_'))
+                                            <div class="mt-1">
+                                                <span class="badge badge-error badge-sm">
+                                                    <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i>
+                                                    Returned
+                                                </span>
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-medium">{{ $transaction->workflow->transaction_name ?? 'N/A' }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($transaction->transaction_status === 'in_progress')
+                                            <span class="badge badge-info">In Progress</span>
+                                        @elseif($transaction->transaction_status === 'completed')
+                                            <span class="badge badge-success">Completed</span>
+                                            @if($transaction->receiving_status === 'pending')
+                                                <span class="badge badge-warning badge-sm ml-1">Awaiting Receipt</span>
+                                            @elseif($transaction->receiving_status === 'received')
+                                                <span class="badge badge-success badge-sm ml-1">Received</span>
+                                            @endif
+                                        @elseif($transaction->transaction_status === 'cancelled')
+                                            <span class="badge badge-error">Cancelled</span>
+                                        @else
+                                            <span class="badge">{{ ucfirst(str_replace('_', ' ', $transaction->transaction_status)) }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-medium">{{ $transaction->current_workflow_step }} / {{ $transaction->total_workflow_steps }}</span>
+                                            <progress 
+                                                class="progress progress-primary w-20" 
+                                                value="{{ $transaction->current_workflow_step }}" 
+                                                max="{{ $transaction->total_workflow_steps }}">
+                                            </progress>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($transaction->urgency === 'high')
+                                            <span class="badge badge-error">High</span>
+                                        @elseif($transaction->urgency === 'medium')
+                                            <span class="badge badge-warning">Medium</span>
+                                        @elseif($transaction->urgency === 'low')
+                                            <span class="badge badge-info">Low</span>
+                                        @else
+                                            <span class="badge badge-ghost">Normal</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-600">{{ $transaction->created_at->format('M d, Y') }}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('transactions.show', $transaction) }}" class="btn btn-sm btn-ghost">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Pagination --}}
+                @if($transactions->hasPages())
+                    <div class="p-4 border-t">
+                        {{ $transactions->links() }}
+                    </div>
+                @endif
+            @endif
+        </x-card>
+
+        {{-- Date Filter Section --}}
+        <x-card title="Filter" class="mb-6">
+            <form method="GET" action="{{ route('transactions.index') }}" class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1">
+                    <label for="date_from" class="label">
+                        <span class="label-text">From Date</span>
+                    </label>
+                    <input type="date" id="date_from" name="date_from" 
+                           value="{{ request('date_from') }}"
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex-1">
+                    <label for="date_to" class="label">
+                        <span class="label-text">To Date</span>
+                    </label>
+                    <input type="date" id="date_to" name="date_to" 
+                           value="{{ request('date_to') }}"
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="search" class="w-4 h-4 mr-2"></i>
+                        Filter
+                    </button>
+                    @if(request('date_from') || request('date_to'))
+                        <a href="{{ route('transactions.index', ['tab' => request('tab', 'all')]) }}" class="btn btn-outline">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </x-card>
+
         {{-- Available Workflows Section --}}
         <x-card title="Available Workflows" subtitle="Select a workflow to create a transaction">
             @if($workflows->count() > 0)

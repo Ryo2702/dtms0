@@ -19,7 +19,7 @@
 
 <div id="{{ $id }}" class="fixed inset-0 z-[9999] hidden overflow-y-auto" aria-labelledby="{{ $id }}-title" role="dialog" aria-modal="true">
 
-    <div class="fixed inset-0 bg-opacity-50 transition-opacity backdrop-blur-sm" onclick="document.getElementById('{{ $id }}').classList.add('hidden')"></div>
+    <div class="fixed inset-0 bg-black/5 transition-opacity backdrop-blur-sm" onclick="document.getElementById('{{ $id }}').classList.add('hidden')"></div>
     
     {{-- Modal container - centered --}}
     <div class="flex min-h-full items-center justify-center p-4">

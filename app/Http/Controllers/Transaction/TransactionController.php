@@ -27,6 +27,9 @@ class TransactionController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $tab = $request->get('tab', 'all');
         
         // Get active workflows - filter by user's department if origin_departments is set
         $workflows = Workflow::where('status', true)
@@ -49,13 +52,38 @@ class TransactionController extends Controller
         // Check if user can edit workflow route (Head role only, not Admin)
         $canEditRoute = $user->hasRole('Head');
 
-        // Get user's transactions
-        $transactions = Transaction::where('created_by', $user->id)
-            ->with(['workflow', 'assignStaff', 'department'])
+        // Build base query for user's transactions
+        $query = Transaction::where('created_by', $user->id)
+            ->with(['workflow', 'assignStaff', 'department']);
+
+        // Filter by status tab
+        $transactions = match($tab) {
+            'in_progress' => $query->clone()
+                ->where('transaction_status', 'in_progress')
+                ->where(function($q) {
+                    $q->whereNull('current_state')
+                      ->orWhere('current_state', 'not like', 'returned_to_%');
+                }),
+            'completed' => $query->clone()->where('transaction_status', 'completed'),
+            'pending_receipt' => $query->clone()->where('transaction_status', 'completed')->where('receiving_status', 'pending'),
+            'cancelled' => $query->clone()->where('transaction_status', 'cancelled'),
+            'rejected' => $query->clone()->where('transaction_status', 'in_progress')->where('current_state', 'like', 'returned_to_%'),
+            default => $query->clone()->where('transaction_status', '!=', 'completed'),
+        };
+
+        // Apply date filters
+        if ($dateFrom) {
+            $transactions->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $transactions->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $transactions = $transactions
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('transactions.index', compact('workflows', 'departments', 'canEditRoute'));
+        return view('transactions.index', compact('workflows', 'departments', 'canEditRoute', 'transactions'));
     }
 
     /**
@@ -66,6 +94,8 @@ class TransactionController extends Controller
         $user = $request->user();
         
         $tab = $request->get('tab', 'all');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
         
         // Build base query for user's transactions
         $query = Transaction::where('created_by', $user->id)
@@ -87,6 +117,14 @@ class TransactionController extends Controller
             'rejected' => $query->clone()->where('transaction_status', 'in_progress')->where('current_state', 'like', 'returned_to_%'),
             default => $query->clone()->where('transaction_status', '!=', 'completed'),
         };
+
+        // Apply date filters
+        if ($dateFrom) {
+            $transactions->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $transactions->whereDate('created_at', '<=', $dateTo);
+        }
 
         $transactions = $transactions->orderBy('created_at', 'desc')->paginate(15);
 

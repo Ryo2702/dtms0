@@ -51,6 +51,7 @@ import {
     GitBranch,
     PackageCheck,
     ClipboardCheck,
+    BarChart3,
 } from "lucide";
 
 createIcons({
@@ -154,7 +155,8 @@ window.lucide = {
             Settings,
             GitBranch,
             PackageCheck,
-            ClipboardCheck
+            ClipboardCheck,
+            BarChart3
         },
     })
 };

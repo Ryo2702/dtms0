@@ -138,9 +138,20 @@
                             <span>Staff Management</span>
                         </a>
                     </li>
-
-                    </li>
                 @endif
+
+                <!-- Reports Section -->
+                <li class="px-3 pt-4 pb-2">
+                    <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Reports & Analytics</span>
+                </li>
+
+                <li class="mb-1">
+                    <a href="{{ route('reports.index') }}"
+                        class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'reports') ? 'bg-white/20' : '' }}">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
 
                 <!-- Settings -->
                 <li class="px-3 pt-4 pb-2">

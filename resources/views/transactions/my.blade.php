@@ -60,6 +60,44 @@
             </div>
         </div>
 
+        {{-- Date Filter Section --}}
+        <x-card class="mb-6">
+            <div class="flex items-center gap-2 mb-4 pb-4 border-b">
+                <i data-lucide="list-filter" class="w-5 h-5 text-primary"></i>
+                <h3 class="text-lg font-semibold">Filter Transactions</h3>
+            </div>
+            <form method="GET" action="{{ route('transactions.my') }}" class="flex flex-col md:flex-row gap-4 items-end">
+                <input type="hidden" name="tab" value="{{ $tab }}" />
+                <div class="flex-1">
+                    <label for="date_from" class="label">
+                        <span class="label-text">From Date</span>
+                    </label>
+                    <input type="date" id="date_from" name="date_from" 
+                           value="{{ request('date_from') }}"
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex-1">
+                    <label for="date_to" class="label">
+                        <span class="label-text">To Date</span>
+                    </label>
+                    <input type="date" id="date_to" name="date_to" 
+                           value="{{ request('date_to') }}"
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="search" class="w-4 h-4 mr-2"></i>
+                        Filter
+                    </button>
+                    @if(request('date_from') || request('date_to'))
+                        <a href="{{ route('transactions.my', ['tab' => $tab]) }}" class="btn btn-outline">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </x-card>
+
         {{-- Rejected Transactions Alert --}}
         @if($stats['rejected'] > 0)
             <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
