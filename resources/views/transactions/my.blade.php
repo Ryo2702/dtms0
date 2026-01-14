@@ -4,79 +4,83 @@
 
 @section('content')
     <x-container>
-        {{-- Header --}}
+        {{-- Header with Tabs --}}
         <div class="mb-6">
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 mb-4">
                 <div>
                     <h1 class="text-3xl font-bold">My Transactions</h1>
                     <p class="text-gray-600 mt-1">Track and manage your submitted transactions</p>
                 </div>
 
                 <div class="flex gap-2">
-                    <a href="{{ route('transactions.index') }}" class="btn btn-primary">
+                    <a href="{{ route('transactions.index') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
                         <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                         New Transaction
                     </a>
                 </div>
             </div>
+
+            {{-- Tabs --}}
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-1 overflow-x-auto" aria-label="Tabs">
+                    <a href="{{ route('transactions.my', ['tab' => 'all']) }}" 
+                       class="whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors {{ $tab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        All
+                    </a>
+                    <a href="{{ route('transactions.my', ['tab' => 'in_progress']) }}" 
+                       class="whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2 {{ $tab === 'in_progress' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        In Progress
+                        @if($stats['in_progress'] > 0)
+                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-blue-500 rounded-full">{{ $stats['in_progress'] }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('transactions.my', ['tab' => 'rejected']) }}" 
+                       class="whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2 {{ $tab === 'rejected' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        Rejected
+                        @if(($stats['rejected'] ?? 0) > 0)
+                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">{{ $stats['rejected'] }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('transactions.my', ['tab' => 'pending_receipt']) }}" 
+                       class="whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2 {{ $tab === 'pending_receipt' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        Pending Receipt
+                        @if(($stats['pending_receipt'] ?? 0) > 0)
+                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-yellow-500 rounded-full">{{ $stats['pending_receipt'] }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('transactions.my', ['tab' => 'completed']) }}" 
+                       class="whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors {{ $tab === 'completed' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        Completed
+                    </a>
+                    <a href="{{ route('transactions.my', ['tab' => 'cancelled']) }}" 
+                       class="whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors {{ $tab === 'cancelled' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        Cancelled
+                    </a>
+                </nav>
+            </div>
         </div>
 
-        {{-- Stats Cards --}}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="stat bg-base-100 rounded-lg shadow-sm border">
-                <div class="stat-title">Total</div>
-                <div class="stat-value text-2xl">{{ $stats['all'] }}</div>
+        {{-- Rejected Transactions Alert --}}
+        @if($stats['rejected'] > 0)
+            <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                <div class="flex items-start gap-3">
+                    <i data-lucide="alert-circle" class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5"></i>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-red-800 mb-1">
+                            {{ $stats['rejected'] }} {{ Str::plural('Transaction', $stats['rejected']) }} Requires Attention
+                        </h3>
+                        <p class="text-sm text-red-700 mb-3">
+                            You have transactions that have been rejected and returned to you for corrections. Please review the rejection reasons and resubmit after making the necessary changes.
+                        </p>
+                        <a href="{{ route('transactions.my', ['tab' => 'rejected']) }}" 
+                           class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 mr-2"></i>
+                            View Rejected Transactions
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="stat bg-base-100 rounded-lg shadow-sm border">
-                <div class="stat-title">In Progress</div>
-                <div class="stat-value text-2xl text-info">{{ $stats['in_progress'] }}</div>
-            </div>
-            <div class="stat bg-base-100 rounded-lg shadow-sm border">
-                <div class="stat-title">Completed</div>
-                <div class="stat-value text-2xl text-success">{{ $stats['completed'] }}</div>
-            </div>
-            <div class="stat bg-base-100 rounded-lg shadow-sm border">
-                <div class="stat-title">Cancelled</div>
-                <div class="stat-value text-2xl text-error">{{ $stats['cancelled'] }}</div>
-            </div>
-        </div>
-
-        {{-- Tabs --}}
-        <div class="tabs tabs-boxed bg-base-200 p-1 mb-6 w-fit">
-            <a href="{{ route('transactions.my', ['tab' => 'all']) }}" 
-               class="tab {{ $tab === 'all' ? 'tab-active' : '' }}">
-                All
-            </a>
-            <a href="{{ route('transactions.my', ['tab' => 'in_progress']) }}" 
-               class="tab {{ $tab === 'in_progress' ? 'tab-active' : '' }}">
-                In Progress
-                @if($stats['in_progress'] > 0)
-                    <span class="badge badge-info badge-sm ml-1">{{ $stats['in_progress'] }}</span>
-                @endif
-            </a>
-            <a href="{{ route('transactions.my', ['tab' => 'rejected']) }}" 
-               class="tab {{ $tab === 'rejected' ? 'tab-active' : '' }}">
-                Rejected
-                @if(($stats['rejected'] ?? 0) > 0)
-                    <span class="badge badge-error badge-sm ml-1">{{ $stats['rejected'] }}</span>
-                @endif
-            </a>
-            <a href="{{ route('transactions.my', ['tab' => 'pending_receipt']) }}" 
-               class="tab {{ $tab === 'pending_receipt' ? 'tab-active' : '' }}">
-                Pending Receipt
-                @if(($stats['pending_receipt'] ?? 0) > 0)
-                    <span class="badge badge-warning badge-sm ml-1">{{ $stats['pending_receipt'] }}</span>
-                @endif
-            </a>
-            <a href="{{ route('transactions.my', ['tab' => 'completed']) }}" 
-               class="tab {{ $tab === 'completed' ? 'tab-active' : '' }}">
-                Completed
-            </a>
-            <a href="{{ route('transactions.my', ['tab' => 'cancelled']) }}" 
-               class="tab {{ $tab === 'cancelled' ? 'tab-active' : '' }}">
-                Cancelled
-            </a>
-        </div>
+        @endif
 
         {{-- Transactions Table --}}
         <x-card>
@@ -86,9 +90,17 @@
                 emptyMessage="You haven't created any transactions yet."
             >
                 @foreach($transactions as $transaction)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 {{ str_starts_with($transaction->current_state, 'returned_to_') ? 'bg-red-50 border-l-4 border-l-red-500' : '' }}">
                         <td class="px-4 py-3">
-                            <span class="font-mono font-bold text-primary">{{ $transaction->transaction_code }}</span>
+                            <span class="font-mono font-bold text-blue-600">{{ $transaction->transaction_code }}</span>
+                            @if(str_starts_with($transaction->current_state, 'returned_to_'))
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
+                                        <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i>
+                                        Action Required
+                                    </span>
+                                </div>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <div class="font-medium">{{ $transaction->workflow->transaction_name ?? 'N/A' }}</div>
@@ -114,8 +126,46 @@
                                     'overdue' => 'badge-warning'
                                 ]"
                             />
+                            @if($transaction->transaction_status === 'completed')
+                                @if($transaction->receiving_status === 'pending')
+                                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold text-orange-700 bg-orange-100 rounded mt-1">
+                                        <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                        Awaiting Receipt
+                                    </span>
+                                @elseif($transaction->receiving_status === 'received')
+                                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold text-green-700 bg-green-100 rounded mt-1">
+                                        <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i>
+                                        Received
+                                    </span>
+                                @elseif($transaction->receiving_status === 'not_received')
+                                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold text-red-700 bg-red-100 rounded mt-1">
+                                        <i data-lucide="x-circle" class="w-3 h-3 mr-1"></i>
+                                        Not Received
+                                    </span>
+                                @endif
+                            @endif
                             @if($transaction->isReturnedState())
-                                <span class="badge badge-warning badge-sm mt-1">Returned</span>
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold text-red-700 bg-red-100 rounded mt-1">
+                                    <i data-lucide="rotate-ccw" class="w-3 h-3 mr-1"></i>
+                                    Returned
+                                </span>
+                                @php
+                                    $lastRejection = $transaction->reviewers()
+                                        ->where('status', 'rejected')
+                                        ->latest('reviewed_at')
+                                        ->first();
+                                @endphp
+                                @if($lastRejection && $lastRejection->rejection_reason)
+                                    <div class="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                                        <div class="font-semibold text-red-800 mb-1">Rejection Reason:</div>
+                                        <div class="text-red-700">{{ Str::limit($lastRejection->rejection_reason, 100) }}</div>
+                                        @if($lastRejection->reviewer)
+                                            <div class="text-red-600 mt-1 text-[10px]">
+                                                — {{ $lastRejection->reviewer->name }} ({{ $lastRejection->department->name ?? 'N/A' }})
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             @endif
                             @if($transaction->transaction_status === 'completed' && $transaction->receiving_status)
                                 <div class="mt-1">
@@ -161,45 +211,50 @@
                             <div class="text-xs text-gray-400">{{ $transaction->created_at->diffForHumans() }}</div>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="flex gap-1">
+                            <div class="flex gap-2">
                                 {{-- View Details - Always available --}}
                                 <a href="{{ route('transactions.show', $transaction) }}" 
-                                   class="btn btn-sm btn-ghost" title="View Details">
+                                   class="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors" title="View Details">
                                     <i data-lucide="eye" class="w-4 h-4"></i>
                                 </a>
 
                                 @if($transaction->transaction_status === 'in_progress')
                                     {{-- Check if transaction is rejected (returned_to state) --}}
                                     @if(str_starts_with($transaction->current_state, 'returned_to_'))
-                                        {{-- Resubmit button for rejected transactions --}}
-                                        <form action="{{ route('transactions.creator-resubmit', $transaction) }}" method="POST" 
+                                        {{-- Resubmit button for rejected transactions - More prominent --}}
+                                        <form action="{{ route('transactions.creator-resubmit', $transaction) }}" method="POST" class="inline-block"
                                               onsubmit="return confirm('Are you sure you want to resubmit this transaction? Make sure you have made the required corrections.')">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-warning" title="Resubmit after corrections">
+                                            <button type="submit" class="inline-flex items-center px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg transition-colors" title="Resubmit after corrections">
                                                 <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
                                                 Resubmit
                                             </button>
                                         </form>
+                                        {{-- Cancel button also available for rejected transactions --}}
+                                        <button onclick="window['cancel-modal-{{ $transaction->id }}'].showModal()" 
+                                                class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" title="Cancel Transaction">
+                                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                        </button>
                                     @else
                                         {{-- Cancel button for in_progress (not rejected) --}}
                                         <button onclick="window['cancel-modal-{{ $transaction->id }}'].showModal()" 
-                                                class="btn btn-sm btn-error" title="Cancel Transaction">
+                                                class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" title="Cancel Transaction">
                                             <i data-lucide="x-circle" class="w-4 h-4"></i>
                                         </button>
                                     @endif
                                 @else
                                     {{-- For other statuses: Show all other actions --}}
                                     <a href="{{ route('transactions.tracker', $transaction) }}" 
-                                       class="btn btn-sm btn-ghost" title="Track Progress">
+                                       class="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors" title="Track Progress">
                                         <i data-lucide="map-pin" class="w-4 h-4"></i>
                                     </a>
                                     <a href="{{ route('transactions.history', $transaction) }}" 
-                                       class="btn btn-sm btn-ghost" title="View History">
+                                       class="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors" title="View History">
                                         <i data-lucide="history" class="w-4 h-4"></i>
                                     </a>
                                     @if(!$transaction->isCompleted() && !$transaction->isCancelled())
                                         <a href="{{ route('transactions.edit', $transaction) }}" 
-                                           class="btn btn-sm btn-ghost" title="Edit">
+                                           class="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors" title="Edit">
                                             <i data-lucide="edit" class="w-4 h-4"></i>
                                         </a>
                                     @endif
@@ -208,11 +263,11 @@
                                         $transaction->receiving_status === 'pending' && 
                                         auth()->user()->department_id === $transaction->origin_department_id)
                                         <button onclick="document.getElementById('confirm-modal-{{ $transaction->id }}').showModal()" 
-                                                class="btn btn-sm btn-success" title="Confirm Received">
+                                                class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors" title="Confirm Received">
                                             <i data-lucide="check" class="w-4 h-4"></i>
                                         </button>
                                         <button onclick="document.getElementById('not-received-modal-{{ $transaction->id }}').showModal()" 
-                                                class="btn btn-sm btn-error" title="Mark Not Received">
+                                                class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors" title="Mark Not Received">
                                             <i data-lucide="x" class="w-4 h-4"></i>
                                         </button>
                                     @endif

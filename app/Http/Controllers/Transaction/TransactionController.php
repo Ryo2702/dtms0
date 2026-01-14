@@ -69,11 +69,18 @@ class TransactionController extends Controller
         
         // Build base query for user's transactions
         $query = Transaction::where('created_by', $user->id)
-            ->with(['workflow', 'assignStaff', 'department', 'currentReviewer', 'originDepartment']);
+            ->with(['workflow', 'assignStaff', 'department', 'currentReviewer', 'originDepartment', 'reviewers' => function($query) {
+                $query->where('status', 'rejected')->latest('reviewed_at');
+            }, 'reviewers.reviewer', 'reviewers.department']);
 
         // Filter by status tab
         $transactions = match($tab) {
-            'in_progress' => $query->clone()->where('transaction_status', 'in_progress'),
+            'in_progress' => $query->clone()
+                ->where('transaction_status', 'in_progress')
+                ->where(function($q) {
+                    $q->whereNull('current_state')
+                      ->orWhere('current_state', 'not like', 'returned_to_%');
+                }),
             'completed' => $query->clone()->where('transaction_status', 'completed'),
             'pending_receipt' => $query->clone()->where('transaction_status', 'completed')->where('receiving_status', 'pending'),
             'cancelled' => $query->clone()->where('transaction_status', 'cancelled'),
@@ -86,7 +93,13 @@ class TransactionController extends Controller
         // Stats for tabs
         $stats = [
             'all' => Transaction::where('created_by', $user->id)->where('transaction_status', '!=', 'completed')->count(),
-            'in_progress' => Transaction::where('created_by', $user->id)->where('transaction_status', 'in_progress')->count(),
+            'in_progress' => Transaction::where('created_by', $user->id)
+                ->where('transaction_status', 'in_progress')
+                ->where(function($q) {
+                    $q->whereNull('current_state')
+                      ->orWhere('current_state', 'not like', 'returned_to_%');
+                })
+                ->count(),
             'rejected' => Transaction::where('created_by', $user->id)
                 ->where('transaction_status', 'in_progress')
                 ->where('current_state', 'like', 'returned_to_%')
@@ -479,13 +492,24 @@ class TransactionController extends Controller
                 ->with('error', 'This transaction cannot be confirmed at this time.');
         }
 
+        // Update receiving status to received
         $transaction->update([
             'receiving_status' => 'received',
             'received_at' => now(),
         ]);
 
+        // Log the final confirmation
+        \App\Models\TransactionLog::create([
+            'transaction_id' => $transaction->id,
+            'from_state' => $transaction->current_state,
+            'to_state' => 'completed',
+            'action' => 'confirm_received',
+            'action_by' => $user->id,
+            'remarks' => 'Transaction received and confirmed by origin department.',
+        ]);
+
         return redirect()->back()
-            ->with('success', 'Transaction has been marked as received.');
+            ->with('success', 'Transaction has been marked as received and is now fully completed.');
     }
 
     /**

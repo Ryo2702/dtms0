@@ -361,6 +361,46 @@
                     </dl>
                 </x-card>
 
+                {{-- Next Reviewer Section --}}
+                @if ($nextReviewer && !$isLastStep)
+                    <x-card title="Next Reviewer">
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="avatar">
+                                    <div class="w-10 rounded-full">
+                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($nextReviewer->name ?? 'Unknown') }}&background=random"
+                                            alt="" />
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-medium text-sm">{{ $nextReviewer->name }}</p>
+                                    <p class="text-xs text-gray-600">{{ $nextReviewer->department->name ?? 'N/A' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <p class="text-xs text-gray-600">
+                                    <i data-lucide="info" class="w-3 h-3 inline"></i>
+                                    Confirm receipt status for the next reviewer
+                                </p>
+
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="showNextReviewerReceiveModal('{{ $reviewer->id }}', '{{ $reviewer->transaction->transaction_code }}')"
+                                        class="btn btn-sm btn-success flex-1 gap-1">
+                                        <i data-lucide="package-check" class="w-4 h-4"></i>
+                                        Received
+                                    </button>
+                                    <button type="button" onclick="showNextReviewerNotReceivedModal('{{ $reviewer->id }}', '{{ $reviewer->transaction->transaction_code }}')"
+                                        class="btn btn-sm btn-error flex-1 gap-1">
+                                        <i data-lucide="package-x" class="w-4 h-4"></i>
+                                        Not Received
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </x-card>
+                @endif
+
                 {{-- Workflow Progress (Vertical) --}}
                 <x-card title="Workflow Progress">
                     @if (isset($workflowProgress['steps']) && count($workflowProgress['steps']) > 0)
@@ -518,6 +558,96 @@
         </div>
     </x-container>
 
+    {{-- Next Reviewer Receive Modal --}}
+    <x-modal id="nextReviewerReceiveModal" title="Mark as Received (Next Reviewer)" size="md">
+        <form id="nextReviewerReceiveForm" method="POST">
+            @csrf
+            <input type="hidden" name="received_status" value="received">
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <i data-lucide="package-check" class="w-8 h-8 text-green-600"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold text-green-900">Mark as Received</p>
+                        <p class="text-sm text-green-700">Transaction: <span id="nextReviewerReceiveTransactionCode"
+                                class="font-mono font-bold"></span></p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-blue-900 mb-2">Next Reviewer Confirmation</p>
+                            <p class="text-sm text-blue-700">
+                                You are confirming that the next reviewer has received this transaction. This will allow you to approve and forward the transaction.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-600">
+                    By clicking "Confirm Receipt", you acknowledge that the next reviewer is ready to receive this transaction.
+                </p>
+            </div>
+
+            <x-slot name="actions">
+                <button type="button" class="btn btn-ghost close-next-reviewer-receive-modal">
+                    Cancel
+                </button>
+                <button type="submit" form="nextReviewerReceiveForm" class="btn btn-success">
+                    <i data-lucide="check" class="w-4 h-4 mr-1"></i>
+                    Confirm Received
+                </button>
+            </x-slot>
+        </form>
+    </x-modal>
+
+    {{-- Next Reviewer Not Received Modal --}}
+    <x-modal id="nextReviewerNotReceivedModal" title="Mark as Not Received (Next Reviewer)" size="md">
+        <form id="nextReviewerNotReceivedForm" method="POST">
+            @csrf
+            <input type="hidden" name="received_status" value="not_received">
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <i data-lucide="package-x" class="w-8 h-8 text-red-600"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold text-red-900">Mark as Not Received</p>
+                        <p class="text-sm text-red-700">Transaction: <span id="nextReviewerNotReceivedTransactionCode"
+                                class="font-mono font-bold"></span></p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-yellow-900 mb-2">Warning</p>
+                            <p class="text-sm text-yellow-700">
+                                By marking this as "Not Received", the next reviewer will not have access to this transaction until you approve it.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-600">
+                    Are you sure you want to mark this as not received for the next reviewer?
+                </p>
+            </div>
+
+            <x-slot name="actions">
+                <button type="button" class="btn btn-ghost close-next-reviewer-not-received-modal">
+                    Cancel
+                </button>
+                <button type="submit" form="nextReviewerNotReceivedForm" class="btn btn-error">
+                    <i data-lucide="x" class="w-4 h-4 mr-1"></i>
+                    Mark Not Received
+                </button>
+            </x-slot>
+        </form>
+    </x-modal>
+
     {{-- Confirmation Modals --}}
     <script>
         // Action type descriptions
@@ -531,6 +661,76 @@
             'release': 'Makes the document actionable by the next office',
             'complete': 'Marks the transaction finished for that stage'
         };
+
+        // Next Reviewer Modal Functions
+        function showNextReviewerReceiveModal(reviewId, transactionCode) {
+            const codeElement = document.getElementById('nextReviewerReceiveTransactionCode');
+            const formElement = document.getElementById('nextReviewerReceiveForm');
+
+            if (codeElement && formElement) {
+                codeElement.textContent = transactionCode;
+                formElement.action = `/transactions/reviews/${reviewId}/next-reviewer/receive`;
+            }
+
+            const modalElement = document.getElementById('nextReviewerReceiveModal');
+            if (modalElement) {
+                modalElement.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }, 100);
+        }
+
+        function showNextReviewerNotReceivedModal(reviewId, transactionCode) {
+            const codeElement = document.getElementById('nextReviewerNotReceivedTransactionCode');
+            const formElement = document.getElementById('nextReviewerNotReceivedForm');
+
+            if (codeElement && formElement) {
+                codeElement.textContent = transactionCode;
+                formElement.action = `/transactions/reviews/${reviewId}/next-reviewer/receive`;
+            }
+
+            const modalElement = document.getElementById('nextReviewerNotReceivedModal');
+            if (modalElement) {
+                modalElement.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }, 100);
+        }
+
+        // Close modals
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeNextReviewerReceiveBtn = document.querySelector('.close-next-reviewer-receive-modal');
+            if (closeNextReviewerReceiveBtn) {
+                closeNextReviewerReceiveBtn.addEventListener('click', function() {
+                    const modalElement = document.getElementById('nextReviewerReceiveModal');
+                    if (modalElement) {
+                        modalElement.classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+
+            const closeNextReviewerNotReceivedBtn = document.querySelector('.close-next-reviewer-not-received-modal');
+            if (closeNextReviewerNotReceivedBtn) {
+                closeNextReviewerNotReceivedBtn.addEventListener('click', function() {
+                    const modalElement = document.getElementById('nextReviewerNotReceivedModal');
+                    if (modalElement) {
+                        modalElement.classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+        });
 
         // Update action description on select change
         document.getElementById('action_type')?.addEventListener('change', function(e) {

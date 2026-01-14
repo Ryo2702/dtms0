@@ -156,7 +156,24 @@ class TransactionReviewerController extends Controller
         // Get workflow progress
         $workflowProgress = $this->workflowEngine->getWorkflowProgress($reviewer->transaction);
 
-        return view('transactions.reviews.review', compact('reviewer', 'workflowProgress'));
+        // Get next reviewer if this is not the last step
+        $nextReviewer = null;
+        $transaction = $reviewer->transaction;
+        $steps = $transaction->workflow_snapshot['steps'] ?? $transaction->workflow->getWorkflowSteps();
+        $currentStep = $transaction->current_workflow_step;
+        $isLastStep = $currentStep >= count($steps);
+
+        if (!$isLastStep && $currentStep < count($steps)) {
+            $nextStep = $steps[$currentStep]; // Next step (0-indexed, current_workflow_step is 1-indexed)
+            $nextDepartmentId = $nextStep['department_id'];
+            $nextReviewer = \App\Models\User::where('department_id', $nextDepartmentId)
+                ->where(function($q) {
+                    $q->where('type', 'Head')->orWhere('type', 'Staff');
+                })
+                ->first();
+        }
+
+        return view('transactions.reviews.review', compact('reviewer', 'workflowProgress', 'nextReviewer', 'isLastStep'));
     }
 
     /**
@@ -195,7 +212,7 @@ class TransactionReviewerController extends Controller
         try {
             $transaction = $reviewer->transaction;
             $workflow = $transaction->workflow;
-            $steps = $workflow->getWorkflowSteps();
+            $steps = $transaction->workflow_snapshot['steps'] ?? $workflow->getWorkflowSteps();
             $currentStep = $transaction->current_workflow_step;
             $isLastStep = $currentStep >= count($steps);
 
@@ -207,6 +224,9 @@ class TransactionReviewerController extends Controller
                 $validated['remarks'] ?? null
             );
 
+            // Refresh transaction to get updated state from workflow engine
+            $transaction->refresh();
+
             // Check if this is the final step (workflow completed)
             if ($isLastStep) {
                 // Workflow is completed - set receiving status to pending for origin department
@@ -214,6 +234,7 @@ class TransactionReviewerController extends Controller
                     'receiving_status' => 'pending',
                     'department_id' => $transaction->origin_department_id, // Return to origin department
                 ]);
+                $transaction->refresh();
             } else {
                 // Move to the next workflow step
                 $transaction->increment('current_workflow_step');
@@ -248,7 +269,7 @@ class TransactionReviewerController extends Controller
     protected function assignNextReviewer(Transaction $transaction, TransactionReviewer $currentReviewer, int $iterationNumber = 1): void
     {
         $workflow = $transaction->workflow;
-        $steps = $workflow->getWorkflowSteps();
+        $steps = $transaction->workflow_snapshot['steps'] ?? $workflow->getWorkflowSteps();
         $currentStep = $transaction->current_workflow_step; // 1-indexed after increment
 
         // The current step after increment points to the next department (1-indexed)
@@ -347,7 +368,7 @@ class TransactionReviewerController extends Controller
         try {
             $transaction = $reviewer->transaction;
             $workflow = $transaction->workflow;
-            $steps = $workflow->getWorkflowSteps();
+            $steps = $transaction->workflow_snapshot['steps'] ?? $workflow->getWorkflowSteps();
             $currentStep = $transaction->current_workflow_step; // 1-indexed
             
             // Get the previous step (return destination)
@@ -363,8 +384,33 @@ class TransactionReviewerController extends Controller
                 $returnToDepartmentId
             );
 
+            // If rejected at first step, return to creator
+            if ($currentStep === 1) {
+                // Mark transaction as returned to creator
+                $transaction->update([
+                    'current_state' => 'returned_to_creator',
+                    'department_id' => $transaction->origin_department_id, // Return to originating department
+                ]);
+
+                // Log the return to creator
+                \App\Models\TransactionLog::create([
+                    'transaction_id' => $transaction->id,
+                    'from_state' => $transaction->current_state,
+                    'to_state' => 'returned_to_creator',
+                    'action' => 'reject_first_step',
+                    'action_by' => $request->user()->id,
+                    'remarks' => 'Transaction rejected at first step and returned to creator: ' . $validated['rejection_reason'],
+                ]);
+
+                // Notify the creator
+                // \App\Helpers\NotificationHelper::notifyTransactionRejected(
+                //     $transaction,
+                //     $transaction->creator,
+                //     $validated['rejection_reason']
+                // );
+            } 
             // Only decrement if we're not at the first step
-            if ($currentStep > 1) {
+            elseif ($currentStep > 1) {
                 $transaction->decrement('current_workflow_step');
                 
                 // Assign the transaction back to the previous department for resubmission
@@ -393,7 +439,7 @@ class TransactionReviewerController extends Controller
         ?string $resubmissionDeadline = null
     ): void {
         $workflow = $transaction->workflow;
-        $steps = $workflow->getWorkflowSteps();
+        $steps = $transaction->workflow_snapshot['steps'] ?? $workflow->getWorkflowSteps();
         $currentStep = $transaction->current_workflow_step; // 1-indexed, after decrement
 
         // After decrement, current_workflow_step points to the previous department
@@ -515,6 +561,71 @@ class TransactionReviewerController extends Controller
         $message = $validated['received_status'] === 'received' 
             ? 'Transaction marked as received successfully. Timer started.' 
             : 'Transaction marked as not received.';
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Mark transaction as received/not received for the next reviewer
+     */
+    public function nextReviewerReceive(Request $request, TransactionReviewer $reviewer)
+    {
+        // Ensure the current user is the assigned reviewer for current step
+        if ($reviewer->reviewer_id !== $request->user()->id) {
+            abort(403, 'You are not authorized to receive this transaction for the next reviewer.');
+        }
+
+        // Ensure the review is still pending
+        if ($reviewer->status !== 'pending') {
+            return back()->with('error', 'This review has already been processed.');
+        }
+
+        // Ensure the transaction has been received
+        if ($reviewer->received_status !== 'received') {
+            return back()->with('error', 'You must receive this transaction before marking for next reviewer.');
+        }
+
+        $validated = $request->validate([
+            'received_status' => 'required|in:received,not_received',
+        ]);
+
+        // Get the next reviewer
+        $transaction = $reviewer->transaction;
+        $steps = $transaction->workflow_snapshot['steps'] ?? $transaction->workflow->getWorkflowSteps();
+        $currentStep = $transaction->current_workflow_step;
+        
+        if ($currentStep >= count($steps)) {
+            return back()->with('error', 'This is the last step. No next reviewer available.');
+        }
+
+        // Create or update the next reviewer record
+        $nextStep = $steps[$currentStep]; // Current step (0-indexed, current_workflow_step is 1-indexed)
+        $nextDepartmentId = $nextStep['department_id'];
+        $nextReviewerUser = \App\Models\User::where('department_id', $nextDepartmentId)
+            ->where(function($q) {
+                $q->where('type', 'Head')->orWhere('type', 'Staff');
+            })
+            ->first();
+
+        if ($nextReviewerUser) {
+            // Find existing next reviewer or create new one
+            $nextReviewer = $transaction->reviewers()
+                ->where('reviewer_id', $nextReviewerUser->id)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($nextReviewer) {
+                $nextReviewer->update([
+                    'received_status' => $validated['received_status'],
+                    'received_by' => $request->user()->id,
+                    'received_at' => now(),
+                ]);
+            }
+        }
+
+        $message = $validated['received_status'] === 'received' 
+            ? 'Next reviewer marked as ready to receive.' 
+            : 'Next reviewer marked as not ready.';
 
         return back()->with('success', $message);
     }

@@ -82,7 +82,7 @@
                                     <th class="px-4 py-3">Urgency</th>
                                     <th class="px-4 py-3">Due Date</th>
                                     <th class="px-4 py-3">Receiving Status</th>
-                                    <th class="px-4 py-3">Review Status</th>
+                                    <th class="px-4 py-3"></th>Review Status</th>
                                     <th class="px-4 py-3">Actions</th>
                                 </tr>
                             </thead>
@@ -110,20 +110,50 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-3">
+                                            @php
+                                                // Determine who forwarded this transaction
+                                                $forwarder = null;
+                                                $forwarderDepartment = null;
+                                                
+                                                if ($review->previousReviewer) {
+                                                    // If previous_reviewer_id is set, use it
+                                                    $forwarder = $review->previousReviewer;
+                                                    $forwarderDepartment = $review->previousReviewer->department;
+                                                } else {
+                                                    // Find the last approved reviewer before this one
+                                                    $lastApprovedReviewer = $review->transaction->reviewers()
+                                                        ->where('status', 'approved')
+                                                        ->where('created_at', '<', $review->created_at)
+                                                        ->latest('reviewed_at')
+                                                        ->first();
+                                                    
+                                                    if ($lastApprovedReviewer) {
+                                                        $forwarder = $lastApprovedReviewer->reviewer;
+                                                        $forwarderDepartment = $lastApprovedReviewer->department;
+                                                    } else {
+                                                        // First step - from creator
+                                                        $forwarder = $review->transaction->creator;
+                                                        $forwarderDepartment = $review->transaction->originDepartment;
+                                                    }
+                                                }
+                                                
+                                                $forwarderName = $forwarder->name ?? 'Unknown';
+                                                $forwarderDeptName = $forwarderDepartment->name ?? 'N/A';
+                                            @endphp
                                             <div class="flex items-center gap-2">
                                                 <div class="avatar">
                                                     <div class="w-8 rounded-full">
-                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown')) }}&background=random"
+                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($forwarderName) }}&background=random"
                                                             alt="" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div class="text-sm font-medium">
-                                                        {{ $review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown') }}</div>
+                                                        {{ $forwarderName }}</div>
                                                     <div class="text-xs text-gray-500">
                                                         <span class="badge badge-outline badge-xs">
                                                             <i data-lucide="building-2" class="w-3 h-3 mr-1"></i>
-                                                            {{ $review->previousReviewer ? ($review->previousReviewer->department->name ?? 'N/A') : ($review->transaction->department->name ?? 'N/A') }}
+                                                            {{ $forwarderDeptName }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -131,10 +161,16 @@
                                         </td>
                                         <td class="px-4 py-3">
                                             @if ($review->transaction->current_workflow_step !== null)
+                                                @php
+                                                    $currentStepIndex = $review->transaction->current_workflow_step - 1;
+                                                    $workflowSteps = $review->transaction->workflow_snapshot['steps'] ?? $review->transaction->workflow->getWorkflowSteps();
+                                                    $currentStepData = $workflowSteps[$currentStepIndex] ?? null;
+                                                    $currentStepDept = $currentStepData['department_name'] ?? 'Unknown';
+                                                @endphp
                                                 <div class="text-sm font-medium">Step
                                                     {{ $review->transaction->current_workflow_step }}</div>
                                                 <div class="text-xs text-gray-500">
-                                                    {{ $review->department->name ?? 'N/A' }}</div>
+                                                    {{ $currentStepDept }}</div>
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif
@@ -327,20 +363,50 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-3">
+                                            @php
+                                                // Determine who forwarded this transaction
+                                                $forwarder = null;
+                                                $forwarderDepartment = null;
+                                                
+                                                if ($review->previousReviewer) {
+                                                    // If previous_reviewer_id is set, use it
+                                                    $forwarder = $review->previousReviewer;
+                                                    $forwarderDepartment = $review->previousReviewer->department;
+                                                } else {
+                                                    // Find the last approved reviewer before this one
+                                                    $lastApprovedReviewer = $review->transaction->reviewers()
+                                                        ->where('status', 'approved')
+                                                        ->where('created_at', '<', $review->created_at)
+                                                        ->latest('reviewed_at')
+                                                        ->first();
+                                                    
+                                                    if ($lastApprovedReviewer) {
+                                                        $forwarder = $lastApprovedReviewer->reviewer;
+                                                        $forwarderDepartment = $lastApprovedReviewer->department;
+                                                    } else {
+                                                        // First step or resubmission - from creator
+                                                        $forwarder = $review->transaction->creator;
+                                                        $forwarderDepartment = $review->transaction->originDepartment;
+                                                    }
+                                                }
+                                                
+                                                $forwarderName = $forwarder->name ?? 'Unknown';
+                                                $forwarderDeptName = $forwarderDepartment->name ?? 'N/A';
+                                            @endphp
                                             <div class="flex items-center gap-2">
                                                 <div class="avatar">
                                                     <div class="w-8 rounded-full">
-                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown')) }}&background=random"
+                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($forwarderName) }}&background=random"
                                                             alt="" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div class="text-sm font-medium">
-                                                        {{ $review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown') }}</div>
+                                                        {{ $forwarderName }}</div>
                                                     <div class="text-xs text-gray-500">
                                                         <span class="badge badge-outline badge-xs">
                                                             <i data-lucide="building-2" class="w-3 h-3 mr-1"></i>
-                                                            {{ $review->previousReviewer ? ($review->previousReviewer->department->name ?? 'N/A') : ($review->transaction->department->name ?? 'N/A') }}
+                                                            {{ $forwarderDeptName }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -348,10 +414,16 @@
                                         </td>
                                         <td class="px-4 py-3">
                                             @if ($review->transaction->current_workflow_step !== null)
+                                                @php
+                                                    $currentStepIndex = $review->transaction->current_workflow_step - 1;
+                                                    $workflowSteps = $review->transaction->workflow_snapshot['steps'] ?? $review->transaction->workflow->getWorkflowSteps();
+                                                    $currentStepData = $workflowSteps[$currentStepIndex] ?? null;
+                                                    $currentStepDept = $currentStepData['department_name'] ?? 'Unknown';
+                                                @endphp
                                                 <div class="text-sm font-medium">Step
                                                     {{ $review->transaction->current_workflow_step }}</div>
                                                 <div class="text-xs text-gray-500">
-                                                    {{ $review->department->name ?? 'N/A' }}</div>
+                                                    {{ $currentStepDept }}</div>
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif
@@ -533,20 +605,50 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-3">
+                                            @php
+                                                // Determine who forwarded this transaction
+                                                $forwarder = null;
+                                                $forwarderDepartment = null;
+                                                
+                                                if ($review->previousReviewer) {
+                                                    // If previous_reviewer_id is set, use it
+                                                    $forwarder = $review->previousReviewer;
+                                                    $forwarderDepartment = $review->previousReviewer->department;
+                                                } else {
+                                                    // Find the last approved reviewer before this one
+                                                    $lastApprovedReviewer = $review->transaction->reviewers()
+                                                        ->where('status', 'approved')
+                                                        ->where('created_at', '<', $review->created_at)
+                                                        ->latest('reviewed_at')
+                                                        ->first();
+                                                    
+                                                    if ($lastApprovedReviewer) {
+                                                        $forwarder = $lastApprovedReviewer->reviewer;
+                                                        $forwarderDepartment = $lastApprovedReviewer->department;
+                                                    } else {
+                                                        // First step - from creator
+                                                        $forwarder = $review->transaction->creator;
+                                                        $forwarderDepartment = $review->transaction->originDepartment;
+                                                    }
+                                                }
+                                                
+                                                $forwarderName = $forwarder->name ?? 'Unknown';
+                                                $forwarderDeptName = $forwarderDepartment->name ?? 'N/A';
+                                            @endphp
                                             <div class="flex items-center gap-2">
                                                 <div class="avatar">
                                                     <div class="w-8 rounded-full">
-                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown')) }}&background=random"
+                                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($forwarderName) }}&background=random"
                                                             alt="" />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div class="text-sm font-medium">
-                                                        {{ $review->previousReviewer ? $review->previousReviewer->name : ($review->transaction->creator->name ?? 'Unknown') }}</div>
+                                                        {{ $forwarderName }}</div>
                                                     <div class="text-xs text-gray-500">
                                                         <span class="badge badge-outline badge-xs">
                                                             <i data-lucide="building-2" class="w-3 h-3 mr-1"></i>
-                                                            {{ $review->previousReviewer ? ($review->previousReviewer->department->name ?? 'N/A') : ($review->transaction->department->name ?? 'N/A') }}
+                                                            {{ $forwarderDeptName }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -554,10 +656,16 @@
                                         </td>
                                         <td class="px-4 py-3">
                                             @if ($review->transaction->current_workflow_step !== null)
+                                                @php
+                                                    $currentStepIndex = $review->transaction->current_workflow_step - 1;
+                                                    $workflowSteps = $review->transaction->workflow_snapshot['steps'] ?? $review->transaction->workflow->getWorkflowSteps();
+                                                    $currentStepData = $workflowSteps[$currentStepIndex] ?? null;
+                                                    $currentStepDept = $currentStepData['department_name'] ?? 'Unknown';
+                                                @endphp
                                                 <div class="text-sm font-medium">Step
                                                     {{ $review->transaction->current_workflow_step }}</div>
                                                 <div class="text-xs text-gray-500">
-                                                    {{ $review->department->name ?? 'N/A' }}</div>
+                                                    {{ $currentStepDept }}</div>
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif

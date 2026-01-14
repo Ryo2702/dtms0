@@ -47,22 +47,52 @@ class WorkflowEngineService
             $currentState = $transaction->current_state;
             $transitions = $transaction->workflow->getTransition();
 
+            // Handle resubmit action on returned states
+            // When a transaction is returned (rejected), resubmitting should move it back to the rejecting department
+            if (str_starts_with($currentState, 'returned_to_') && $action === 'resubmit') {
+                // Find the department that rejected it
+                $lastRejectedReviewer = $transaction->reviewers()
+                    ->where('status', 'rejected')
+                    ->latest('reviewed_at')
+                    ->first();
+                
+                if ($lastRejectedReviewer && $lastRejectedReviewer->department) {
+                    $departmentName = strtolower(str_replace(' ', '_', $lastRejectedReviewer->department->name));
+                    $nextState = "pending_{$departmentName}_review";
+                } else {
+                    // Fallback to first step if we can't determine the rejecting department
+                    $nextState = $transaction->workflow->getInitialState();
+                }
+            }
             // Allow forward approval on returned states by aliasing to resubmit
             // This supports UI semantics where reviewers "approve" after corrections.
-            if (str_starts_with($currentState, 'returned_to_') && $action === 'approve') {
+            elseif (str_starts_with($currentState, 'returned_to_') && $action === 'approve') {
                 $action = 'resubmit';
+                // Determine next state same as resubmit
+                $lastRejectedReviewer = $transaction->reviewers()
+                    ->where('status', 'rejected')
+                    ->latest('reviewed_at')
+                    ->first();
+                
+                if ($lastRejectedReviewer && $lastRejectedReviewer->department) {
+                    $departmentName = strtolower(str_replace(' ', '_', $lastRejectedReviewer->department->name));
+                    $nextState = "pending_{$departmentName}_review";
+                } else {
+                    $nextState = $transaction->workflow->getInitialState();
+                }
             }
+            else {
+                // Check if action is valid for current state
+                if (!isset($transitions[$currentState][$action])) {
+                    throw new \Exception("Action '{$action}' is not valid for current state '{$currentState}'.");
+                }
 
-            // Check if action is valid for current state
-            if (!isset($transitions[$currentState][$action])) {
-                throw new \Exception("Action '{$action}' is not valid for current state '{$currentState}'.");
+                $nextState = $transitions[$currentState][$action];
             }
-
-            $nextState = $transitions[$currentState][$action];
 
             // For reject action, we might need to determine the specific return destination
             if ($action === 'reject' && $returnToDepartmentId) {
-                $nextState = $this->getReturnState($transaction->workflow, $returnToDepartmentId);
+                $nextState = $this->getReturnState($transaction, $returnToDepartmentId);
             }
 
             // Log the transition
@@ -102,9 +132,9 @@ class WorkflowEngineService
     /**
      * Get return state for a specific department
      */
-    protected function getReturnState(Workflow $workflow, int $departmentId): string
+    protected function getReturnState(Transaction $transaction, int $departmentId): string
     {
-        $steps = $workflow->getWorkflowSteps();
+        $steps = $transaction->getWorkflowSteps();
         
         foreach ($steps as $step) {
             if ($step['department_id'] == $departmentId) {
@@ -173,7 +203,7 @@ class WorkflowEngineService
      */
     public function getReturnOptions(Transaction $transaction): array
     {
-        $steps = $transaction->workflow->getWorkflowSteps();
+        $steps = $transaction->getWorkflowSteps();
         $currentState = $transaction->current_state;
 
         // Find current step index

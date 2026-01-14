@@ -46,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{reviewer}/reject', [TransactionReviewerController::class, 'reject'])->name('reject');
             Route::post('/{reviewer}/receive', [TransactionReviewerController::class, 'receive'])->name('receive');
             Route::post('/{reviewer}/resubmit', [TransactionReviewerController::class, 'resubmit'])->name('resubmit');
+            Route::post('/{reviewer}/next-reviewer/receive', [TransactionReviewerController::class, 'nextReviewerReceive'])->name('next-reviewer-receive');
             Route::put('/{reviewer}/due-date', [TransactionReviewerController::class, 'updateDueDate'])->name('update-due-date');
             Route::put('/{reviewer}/reassign', [TransactionReviewerController::class, 'reassign'])->name('reassign');
         });
