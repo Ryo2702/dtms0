@@ -213,18 +213,29 @@
                                             <div class="flex gap-1">
                                                 @if ($review->received_status === 'pending')
                                                     @if (auth()->user()->isHead() || auth()->user()->type === 'Staff')
-                                                        <button type="button"
-                                                            onclick="showReceiveModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}')"
-                                                            class="btn btn-sm btn-success" title="Mark as Received">
-                                                            <i data-lucide="package-check" class="w-4 h-4 mr-1"></i>
-                                                            Receive
-                                                        </button>
-                                                        <button type="button"
-                                                            onclick="showNotReceivedModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}')"
-                                                            class="btn btn-sm btn-error" title="Mark as Not Received">
-                                                            <i data-lucide="package-x" class="w-4 h-4 mr-1"></i>
-                                                            Not Received
-                                                        </button>
+                                                        @if ($review->iteration_number > 1)
+                                                            {{-- Resubmit button for resubmissions --}}
+                                                            <button type="button"
+                                                                onclick="showResubmitModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}', {{ $review->iteration_number }})"
+                                                                class="btn btn-sm btn-info" title="Mark as Resubmitted">
+                                                                <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
+                                                                Resubmit
+                                                            </button>
+                                                        @else
+                                                            {{-- Regular Receive/Not Received for first submissions --}}
+                                                            <button type="button"
+                                                                onclick="showReceiveModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}')"
+                                                                class="btn btn-sm btn-success" title="Mark as Received">
+                                                                <i data-lucide="package-check" class="w-4 h-4 mr-1"></i>
+                                                                Receive
+                                                            </button>
+                                                            <button type="button"
+                                                                onclick="showNotReceivedModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}')"
+                                                                class="btn btn-sm btn-error" title="Mark as Not Received">
+                                                                <i data-lucide="package-x" class="w-4 h-4 mr-1"></i>
+                                                                Not Received
+                                                            </button>
+                                                        @endif
                                                     @else
                                                         <span class="badge badge-warning">
                                                             <i data-lucide="lock" class="w-3 h-3 mr-1"></i>
@@ -424,30 +435,24 @@
                                                 @if ($review->received_status === 'pending')
                                                     @if (auth()->user()->isHead() || auth()->user()->type === 'Staff')
                                                         <button type="button"
-                                                            onclick="showReceiveModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}')"
-                                                            class="btn btn-sm btn-success" title="Mark as Received">
-                                                            <i data-lucide="package-check" class="w-4 h-4 mr-1"></i>
-                                                            Receive
-                                                        </button>
-                                                        <button type="button"
-                                                            onclick="showNotReceivedModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}')"
-                                                            class="btn btn-sm btn-error" title="Mark as Not Received">
-                                                            <i data-lucide="package-x" class="w-4 h-4 mr-1"></i>
-                                                            Not Received
+                                                            onclick="showResubmitModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}', {{ $review->iteration_number }})"
+                                                            class="btn btn-sm btn-info" title="Mark as Resubmitted">
+                                                            <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
+                                                            Resubmit
                                                         </button>
                                                     @else
                                                         <span class="badge badge-warning">
                                                             <i data-lucide="lock" class="w-3 h-3 mr-1"></i>
-                                                            Awaiting Receipt by Head/Staff
+                                                            Awaiting Resubmission by Head/Staff
                                                         </span>
                                                     @endif
                                                 @elseif($review->received_status === 'not_received')
                                                     @if (auth()->user()->isHead() || auth()->user()->type === 'Staff')
                                                         <button type="button"
-                                                            onclick="showReceiveModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}')"
-                                                            class="btn btn-sm btn-success" title="Mark as Received (Arrived Late)">
-                                                            <i data-lucide="package-check" class="w-4 h-4 mr-1"></i>
-                                                            Mark Received
+                                                            onclick="showResubmitModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}', {{ $review->iteration_number }})"
+                                                            class="btn btn-sm btn-info" title="Mark as Resubmitted">
+                                                            <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
+                                                            Resubmit
                                                         </button>
                                                     @endif
                                                 @elseif($review->status === 'pending' && $review->received_status === 'received')
@@ -773,6 +778,81 @@
         </form>
     </x-modal>
 
+    {{-- Resubmit Modal --}}
+    <x-modal id="resubmitModal" title="Confirm Resubmission" size="md">
+        <form id="resubmitForm" method="POST">
+            @csrf
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 p-4 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <i data-lucide="refresh-cw" class="w-8 h-8 text-cyan-600"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold text-cyan-900">Mark as Resubmitted</p>
+                        <p class="text-sm text-cyan-700">Transaction: <span id="resubmitTransactionCode"
+                                class="font-mono font-bold"></span></p>
+                        <p class="text-xs text-cyan-600 mt-1">Resubmission #<span id="resubmitIterationNumber"></span></p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="user-check" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-blue-900 mb-1">Resubmitted By:</p>
+                            <div class="flex items-center gap-2">
+                                <div class="avatar placeholder">
+                                    <div class="bg-blue-600 text-white rounded-full w-8">
+                                        <span class="text-xs">{{ substr(auth()->user()->name ?? 'U', 0, 1) }}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-900">{{ auth()->user()->name }}</p>
+                                    <p class="text-xs text-blue-700">{{ auth()->user()->email }}</p>
+                                    @if (auth()->user()->isHead())
+                                        <span class="badge badge-sm bg-blue-600 text-white border-0 mt-0.5">Department
+                                            Head</span>
+                                    @elseif(auth()->user()->type === 'Staff')
+                                        <span class="badge badge-sm bg-blue-600 text-white border-0 mt-0.5">Staff</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="flex gap-2">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+                        <div class="text-sm text-yellow-800">
+                            <p class="font-semibold mb-1">Important:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>This transaction has been corrected and is ready for re-review</li>
+                                <li>The review timer will start immediately after resubmission</li>
+                                <li>You must complete the review before the deadline</li>
+                                <li>This action cannot be undone</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-600">
+                    By clicking "Confirm Resubmission", you acknowledge that the corrections have been made and the transaction
+                    is ready for the next review cycle.
+                </p>
+            </div>
+
+            <x-slot name="actions">
+                <button type="button" class="btn btn-ghost close-resubmit-modal">
+                    Cancel
+                </button>
+                <button type="submit" form="resubmitForm" class="btn btn-info">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
+                    Confirm Resubmission
+                </button>
+            </x-slot>
+        </form>
+    </x-modal>
+
     @push('scripts')
         <script>
             function showReceiveModal(reviewId, transactionCode) {
@@ -835,6 +915,38 @@
                 }, 100);
             }
 
+            function showResubmitModal(reviewId, transactionCode, iterationNumber) {
+                // Set transaction code and form action
+                const codeElement = document.getElementById('resubmitTransactionCode');
+                const iterationElement = document.getElementById('resubmitIterationNumber');
+                const formElement = document.getElementById('resubmitForm');
+
+                if (codeElement && formElement && iterationElement) {
+                    codeElement.textContent = transactionCode;
+                    iterationElement.textContent = iterationNumber;
+                    formElement.action = `/transactions/reviews/${reviewId}/resubmit`;
+                }
+
+                // Show modal
+                if (typeof resubmitModal !== 'undefined' && resubmitModal.showModal) {
+                    resubmitModal.showModal();
+                } else {
+                    // Fallback: directly show the modal
+                    const modalElement = document.getElementById('resubmitModal');
+                    if (modalElement) {
+                        modalElement.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                }
+
+                // Re-render lucide icons in modal
+                setTimeout(() => {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                }, 100);
+            }
+
             // Initialize lucide icons on page load
             document.addEventListener('DOMContentLoaded', function() {
                 if (typeof lucide !== 'undefined') {
@@ -857,6 +969,17 @@
                 if (closeNotReceivedBtn) {
                     closeNotReceivedBtn.addEventListener('click', function() {
                         const modalElement = document.getElementById('notReceivedModal');
+                        if (modalElement) {
+                            modalElement.classList.add('hidden');
+                            document.body.style.overflow = '';
+                        }
+                    });
+                }
+
+                const closeResubmitBtn = document.querySelector('.close-resubmit-modal');
+                if (closeResubmitBtn) {
+                    closeResubmitBtn.addEventListener('click', function() {
+                        const modalElement = document.getElementById('resubmitModal');
                         if (modalElement) {
                             modalElement.classList.add('hidden');
                             document.body.style.overflow = '';

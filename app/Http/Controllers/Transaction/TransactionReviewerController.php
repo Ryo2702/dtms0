@@ -518,4 +518,36 @@ class TransactionReviewerController extends Controller
 
         return back()->with('success', $message);
     }
+
+    /**
+     * Resubmit a transaction after corrections (for resubmissions)
+     * This marks the transaction as received and ready for the next review cycle
+     */
+    public function resubmit(Request $request, TransactionReviewer $reviewer)
+    {
+        // Check if user is authorized (must be head or staff)
+        $user = $request->user();
+        if (!$user->isHead() && $user->type !== 'Staff') {
+            return back()->with('error', 'Only department heads or staff can resubmit transactions.');
+        }
+
+        // Check if user is from the same department as the reviewer
+        if ($reviewer->reviewer->department_id !== $user->department_id) {
+            return back()->with('error', 'You can only resubmit transactions assigned to your department.');
+        }
+
+        // Verify this is actually a resubmission (iteration_number > 1)
+        if ($reviewer->iteration_number <= 1) {
+            return back()->with('error', 'This action is only available for resubmissions.');
+        }
+
+        // Mark as received and ready for review
+        $reviewer->update([
+            'received_status' => 'received',
+            'received_by' => $user->id,
+            'received_at' => now(),
+        ]);
+
+        return back()->with('success', 'Transaction resubmitted successfully. Review timer started.');
+    }
 }

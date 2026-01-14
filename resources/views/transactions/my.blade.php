@@ -54,6 +54,13 @@
                     <span class="badge badge-info badge-sm ml-1">{{ $stats['in_progress'] }}</span>
                 @endif
             </a>
+            <a href="{{ route('transactions.my', ['tab' => 'rejected']) }}" 
+               class="tab {{ $tab === 'rejected' ? 'tab-active' : '' }}">
+                Rejected
+                @if(($stats['rejected'] ?? 0) > 0)
+                    <span class="badge badge-error badge-sm ml-1">{{ $stats['rejected'] }}</span>
+                @endif
+            </a>
             <a href="{{ route('transactions.my', ['tab' => 'pending_receipt']) }}" 
                class="tab {{ $tab === 'pending_receipt' ? 'tab-active' : '' }}">
                 Pending Receipt
@@ -162,11 +169,24 @@
                                 </a>
 
                                 @if($transaction->transaction_status === 'in_progress')
-                                    {{-- For in_progress: Only Cancel button --}}
-                                    <button onclick="window['cancel-modal-{{ $transaction->id }}'].showModal()" 
-                                            class="btn btn-sm btn-error" title="Cancel Transaction">
-                                        <i data-lucide="x-circle" class="w-4 h-4"></i>
-                                    </button>
+                                    {{-- Check if transaction is rejected (returned_to state) --}}
+                                    @if(str_starts_with($transaction->current_state, 'returned_to_'))
+                                        {{-- Resubmit button for rejected transactions --}}
+                                        <form action="{{ route('transactions.creator-resubmit', $transaction) }}" method="POST" 
+                                              onsubmit="return confirm('Are you sure you want to resubmit this transaction? Make sure you have made the required corrections.')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-warning" title="Resubmit after corrections">
+                                                <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
+                                                Resubmit
+                                            </button>
+                                        </form>
+                                    @else
+                                        {{-- Cancel button for in_progress (not rejected) --}}
+                                        <button onclick="window['cancel-modal-{{ $transaction->id }}'].showModal()" 
+                                                class="btn btn-sm btn-error" title="Cancel Transaction">
+                                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                        </button>
+                                    @endif
                                 @else
                                     {{-- For other statuses: Show all other actions --}}
                                     <a href="{{ route('transactions.tracker', $transaction) }}" 

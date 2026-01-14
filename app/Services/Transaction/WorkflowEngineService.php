@@ -47,6 +47,12 @@ class WorkflowEngineService
             $currentState = $transaction->current_state;
             $transitions = $transaction->workflow->getTransition();
 
+            // Allow forward approval on returned states by aliasing to resubmit
+            // This supports UI semantics where reviewers "approve" after corrections.
+            if (str_starts_with($currentState, 'returned_to_') && $action === 'approve') {
+                $action = 'resubmit';
+            }
+
             // Check if action is valid for current state
             if (!isset($transitions[$currentState][$action])) {
                 throw new \Exception("Action '{$action}' is not valid for current state '{$currentState}'.");

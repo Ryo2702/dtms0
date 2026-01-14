@@ -121,9 +121,14 @@
                             <dt class="text-sm text-gray-500 mb-2">Custom Document Attachment</dt>
                             <dd class="flex flex-wrap gap-2">
                                 @php
-                                    $customTags = is_string($transaction->custom_document_tags) 
-                                        ? json_decode($transaction->custom_document_tags, true) 
-                                        : $transaction->custom_document_tags;
+                                    $tags = $transaction->custom_document_tags;
+                                    if (is_string($tags)) {
+                                        $customTags = json_decode($tags, true);
+                                    } elseif (is_array($tags)) {
+                                        $customTags = $tags;
+                                    } else {
+                                        $customTags = null;
+                                    }
                                 @endphp
                                 @if(is_array($customTags) && count($customTags) > 0)
                                     @foreach($customTags as $tag)
@@ -159,6 +164,88 @@
                         @endif
                     </div>
                 </x-card>
+
+                {{-- Rejection Information (if transaction is returned) --}}
+                @if($transaction->isReturnedState())
+                    @php
+                        $lastRejectedReviewer = $transaction->reviewers()
+                            ->where('status', 'rejected')
+                            ->latest('reviewed_at')
+                            ->with(['reviewer', 'department'])
+                            ->first();
+                    @endphp
+                    
+                    @if($lastRejectedReviewer)
+                        <x-card title="Rejection Information">
+                            <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div class="flex items-center gap-2 text-error mb-4">
+                                    <i data-lucide="x-circle" class="w-5 h-5"></i>
+                                    <span class="font-semibold text-lg">Transaction Returned for Corrections</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <dt class="text-sm text-gray-600 mb-1">Rejected By:</dt>
+                                        <dd class="flex items-center gap-2">
+                                            <div class="avatar">
+                                                <div class="w-8 rounded-full">
+                                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($lastRejectedReviewer->reviewer->name ?? 'Unknown') }}&background=random" alt="" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium text-gray-900">{{ $lastRejectedReviewer->reviewer->name ?? 'Unknown' }}</div>
+                                                <div class="text-xs text-gray-600">{{ $lastRejectedReviewer->department->name ?? 'N/A' }}</div>
+                                            </div>
+                                        </dd>
+                                    </div>
+
+                                    @if($lastRejectedReviewer->reviewed_at)
+                                        <div>
+                                            <dt class="text-sm text-gray-600 mb-1">Rejected On:</dt>
+                                            <dd class="font-medium text-gray-900">
+                                                {{ $lastRejectedReviewer->reviewed_at->format('M d, Y h:i A') }}
+                                            </dd>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                @if($lastRejectedReviewer->rejection_reason)
+                                    <div>
+                                        <dt class="text-sm text-gray-600 mb-2 font-semibold">Reason for Rejection:</dt>
+                                        <dd class="bg-white p-3 rounded border border-red-200 text-gray-900">
+                                            {{ $lastRejectedReviewer->rejection_reason }}
+                                        </dd>
+                                    </div>
+                                @endif
+
+                                @if($lastRejectedReviewer->resubmission_deadline)
+                                    <div class="mt-3 pt-3 border-t border-red-200">
+                                        <dt class="text-sm text-gray-600 mb-1">Resubmission Deadline:</dt>
+                                        <dd class="font-medium text-gray-900">
+                                            {{ \Carbon\Carbon::parse($lastRejectedReviewer->resubmission_deadline)->format('M d, Y h:i A') }}
+                                            <span class="text-xs text-gray-600">
+                                                ({{ \Carbon\Carbon::parse($lastRejectedReviewer->resubmission_deadline)->diffForHumans() }})
+                                            </span>
+                                        </dd>
+                                    </div>
+                                @endif
+
+                                @if(Auth::check() && Auth::id() === $transaction->created_by)
+                                    <div class="mt-4 pt-4 border-t border-red-200">
+                                        <form action="{{ route('transactions.creator-resubmit', $transaction) }}" method="POST" 
+                                              onsubmit="return confirm('Are you sure you want to resubmit this transaction? Make sure you have made the required corrections.')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-warning w-full">
+                                                <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                                                Resubmit Transaction After Corrections
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                            </div>
+                        </x-card>
+                    @endif
+                @endif
 
                 {{-- Workflow Progress --}}
                 <x-card title="Workflow Progress">

@@ -77,6 +77,7 @@ class TransactionController extends Controller
             'completed' => $query->clone()->where('transaction_status', 'completed'),
             'pending_receipt' => $query->clone()->where('transaction_status', 'completed')->where('receiving_status', 'pending'),
             'cancelled' => $query->clone()->where('transaction_status', 'cancelled'),
+            'rejected' => $query->clone()->where('transaction_status', 'in_progress')->where('current_state', 'like', 'returned_to_%'),
             default => $query->clone()->where('transaction_status', '!=', 'completed'),
         };
 
@@ -86,6 +87,10 @@ class TransactionController extends Controller
         $stats = [
             'all' => Transaction::where('created_by', $user->id)->where('transaction_status', '!=', 'completed')->count(),
             'in_progress' => Transaction::where('created_by', $user->id)->where('transaction_status', 'in_progress')->count(),
+            'rejected' => Transaction::where('created_by', $user->id)
+                ->where('transaction_status', 'in_progress')
+                ->where('current_state', 'like', 'returned_to_%')
+                ->count(),
             'pending_receipt' => Transaction::where('created_by', $user->id)
                 ->where('transaction_status', 'completed')
                 ->where('receiving_status', 'pending')
@@ -522,4 +527,72 @@ class TransactionController extends Controller
         return redirect()->back()
             ->with('success', 'Transaction has been marked as not received.');
     }
-}
+    /**
+     * Creator resubmits a rejected transaction to continue the workflow
+     */
+    public function creatorResubmit(Request $request, Transaction $transaction)
+    {
+        $user = $request->user();
+
+        // Verify the user is the creator
+        if ($transaction->created_by !== $user->id) {
+            abort(403, 'You are not authorized to resubmit this transaction.');
+        }
+
+        // Verify the transaction is in a returned state
+        if (!str_starts_with($transaction->current_state, 'returned_to_')) {
+            return redirect()->back()
+                ->with('error', 'This transaction is not in a state that can be resubmitted.');
+        }
+
+        // Get the last rejected reviewer to find the department to resubmit to
+        $lastRejectedReviewer = $transaction->reviewers()
+            ->where('status', 'rejected')
+            ->latest('reviewed_at')
+            ->first();
+
+        if (!$lastRejectedReviewer) {
+            return redirect()->back()
+                ->with('error', 'Unable to find rejection information.');
+        }
+
+        // Execute the resubmit action through workflow engine
+        try {
+            $this->transactionService->executeAction(
+                $transaction,
+                'resubmit',
+                $user,
+                'Transaction resubmitted after corrections by creator.'
+            );
+
+            // Create a new reviewer entry for the department that rejected
+            $nextReviewerUser = \App\Models\User::where('department_id', $lastRejectedReviewer->department_id)
+                ->where('type', 'Head')
+                ->first();
+
+            if ($nextReviewerUser) {
+                \App\Models\TransactionReviewer::create([
+                    'transaction_id' => $transaction->id,
+                    'reviewer_id' => $nextReviewerUser->id,
+                    'department_id' => $lastRejectedReviewer->department_id,
+                    'status' => 'pending',
+                    'received_status' => 'pending',
+                    'due_date' => now()->addDays(3), // Default 3 days
+                    'iteration_number' => ($lastRejectedReviewer->iteration_number ?? 1) + 1,
+                    'previous_reviewer_id' => $lastRejectedReviewer->reviewer_id,
+                ]);
+
+                // Update transaction department
+                $transaction->update([
+                    'department_id' => $lastRejectedReviewer->department_id,
+                ]);
+            }
+
+            return redirect()->route('transactions.my', ['tab' => 'in_progress'])
+                ->with('success', 'Transaction resubmitted successfully and sent back for review.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to resubmit transaction: ' . $e->getMessage());
+        }
+    }}
