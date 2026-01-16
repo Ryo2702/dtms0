@@ -75,7 +75,17 @@
                 </div>
 
                 <div class="mb-4">
-                    <x-form.input name="role" label="Role" placeholder="Enter Role" class="w-full" required />
+                    <x-form.select name="role" label="Role" required class="w-full">
+                        <option value="">Select a Role</option>
+                        <option value="Mayor">Mayor</option>
+                        <option value="Vice Mayor">Vice Mayor</option>
+                        <option value="City Councilor">City Councilor</option>
+                        <option value="Punong Barangay">Punong Barangay</option>
+                        <option value="Barangay Councilor">Barangay Councilor</option>
+                        <option value="City Administrator">City Administrator</option>
+                        <option value="Department Head">Department Head</option>
+                        <option value="Staff">Staff</option>
+                    </x-form.select>
                 </div>
             </form>
 
@@ -107,8 +117,17 @@
                 </div>
 
                 <div class="mb-4">
-                    <x-form.input name="role" id="edit_role" label="Role" placeholder="Enter Role" required
-                        class="w-full" />
+                    <x-form.select name="role" id="edit_role" label="Role" required class="w-full">
+                        <option value="">Select a Role</option>
+                        <option value="Mayor">Mayor</option>
+                        <option value="Vice Mayor">Vice Mayor</option>
+                        <option value="City Councilor">City Councilor</option>
+                        <option value="Punong Barangay">Punong Barangay</option>
+                        <option value="Barangay Councilor">Barangay Councilor</option>
+                        <option value="City Administrator">City Administrator</option>
+                        <option value="Department Head">Department Head</option>
+                        <option value="Staff">Staff</option>
+                    </x-form.select>
                 </div>
             </form>
 

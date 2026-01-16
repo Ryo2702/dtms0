@@ -30,7 +30,7 @@ class StaffController extends Controller
 
     public function store(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user->type !== 'Head') {
             abort(403, 'Unauthorized');
@@ -51,7 +51,7 @@ class StaffController extends Controller
 
     public function update(Request $request, AssignStaff $staff) {
         
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user->type !== 'Head') {
             abort(403, 'Unauthorized');

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DocumentReview;
+use App\Models\Transaction;
+use App\Models\TransactionReviewer;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -120,16 +121,18 @@ class ProfileController extends Controller
         // Only calculate stats for Staff and Head users
         if (in_array($user->type, ['Staff', 'Head'])) {
             $stats = [
-                'total_documents_created' => DocumentReview::where('created_by', $user->id)->count(),
-                'total_documents_reviewed' => DocumentReview::where('assigned_to', $user->id)
+                'total_documents_created' => Transaction::where('created_by', $user->id)->count(),
+                'total_documents_reviewed' => TransactionReviewer::where('reviewer_id', $user->id)
                     ->whereIn('status', ['approved', 'rejected'])
                     ->count(),
-                'pending_reviews' => DocumentReview::where('assigned_to', $user->id)
+                'pending_reviews' => TransactionReviewer::where('reviewer_id', $user->id)
                     ->where('status', 'pending')
                     ->count(),
-                'completed_reviews' => DocumentReview::where('assigned_to', $user->id)
+                'completed_reviews' => TransactionReviewer::where('reviewer_id', $user->id)
                     ->where('status', 'approved')
-                    ->whereNotNull('downloaded_at')
+                    ->whereHas('transaction', function($q) {
+                        $q->where('transaction_status', 'completed');
+                    })
                     ->count(),
             ];
         }
@@ -147,35 +150,37 @@ class ProfileController extends Controller
         $activities = collect();
 
         if (in_array($user->type, ['Staff', 'Head'])) {
-            // Recent document reviews assigned to user
-            $recentReviews = DocumentReview::where('assigned_to', $user->id)
-                ->with(['creator'])
+            // Recent transactions assigned to user for review
+            $recentReviews = Transaction::whereHas('reviewers', function($q) use ($user) {
+                    $q->where('reviewer_id', $user->id)->where('status', 'pending');
+                })
+                ->with(['creator', 'workflow'])
                 ->latest()
                 ->take(5)
                 ->get()
-                ->map(function ($review) {
+                ->map(function ($transaction) {
                     return [
                         'type' => 'review_assigned',
-                        'description' => "Document review assigned: {$review->document_type}",
-                        'date' => $review->created_at,
-                        'status' => $review->status,
-                        'url' => route('documents.reviews.show', $review->id),
+                        'description' => "Transaction assigned: {$transaction->workflow->transaction_name}",
+                        'date' => $transaction->created_at,
+                        'status' => $transaction->transaction_status,
+                        'url' => route('transactions.show', $transaction->id),
                     ];
                 });
 
-            // Recent documents created by user
-            $recentCreated = \App\Models\DocumentReview::where('created_by', $user->id)
-                ->with(['reviewer'])
+            // Recent transactions created by user
+            $recentCreated = Transaction::where('created_by', $user->id)
+                ->with(['workflow'])
                 ->latest()
                 ->take(5)
                 ->get()
-                ->map(function ($review) {
+                ->map(function ($transaction) {
                     return [
                         'type' => 'document_created',
-                        'description' => "Document created: {$review->document_type}",
-                        'date' => $review->created_at,
-                        'status' => $review->status,
-                        'url' => route('documents.reviews.show', $review->id),
+                        'description' => "Transaction created: {$transaction->workflow->transaction_name}",
+                        'date' => $transaction->created_at,
+                        'status' => $transaction->transaction_status,
+                        'url' => route('transactions.show', $transaction->id),
                     ];
                 });
 

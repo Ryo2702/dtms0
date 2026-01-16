@@ -15,11 +15,11 @@
 
         @if ($badge && $badge['count'] > 0)
             <div class="flex items-center gap-1">
-                <div class="badge {{ $badge['class'] }} badge-xs lg:badge-sm" title="Total completed documents">
+                <div class="inline-flex items-center justify-center rounded text-xs lg:text-sm px-2 py-1 font-semibold {{ $badge['class'] }}" title="Total completed documents">
                     {{ $badge['count'] }}
                 </div>
                 @if (isset($badge['overdue_count']) && $badge['overdue_count'] > 0)
-                    <div class="badge badge-error badge-xs lg:badge-sm" title="Completed documents that were overdue">
+                    <div class="inline-flex items-center justify-center rounded text-xs lg:text-sm px-2 py-1 font-semibold bg-red-600 text-white" title="Completed documents that were overdue">
                         {{ $badge['overdue_count'] }}
                     </div>
                 @endif

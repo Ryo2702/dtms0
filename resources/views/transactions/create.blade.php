@@ -69,7 +69,7 @@
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i data-lucide="tag" class="w-4 h-4 inline"></i>
-                                Attach Document Tags (Multi-select)
+                                Attach Document:
                             </label>
                             <div class="border border-gray-300 rounded-lg overflow-hidden">
                                 <div class="p-3 max-h-32 overflow-y-auto" id="documentTagsContainer">
@@ -96,7 +96,7 @@
                                 <div class="border-t border-gray-200 p-2">
                                     <button type="button" onclick="openCreateTagModal()"
                                         class="w-full px-3 py-2 text-sm bg-blue-900 text-white hover:bg-blue-800 rounded-lg font-medium flex items-center justify-center gap-2">
-                                        <i data-lucide="plus-circle" class="w-4 h-4 text-white"></i>
+                                        <i data-lucide="plus" class="w-4 h-4 text-white"></i>
                                     </button>
                                 </div>
                             </div>
@@ -340,6 +340,12 @@
             const storageKey = `workflow_custom_${workflowId}`;
             const canUpdateWorkflow = {{ auth()->user()->can('update', $workflow) ? 'true' : 'false' }};
 
+            // DEBUG: Log the initial data
+            console.log('=== DEBUG: Initial Data ===');
+            console.log('Default Workflow Config:', defaultWorkflowConfig);
+            console.log('Departments:', departments);
+            console.log('Departments with logos:', departments.map(d => ({ id: d.id, name: d.name, logo_url: d.logo_url })));
+
             // Dropdown toggle function
             function toggleDropdown() {
                 const dropdown = document.getElementById('workflowDropdown');
@@ -390,6 +396,16 @@
                 console.error('Error loading saved workflow:', e);
                 currentWorkflowConfig = JSON.parse(JSON.stringify(defaultWorkflowConfig));
             }
+
+            // DEBUG: Log loaded config
+            console.log('=== DEBUG: Current Workflow Config ===');
+            console.log('Full Config:', currentWorkflowConfig);
+            console.log('Steps:', currentWorkflowConfig.steps);
+            console.log('Steps with logos:', currentWorkflowConfig.steps ? currentWorkflowConfig.steps.map(s => ({ 
+                department_id: s.department_id, 
+                department_name: s.department_name, 
+                department_logo: s.department_logo 
+            })) : 'No steps');
 
             // Edit mode state
             let isEditMode = false;
@@ -736,6 +752,7 @@
                 currentWorkflowConfig.steps[index].department_id = deptId ? parseInt(deptId) : '';
                 currentWorkflowConfig.steps[index].department_name = dept ? dept.name : '';
                 currentWorkflowConfig.steps[index].department_head = dept && dept.head_name ? dept.head_name : '';
+                currentWorkflowConfig.steps[index].department_logo = dept && dept.logo_url ? dept.logo_url : '';
                 renderEditableSteps();
                 updateStepCount();
             };
@@ -919,24 +936,36 @@
                         if (step.department_id && step.department_name) {
                             uniqueDepartments.set(step.department_id, {
                                 name: step.department_name,
-                                head: step.department_head || 'Not assigned'
+                                head: step.department_head || null,
+                                logo: step.department_logo || null
                             });
                         }
                     });
+
+                    // DEBUG: Log departments for display
+                    console.log('=== DEBUG: Department Heads Display ===');
+                    console.log('Unique Departments:', Array.from(uniqueDepartments.values()));
 
                     if (uniqueDepartments.size === 0) {
                         departmentHeadsList.innerHTML = '<span class="text-gray-400">No departments yet</span>';
                     } else {
                         departmentHeadsList.innerHTML = Array.from(uniqueDepartments.values())
-                            .map(dept => `
+                            .map(dept => {
+                                console.log(`Building display for ${dept.name}, logo: ${dept.logo}, head: ${dept.head}`);
+                                const headDisplay = dept.head ? `<span class="text-gray-700">${dept.head}</span>` : '<span class="text-gray-400 italic">No head assigned</span>';
+                                const logoHtml = dept.logo ? 
+                                    `<img src="${dept.logo}" alt="${dept.name}" class="w-6 h-6 rounded-full object-cover flex-shrink-0">` : 
+                                    `<div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0"><i data-lucide="user" class="w-3 h-3 text-gray-600"></i></div>`;
+                                return `
                             <div class="flex items-start gap-2">
-                                <i data-lucide="user" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                                ${logoHtml}
                                 <div class="flex-1 min-w-0">
                                     <div class="font-medium text-gray-700">${dept.name}</div>
-                                    <div class="text-xs text-gray-500">${dept.head}</div>
+                                    <div class="text-xs text-gray-500">${headDisplay}</div>
                                 </div>
                             </div>
-                        `).join('');
+                        `;
+                            }).join('');
 
                         // Reinitialize Lucide icons
                         if (typeof lucide !== 'undefined') {
@@ -969,6 +998,7 @@
                         department_id: step.department_id,
                         department_name: step.department_name,
                         department_head: step.department_head || '',
+                        department_logo: step.department_logo || '',
                         process_time_value: step.process_time_value || 1,
                         process_time_unit: step.process_time_unit || 'days'
                     }))

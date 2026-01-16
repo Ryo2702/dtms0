@@ -34,7 +34,7 @@
                 <!-- Admin Section -->
                 @if ($user->type === 'Admin')
                     <li class="px-3 pt-4 pb-2">
-                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Administration</span>
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">System Management</span>
                     </li>
 
                     <li class="mb-1">
@@ -62,7 +62,7 @@
                     </li>
 
                     <li class="px-3 pt-4 pb-2">
-                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Workflow Management</span>
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Configuration</span>
                     </li>
 
                     <li class="mb-1">
@@ -82,7 +82,7 @@
                     </li>
                 @else
                     <li class="px-3 pt-4 pb-2">
-                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Status</span>
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">My Transactions</span>
                     </li>
 
                     <li class="mb-1">
@@ -125,11 +125,18 @@
                         </a>
                     </li>
 
-
-                    <li class="px-3 pt-4 pb-2">
-                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Department</span>
+                    <li class="mb-1">
+                        <a href="{{ route('transactions.archive.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::contains(request()->route()->getName(), 'archive') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="archive" class="w-5 h-5"></i>
+                            <span>Archive</span>
+                        </a>
                     </li>
 
+
+                    <li class="px-3 pt-4 pb-2">
+                        <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Team Management</span>
+                    </li>
 
                     <li class="mb-1">
                         <a href="{{ route('staff.index') }}"
@@ -139,7 +146,7 @@
                         </a>
                     </li>
                 @endif
-
+{{-- 
                 <!-- Reports Section -->
                 <li class="px-3 pt-4 pb-2">
                     <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Reports & Analytics</span>
@@ -151,7 +158,7 @@
                         <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
                         <span>Reports</span>
                     </a>
-                </li>
+                </li> --}}
 
                 <!-- Settings -->
                 <li class="px-3 pt-4 pb-2">

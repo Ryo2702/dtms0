@@ -192,7 +192,8 @@ class TransactionController extends Controller
                     'id' => $dept->id,
                     'name' => $dept->name,
                     'code' => $dept->code,
-                    'head_name' => $dept->head ? $dept->head->name : null
+                    'head_name' => $dept->head ? $dept->head->name : null,
+                    'logo_url' => $dept->getLogoUrl()
                 ];
             });
         
@@ -202,6 +203,26 @@ class TransactionController extends Controller
             ->get();
         
         $workflowConfig = $workflow->workflow_config;
+        
+        // Enrich workflow config with head names and logo URLs from departments
+        if (isset($workflowConfig['steps']) && is_array($workflowConfig['steps'])) {
+            $deptMap = [];
+            foreach ($departments as $dept) {
+                $deptMap[$dept['id']] = [
+                    'head_name' => $dept['head_name'],
+                    'logo_url' => $dept['logo_url']
+                ];
+            }
+            
+            foreach ($workflowConfig['steps'] as &$step) {
+                if (isset($step['department_id']) && isset($deptMap[$step['department_id']])) {
+                    $step['department_head'] = $deptMap[$step['department_id']]['head_name'];
+                    $step['department_logo'] = $deptMap[$step['department_id']]['logo_url'];
+                }
+            }
+            unset($step);
+        }
+        
         $workflowSteps = $workflow->getWorkflowSteps();
 
         return view('transactions.create', compact(

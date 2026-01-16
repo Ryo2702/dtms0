@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\DocumentTag;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -14,7 +15,7 @@ class DocumentTagController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Display a listing of document tags
+     * Display a listing of document tags (Admin only)
      */
     public function index(Request $request)
     {
@@ -87,11 +88,24 @@ class DocumentTagController extends Controller
                 $count++;
             }
 
+            // Determine if created by head or admin
+            $user = Auth::user();
+            $createdByHead = false;
+            $createdByAdmin = false;
+            
+            if ($user && $user->hasRole('Admin')) {
+                $createdByAdmin = true;
+            } elseif ($user && $user->hasRole('Department Head')) {
+                $createdByHead = true;
+            }
+
             $documentTag = DocumentTag::create([
                 'name' => $request->input('name'),
                 'slug' => $slug,
                 'description' => $request->input('description'),
                 'status' => $request->has('status') ? true : false,
+                'created_by_head' => $createdByHead,
+                'created_by_admin' => $createdByAdmin,
             ]);
 
             // Sync departments (many-to-many)

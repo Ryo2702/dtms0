@@ -35,6 +35,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create', [TransactionController::class, 'create'])->name('create');
         Route::post('/', [TransactionController::class, 'store'])->name('store');
         Route::post('/{transaction}/creator-resubmit', [TransactionController::class, 'creatorResubmit'])->name('creator-resubmit');
+        
+        // Archive routes
+        Route::prefix('archive')->name('archive.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Transaction\ArchiveController::class, 'index'])->name('index');
+        });
 
         // Transaction Reviewer routes (must be before {transaction} wildcard)
         Route::prefix('reviews')->name('reviews.')->group(function () {
