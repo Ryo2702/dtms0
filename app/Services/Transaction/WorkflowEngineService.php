@@ -251,6 +251,18 @@ class WorkflowEngineService
         $currentStep = $transaction->current_workflow_step;
         $currentState = $transaction->current_state;
 
+        // Get all reviewers for this transaction with their details
+        $reviewers = $transaction->reviewers()
+            ->with('reviewer', 'department')
+            ->orderBy('created_at')
+            ->get();
+
+        // Get all transaction logs
+        $logs = $transaction->transactionLogs()
+            ->with('actor')
+            ->orderBy('created_at')
+            ->get();
+
         $progress = [];
 
         foreach ($steps as $index => $step) {
@@ -263,7 +275,12 @@ class WorkflowEngineService
                 $status = str_starts_with($currentState, 'returned_to_') ? 'returned' : 'current';
             }
 
-            $progress[] = [
+            // Find reviewers for this step (department)
+            $stepReviewers = $reviewers->filter(function($reviewer) use ($step) {
+                return $reviewer->department_id == $step['department_id'];
+            });
+
+            $stepData = [
                 'order' => $step['order'] ?? $stepNumber,
                 'department_id' => $step['department_id'],
                 'department_name' => $step['department_name'],
@@ -271,6 +288,35 @@ class WorkflowEngineService
                 'process_time_unit' => $step['process_time_unit'] ?? 'days',
                 'status' => $status,
             ];
+
+            // Add reviewer information if available
+            if ($stepReviewers->isNotEmpty()) {
+                $latestReviewer = $stepReviewers->last(); // Get the last reviewer for this step (handles resubmissions)
+                $stepData['reviewer_name'] = $latestReviewer->reviewer?->name ?? 'Unknown';
+                $stepData['reviewed_at'] = $latestReviewer->reviewed_at;
+                
+                // Determine action based on reviewer status
+                if ($latestReviewer->status === 'approved') {
+                    $stepData['action'] = 'approved';
+                } elseif ($latestReviewer->status === 'rejected') {
+                    $stepData['action'] = 'rejected';
+                    $stepData['remarks'] = $latestReviewer->rejection_reason;
+                } elseif ($latestReviewer->status === 'pending') {
+                    $stepData['action'] = 'pending';
+                }
+            }
+
+            // Add transaction log remarks if available
+            $relevantLog = $logs->filter(function($log) use ($step) {
+                return strpos($log->to_state, strtolower(str_replace(' ', '_', $step['department_name']))) !== false 
+                    || strpos($log->remarks, $step['department_name']) !== false;
+            })->last();
+
+            if ($relevantLog && !isset($stepData['remarks'])) {
+                $stepData['remarks'] = $relevantLog->remarks;
+            }
+
+            $progress[] = $stepData;
         }
 
         // Mark all as completed if transaction is done

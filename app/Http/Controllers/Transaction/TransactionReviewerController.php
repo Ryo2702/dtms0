@@ -397,17 +397,54 @@ class TransactionReviewerController extends Controller
             'resubmission_deadline' => $validated['resubmission_deadline'] ?? null,
         ]);
 
-        try {
-            $transaction = $reviewer->transaction;
-            $workflow = $transaction->workflow;
-            $steps = $transaction->workflow_snapshot['steps'] ?? $workflow->getWorkflowSteps();
-            $currentStep = $transaction->current_workflow_step; // 1-indexed
-            
-            // Get the previous step (return destination)
-            $returnOptions = $this->workflowEngine->getReturnOptions($transaction);
-            $returnToDepartmentId = !empty($returnOptions) ? $returnOptions[0]['department_id'] : null;
+        $transaction = $reviewer->transaction;
+        $workflow = $transaction->workflow;
+        $steps = $transaction->workflow_snapshot['steps'] ?? $workflow->getWorkflowSteps();
+        $currentStep = $transaction->current_workflow_step; // 1-indexed
+        
+        // Get the previous step (return destination)
+        $returnOptions = $this->workflowEngine->getReturnOptions($transaction);
+        $returnToDepartmentId = !empty($returnOptions) ? $returnOptions[0]['department_id'] : null;
 
-            // Execute the workflow state transition (reject)
+        // If rejected at first step, return to creator
+        if ($currentStep === 1) {
+            // Get the old state before updating
+            $oldState = $transaction->current_state;
+            
+            // Mark transaction as returned to creator
+            $transaction->update([
+                'current_state' => 'returned_to_creator',
+                'department_id' => $transaction->origin_department_id, // Return to originating department
+            ]);
+
+            // Log the return to creator
+            \App\Models\TransactionLog::create([
+                'transaction_id' => $transaction->id,
+                'from_state' => $oldState,
+                'to_state' => 'returned_to_creator',
+                'action' => 'reject_first_step',
+                'action_by' => $request->user()->id,
+                'remarks' => 'Transaction rejected at first step and returned to creator: ' . $validated['rejection_reason'],
+            ]);
+
+            // Notify the creator
+            // \App\Helpers\NotificationHelper::notifyTransactionRejected(
+            //     $transaction,
+            //     $transaction->creator,
+            //     $validated['rejection_reason']
+            // );
+        } 
+        // Only decrement if we're not at the first step
+        elseif ($currentStep > 1) {
+            $transaction->decrement('current_workflow_step');
+            
+            // Assign the transaction back to the previous department for resubmission
+            $this->assignPreviousReviewer($transaction, $reviewer, $validated['resubmission_deadline'] ?? null);
+        }
+
+        // Try to execute the workflow state transition (reject) if workflow engine supports it
+        // This is optional - the manual state update above is the primary mechanism
+        try {
             $this->workflowEngine->executeAction(
                 $transaction,
                 'reject',
@@ -415,43 +452,9 @@ class TransactionReviewerController extends Controller
                 $validated['rejection_reason'],
                 $returnToDepartmentId
             );
-
-            // If rejected at first step, return to creator
-            if ($currentStep === 1) {
-                // Mark transaction as returned to creator
-                $transaction->update([
-                    'current_state' => 'returned_to_creator',
-                    'department_id' => $transaction->origin_department_id, // Return to originating department
-                ]);
-
-                // Log the return to creator
-                \App\Models\TransactionLog::create([
-                    'transaction_id' => $transaction->id,
-                    'from_state' => $transaction->current_state,
-                    'to_state' => 'returned_to_creator',
-                    'action' => 'reject_first_step',
-                    'action_by' => $request->user()->id,
-                    'remarks' => 'Transaction rejected at first step and returned to creator: ' . $validated['rejection_reason'],
-                ]);
-
-                // Notify the creator
-                // \App\Helpers\NotificationHelper::notifyTransactionRejected(
-                //     $transaction,
-                //     $transaction->creator,
-                //     $validated['rejection_reason']
-                // );
-            } 
-            // Only decrement if we're not at the first step
-            elseif ($currentStep > 1) {
-                $transaction->decrement('current_workflow_step');
-                
-                // Assign the transaction back to the previous department for resubmission
-                $this->assignPreviousReviewer($transaction, $reviewer, $validated['resubmission_deadline'] ?? null);
-            }
-
         } catch (\Exception $e) {
-            // Log the error but continue - the reviewer status is already updated
-            \Log::error('Workflow rejection failed: ' . $e->getMessage());
+            // Log the error but continue - the manual state update has already succeeded
+            \Log::warning('Workflow engine reject action skipped (not in transition table): ' . $e->getMessage());
         }
 
         return redirect()->route('transactions.reviews.index')
@@ -493,17 +496,32 @@ class TransactionReviewerController extends Controller
                 $prevStep['process_time_unit'] ?? 'days'
             );
 
-        // Find the department head for the previous department
-        $prevReviewerUser = \App\Models\User::where('department_id', $prevDepartmentId)
-            ->where('type', 'Head')
-            ->first();
+        // Determine who should receive the rejected transaction
+        $prevReviewerUser = null;
+
+        // First priority: Send back to the previous reviewer who forwarded this transaction
+        if ($currentReviewer->previous_reviewer_id) {
+            $prevReviewerUser = \App\Models\User::find($currentReviewer->previous_reviewer_id);
+        }
+
+        // Second priority: If no previous reviewer found, find a department head in the previous department
+        if (!$prevReviewerUser) {
+            $prevReviewerUser = \App\Models\User::where('department_id', $prevDepartmentId)
+                ->where('type', 'Head')
+                ->first();
+        }
+
+        // If still no reviewer found, use the origin department creator as fallback
+        if (!$prevReviewerUser) {
+            $prevReviewerUser = $transaction->creator;
+        }
 
         if ($prevReviewerUser) {
             // Create a new reviewer entry for resubmission with incremented iteration
             TransactionReviewer::create([
                 'transaction_id' => $transaction->id,
                 'reviewer_id' => $prevReviewerUser->id,
-                'department_id' => $prevDepartmentId,
+                'department_id' => $prevReviewerUser->department_id,
                 'status' => 'pending',
                 'due_date' => $dueDate,
                 'iteration_number' => ($currentReviewer->iteration_number ?? 1) + 1,
@@ -512,7 +530,7 @@ class TransactionReviewerController extends Controller
 
             // Update transaction's current department
             $transaction->update([
-                'department_id' => $prevDepartmentId,
+                'department_id' => $prevReviewerUser->department_id,
             ]);
         }
     }

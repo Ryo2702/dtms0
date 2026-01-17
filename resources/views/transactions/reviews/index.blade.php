@@ -120,7 +120,7 @@
                                     <th class="px-4 py-3">Urgency</th>
                                     <th class="px-4 py-3">Due Date</th>
                                     <th class="px-4 py-3">Receiving Status</th>
-                                    <th class="px-4 py-3"></th>Review Status</th>
+                                    <th class="px-4 py-3">Review Status</th>
                                     <th class="px-4 py-3">Actions</th>
                                 </tr>
                             </thead>
@@ -368,13 +368,14 @@
                         <table class="table w-full">
                             <thead class="bg-info text-white">
                                 <tr>
-                                    <th class="px-4 py-3">Transaction</th>
+                                    <th class="px-4 py-3">Transaction Number</th>
                                     <th class="px-4 py-3">Workflow</th>
                                     <th class="px-4 py-3">Origin Department</th>
                                     <th class="px-4 py-3">From</th>
                                     <th class="px-4 py-3">Current Step</th>
                                     <th class="px-4 py-3">Urgency</th>
                                     <th class="px-4 py-3">Iteration</th>
+                                    <th class="px-4 py-3">Previous Review</th>
                                     <th class="px-4 py-3">Due Date</th>
                                     <th class="px-4 py-3">Receiving Status</th>
                                     <th class="px-4 py-3">Review Status</th>
@@ -482,6 +483,33 @@
                                                 #{{ $review->iteration_number }}</span>
                                         </td>
                                         <td class="px-4 py-3">
+                                            @php
+                                                // Check if current user rejected this in a previous iteration
+                                                $myPreviousRejection = $review->transaction->reviewers()
+                                                    ->where('reviewer_id', auth()->id())
+                                                    ->where('status', 'rejected')
+                                                    ->where('iteration_number', '<', $review->iteration_number)
+                                                    ->orderBy('iteration_number', 'desc')
+                                                    ->first();
+                                            @endphp
+                                            
+                                            @if($myPreviousRejection)
+                                                <div class="space-y-1">
+                                                    <div class="flex items-center gap-1">
+                                                        <i data-lucide="alert-circle" class="w-3 h-3 text-red-600"></i>
+                                                        <span class="text-xs font-semibold text-red-700">You rejected (Iteration #{{ $myPreviousRejection->iteration_number }})</span>
+                                                    </div>
+                                                    @if($myPreviousRejection->rejection_reason)
+                                                        <div class="text-xs text-gray-700 bg-red-50 p-2 rounded border border-red-200">
+                                                            <span class="font-medium text-red-800">Reason:</span> {{ Str::limit($myPreviousRejection->rejection_reason, 60) }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <span class="text-xs text-gray-400">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3">
                                             @if ($review->due_date)
                                                 <div
                                                     class="flex items-center gap-2 {{ $review->isOverdue() ? 'text-error' : ($review->due_date->isToday() ? 'text-warning' : '') }}">
@@ -546,7 +574,7 @@
                                                     @if (auth()->user()->isHead() || auth()->user()->type === 'Staff')
                                                         <button type="button"
                                                             onclick="showResubmitModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}', {{ $review->iteration_number }})"
-                                                            class="btn btn-sm btn-info" title="Mark as Resubmitted">
+                                                            class="px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" title="Mark as Resubmitted">
                                                             <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
                                                             Resubmit
                                                         </button>
@@ -560,21 +588,21 @@
                                                     @if (auth()->user()->isHead() || auth()->user()->type === 'Staff')
                                                         <button type="button"
                                                             onclick="showResubmitModal('{{ $review->id }}', '{{ $review->transaction->transaction_code }}', {{ $review->iteration_number }})"
-                                                            class="btn btn-sm btn-info" title="Mark as Resubmitted">
+                                                            class="px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" title="Mark as Resubmitted">
                                                             <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
                                                             Resubmit
                                                         </button>
                                                     @endif
                                                 @elseif($review->status === 'pending' && $review->received_status === 'received')
                                                     <a href="{{ route('transactions.reviews.review', $review) }}"
-                                                        class="btn btn-sm btn-primary" title="Re-Review">
+                                                        class="px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" title="Re-Review">
                                                         <i data-lucide="clipboard-check" class="w-4 h-4 mr-1"></i>
                                                         Re-Review
                                                     </a>
                                                 @endif
                                                 <a href="{{ route('transactions.reviews.show', $review) }}"
-                                                    class="btn btn-sm btn-ghost" title="View Review Details">
-                                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                                    class="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="View Review Details">
+                                                    <i data-lucide="eye" class="w-4 h-4\"></i>
                                                 </a>
                                             </div>
                                         </td>
@@ -769,7 +797,7 @@
                                         </td>
                                         <td class="px-4 py-3">
                                             <a href="{{ route('transactions.reviews.show', $review) }}"
-                                                class="btn btn-sm btn-ghost" title="View Review Details">
+                                                class="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="View Review Details">
                                                 <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
                                                 View
                                             </a>
@@ -847,10 +875,10 @@
             </div>
 
             <x-slot name="actions">
-                <button type="button" class="btn btn-ghost close-receive-modal">
+                <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors close-receive-modal">
                     Cancel
                 </button>
-                <button type="submit" form="receiveForm" class="btn btn-success">
+                <button type="submit" form="receiveForm" class="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
                     <i data-lucide="check" class="w-4 h-4 mr-1"></i>
                     Confirm Receipt
                 </button>
@@ -913,10 +941,10 @@
             </div>
 
             <x-slot name="actions">
-                <button type="button" class="btn btn-ghost close-not-received-modal">
+                <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors close-not-received-modal">
                     Cancel
                 </button>
-                <button type="submit" form="notReceivedForm" class="btn btn-error">
+                <button type="submit" form="notReceivedForm" class="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
                     <i data-lucide="x" class="w-4 h-4 mr-1"></i>
                     Mark Not Received
                 </button>
@@ -988,10 +1016,10 @@
             </div>
 
             <x-slot name="actions">
-                <button type="button" class="btn btn-ghost close-resubmit-modal">
+                <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors close-resubmit-modal">
                     Cancel
                 </button>
-                <button type="submit" form="resubmitForm" class="btn btn-info">
+                <button type="submit" form="resubmitForm" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
                     <i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>
                     Confirm Resubmission
                 </button>

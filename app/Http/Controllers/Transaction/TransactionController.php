@@ -649,15 +649,25 @@ class TransactionController extends Controller
             );
 
             // Create a new reviewer entry for the department that rejected
-            $nextReviewerUser = \App\Models\User::where('department_id', $lastRejectedReviewer->department_id)
-                ->where('type', 'Head')
-                ->first();
+            // Priority 1: Send back to the reviewer who rejected it
+            // Priority 2: If not available, find department head
+            $nextReviewerUser = null;
+            
+            if ($lastRejectedReviewer->reviewer_id) {
+                $nextReviewerUser = \App\Models\User::find($lastRejectedReviewer->reviewer_id);
+            }
+            
+            if (!$nextReviewerUser) {
+                $nextReviewerUser = \App\Models\User::where('department_id', $lastRejectedReviewer->department_id)
+                    ->where('type', 'Head')
+                    ->first();
+            }
 
             if ($nextReviewerUser) {
                 \App\Models\TransactionReviewer::create([
                     'transaction_id' => $transaction->id,
                     'reviewer_id' => $nextReviewerUser->id,
-                    'department_id' => $lastRejectedReviewer->department_id,
+                    'department_id' => $nextReviewerUser->department_id,
                     'status' => 'pending',
                     'received_status' => 'pending',
                     'due_date' => now()->addDays(3), // Default 3 days
@@ -667,7 +677,7 @@ class TransactionController extends Controller
 
                 // Update transaction department
                 $transaction->update([
-                    'department_id' => $lastRejectedReviewer->department_id,
+                    'department_id' => $nextReviewerUser->department_id,
                 ]);
             }
 
