@@ -52,6 +52,7 @@ import {
     PackageCheck,
     ClipboardCheck,
     BarChart3,
+    Archive,
 } from "lucide";
 
 createIcons({
@@ -101,76 +102,80 @@ createIcons({
         Trash2,
         Settings,
         GitBranch,
-
+        PackageCheck,
+        ClipboardCheck,
+        BarChart3,
+        Archive,
     },
 });
 
 // Expose lucide globally for dynamic content
 window.lucide = {
-    createIcons: () => createIcons({
-        icons: {
-            CircleAlert,
-            SquarePen,
-            Send,
-            MoveLeft,
-            MoveUp,
-            MoveDown,
-            Plus,
-            Eye,
-            Edit,
-            ChevronLeft,
-            ChevronRight,
-            Search,
-            RefreshCcw,
-            FileCheck,
-            LogOut,
-            ArrowLeft,
-            ArrowRight,
-            Menu,
-            X,
-            FileClock,
-            Check,
-            Bell,
-            Home,
-            Users,
-            Building2,
-            MapPin,
-            ShieldCheck,
-            FileText,
-            Inbox,
-            Clock,
-            CircleCheckBig,
-            XCircle,
-            Ban,
-            UsersRound,
-            FolderOpen,
-            UserRound,
-            ImageOff,
-            EllipsisVertical,
-            FileSliders,
-            FileType,
-            ChevronUp,
-            ChevronDown,
-            Trash2,
-            Settings,
-            GitBranch,
-            PackageCheck,
-            ClipboardCheck,
-            BarChart3
-        },
-    })
+    createIcons: () =>
+        createIcons({
+            icons: {
+                CircleAlert,
+                SquarePen,
+                Send,
+                MoveLeft,
+                MoveUp,
+                MoveDown,
+                Plus,
+                Eye,
+                Edit,
+                ChevronLeft,
+                ChevronRight,
+                Search,
+                RefreshCcw,
+                FileCheck,
+                LogOut,
+                ArrowLeft,
+                ArrowRight,
+                Menu,
+                X,
+                FileClock,
+                Check,
+                Bell,
+                Home,
+                Users,
+                Building2,
+                MapPin,
+                ShieldCheck,
+                FileText,
+                Inbox,
+                Clock,
+                CircleCheckBig,
+                XCircle,
+                Ban,
+                UsersRound,
+                FolderOpen,
+                UserRound,
+                ImageOff,
+                EllipsisVertical,
+                FileSliders,
+                FileType,
+                ChevronUp,
+                ChevronDown,
+                Trash2,
+                Settings,
+                GitBranch,
+                PackageCheck,
+                ClipboardCheck,
+                BarChart3,
+                Archive,
+            },
+        }),
 };
-
 
 window.$ = window.jQuery = $;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     const observer = new MutationObserver(() => {
         createIcons();
     });
 
     observer.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true,
     });
 });
