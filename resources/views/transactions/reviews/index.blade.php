@@ -59,6 +59,15 @@
             <form method="GET" action="{{ route('transactions.reviews.index') }}" class="flex flex-col md:flex-row gap-4 items-end">
                 <input type="hidden" name="tab" value="{{ $tab }}" />
                 <div class="flex-1">
+                    <label for="review_transaction_code" class="label">
+                        <span class="label-text">Transaction Number</span>
+                    </label>
+                    <input type="text" id="review_transaction_code" name="transaction_code" 
+                           value="{{ request('transaction_code') }}"
+                           placeholder="Search by transaction code..."
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex-1">
                     <label for="review_date_from" class="label">
                         <span class="label-text">From Date</span>
                     </label>
@@ -79,7 +88,7 @@
                         <i data-lucide="search" class="w-4 h-4 mr-2"></i>
                         Filter
                     </button>
-                    @if(request('date_from') || request('date_to'))
+                    @if(request('date_from') || request('date_to') || request('transaction_code'))
                         <a href="{{ route('transactions.reviews.index', ['tab' => $tab]) }}" class="btn btn-outline">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </a>
@@ -112,7 +121,7 @@
                         <table class="table w-full">
                             <thead class="bg-primary text-white">
                                 <tr>
-                                    <th class="px-4 py-3">Transaction</th>
+                                    <th class="px-4 py-3">Transaction Number</th>
                                     <th class="px-4 py-3">Workflow</th>
                                     <th class="px-4 py-3">Origin Department</th>
                                     <th class="px-4 py-3">From</th>
@@ -468,15 +477,19 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3">
-                                            @if ($review->transaction->urgency === 'high')
-                                                <span class="badge badge-error">High</span>
-                                            @elseif($review->transaction->urgency === 'medium')
-                                                <span class="badge badge-warning">Medium</span>
-                                            @elseif($review->transaction->urgency === 'low')
-                                                <span class="badge badge-info">Low</span>
-                                            @else
-                                                <span class="badge badge-ghost">Normal</span>
-                                            @endif
+                                            <x-status-badge 
+                                                :status="$review->transaction->level_of_urgency" 
+                                                :labels="[
+                                                    'normal' => 'Normal',
+                                                    'urgent' => 'Urgent',
+                                                    'highly_urgent' => 'Highly Urgent'
+                                                ]"
+                                                :variants="[
+                                                    'normal' => 'badge-ghost',
+                                                    'urgent' => 'badge-warning',
+                                                    'highly_urgent' => 'badge-error'
+                                                ]"
+                                            />
                                         </td>
                                         <td class="px-4 py-3">
                                             <span class="badge badge-info">Resubmission
@@ -737,15 +750,19 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3">
-                                            @if ($review->transaction->urgency === 'high')
-                                                <span class="badge badge-error">High</span>
-                                            @elseif($review->transaction->urgency === 'medium')
-                                                <span class="badge badge-warning">Medium</span>
-                                            @elseif($review->transaction->urgency === 'low')
-                                                <span class="badge badge-info">Low</span>
-                                            @else
-                                                <span class="badge badge-ghost">Normal</span>
-                                            @endif
+                                            <x-status-badge 
+                                                :status="$review->transaction->level_of_urgency" 
+                                                :labels="[
+                                                    'normal' => 'Normal',
+                                                    'urgent' => 'Urgent',
+                                                    'highly_urgent' => 'Highly Urgent'
+                                                ]"
+                                                :variants="[
+                                                    'normal' => 'badge-ghost',
+                                                    'urgent' => 'badge-warning',
+                                                    'highly_urgent' => 'badge-error'
+                                                ]"
+                                            />
                                         </td>
                                         <td class="px-4 py-3">
                                             @if ($review->reviewed_at)

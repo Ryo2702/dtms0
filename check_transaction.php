@@ -10,7 +10,8 @@ use App\Models\TransactionReviewer;
 
 echo "\n=== Transaction Status Check ===\n\n";
 
-$transactionCode = 'TTN-20260116-0001-0764';
+// Accept transaction code from CLI args, fallback to default
+$transactionCode = $argv[1] ?? 'TTN-20260116-0001-0764';
 $transaction = Transaction::where('transaction_code', $transactionCode)->first();
 
 if (!$transaction) {
@@ -26,6 +27,19 @@ echo "Department ID: {$transaction->department_id}\n";
 echo "Origin Dept ID: {$transaction->origin_department_id}\n";
 echo "Created By: {$transaction->created_by}\n";
 echo "Creator: {$transaction->creator->name}\n";
+
+// Show workflow progress visualization data
+$engine = app(\App\Services\Transaction\WorkflowEngineService::class);
+$progress = $engine->getWorkflowProgress($transaction);
+
+echo "\n=== Workflow Progress (computed) ===\n";
+foreach ($progress['steps'] as $step) {
+    $order = $step['order'] ?? '?';
+    $dept = $step['department_name'] ?? 'Unknown';
+    $status = $step['status'] ?? 'pending';
+    $action = $step['action'] ?? 'n/a';
+    echo sprintf("Step %s: %s | status=%s, action=%s\n", $order, $dept, $status, $action);
+}
 
 echo "\n=== Reviewers ===\n";
 foreach ($transaction->reviewers as $reviewer) {

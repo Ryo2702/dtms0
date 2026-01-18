@@ -96,6 +96,7 @@ class TransactionController extends Controller
         $tab = $request->get('tab', 'all');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
+        $transactionCode = $request->get('transaction_code');
         
         // Build base query for user's transactions
         $query = Transaction::where('created_by', $user->id)
@@ -117,6 +118,11 @@ class TransactionController extends Controller
             'rejected' => $query->clone()->where('transaction_status', 'in_progress')->where('current_state', 'like', 'returned_to_%'),
             default => $query->clone()->where('transaction_status', '!=', 'completed'),
         };
+
+        // Apply transaction code filter
+        if ($transactionCode) {
+            $transactions->where('transaction_code', 'like', '%' . $transactionCode . '%');
+        }
 
         // Apply date filters
         if ($dateFrom) {

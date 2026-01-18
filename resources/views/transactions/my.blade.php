@@ -69,6 +69,15 @@
             <form method="GET" action="{{ route('transactions.my') }}" class="flex flex-col md:flex-row gap-4 items-end">
                 <input type="hidden" name="tab" value="{{ $tab }}" />
                 <div class="flex-1">
+                    <label for="transaction_code" class="label">
+                        <span class="label-text">Transaction Number</span>
+                    </label>
+                    <input type="text" id="transaction_code" name="transaction_code" 
+                           value="{{ request('transaction_code') }}"
+                           placeholder="Search by transaction code..."
+                           class="input input-bordered w-full" />
+                </div>
+                <div class="flex-1">
                     <label for="date_from" class="label">
                         <span class="label-text">From Date</span>
                     </label>
@@ -89,7 +98,7 @@
                         <i data-lucide="search" class="w-4 h-4 mr-2"></i>
                         Filter
                     </button>
-                    @if(request('date_from') || request('date_to'))
+                    @if(request('date_from') || request('date_to') || request('transaction_code'))
                         <a href="{{ route('transactions.my', ['tab' => $tab]) }}" class="btn btn-outline">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </a>
@@ -123,7 +132,7 @@
         {{-- Transactions Table --}}
         <x-card>
             <x-data-table 
-                :headers="['Code', 'Workflow', 'Status', 'Current Step', 'Urgency', 'Created', 'Actions']"
+                :headers="['Transaction Number', 'Workflow', 'Status', 'Current Step', 'Urgency', 'Created', 'Due Date', 'Actions']"
                 :paginator="$transactions"
                 emptyMessage="You haven't created any transactions yet."
             >
@@ -247,6 +256,18 @@
                         <td class="px-4 py-3 text-gray-600 text-sm">
                             <div>{{ $transaction->created_at->format('M d, Y') }}</div>
                             <div class="text-xs text-gray-400">{{ $transaction->created_at->diffForHumans() }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 text-sm">
+                            @if($transaction->due_date)
+                                <div class="{{ $transaction->due_date->isPast() && $transaction->transaction_status !== 'completed' ? 'text-red-600 font-semibold' : '' }}">
+                                    {{ $transaction->due_date->format('M d, Y') }}
+                                </div>
+                                <div class="text-xs {{ $transaction->due_date->isPast() && $transaction->transaction_status !== 'completed' ? 'text-red-500' : 'text-gray-400' }}">
+                                    {{ $transaction->due_date->diffForHumans() }}
+                                </div>
+                            @else
+                                <span class="text-gray-400 text-xs">No due date</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex gap-2">

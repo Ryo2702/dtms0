@@ -26,6 +26,7 @@ class TransactionReviewerController extends Controller
         $tab = $request->get('tab', 'pending');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
+        $transactionCode = $request->get('transaction_code');
 
         // Pending reviews - only transactions with pending status
         $pendingReviewsQuery = TransactionReviewer::with([
@@ -39,7 +40,17 @@ class TransactionReviewerController extends Controller
             'previousReviewer.department'
         ])
             ->forReviewer($userId)
-            ->where('status', 'pending');
+            ->where('status', 'pending')
+            ->whereHas('transaction', function($query) {
+                $query->where('transaction_status', '!=', 'cancelled');
+            });
+
+        // Apply transaction code filter to pending reviews
+        if ($transactionCode) {
+            $pendingReviewsQuery->whereHas('transaction', function ($query) use ($transactionCode) {
+                $query->where('transaction_code', 'like', '%' . $transactionCode . '%');
+            });
+        }
 
         // Apply date filters to pending reviews
         if ($dateFrom) {
@@ -68,6 +79,13 @@ class TransactionReviewerController extends Controller
             ->forReviewer($userId)
             ->whereIn('status', ['approved', 'rejected']);
 
+        // Apply transaction code filter to reviewed by me
+        if ($transactionCode) {
+            $reviewedByMeQuery->whereHas('transaction', function ($query) use ($transactionCode) {
+                $query->where('transaction_code', 'like', '%' . $transactionCode . '%');
+            });
+        }
+
         // Apply date filters to reviewed by me
         if ($dateFrom) {
             $reviewedByMeQuery->whereDate('transaction_reviewers.created_at', '>=', $dateFrom);
@@ -94,7 +112,17 @@ class TransactionReviewerController extends Controller
         ])
             ->forReviewer($userId)
             ->where('status', 'pending')
-            ->where('iteration_number', '>', 1);
+            ->where('iteration_number', '>', 1)
+            ->whereHas('transaction', function($query) {
+                $query->where('transaction_status', '!=', 'cancelled');
+            });
+
+        // Apply transaction code filter to resubmissions
+        if ($transactionCode) {
+            $resubmissionsQuery->whereHas('transaction', function ($query) use ($transactionCode) {
+                $query->where('transaction_code', 'like', '%' . $transactionCode . '%');
+            });
+        }
 
         // Apply date filters to resubmissions
         if ($dateFrom) {
@@ -113,8 +141,16 @@ class TransactionReviewerController extends Controller
         $pendingCount = $pendingReviews->where('status', 'pending')->count();
         $stats = [
             'pending' => $pendingCount,
-            'due_today' => $pendingReviews->where('status', 'pending')->filter(fn($r) => $r->due_date && $r->due_date->isToday())->count(),
-            'overdue' => $pendingReviews->where('status', 'pending')->filter(fn($r) => $r->isOverdue())->count(),
+            'due_today' => $pendingReviews
+                ->where('status', 'pending')
+                ->where('received_status', 'received')
+                ->filter(fn($r) => $r->due_date && $r->due_date->isToday())
+                ->count(),
+            'overdue' => $pendingReviews
+                ->where('status', 'pending')
+                ->where('received_status', 'received')
+                ->filter(fn($r) => $r->isOverdue())
+                ->count(),
             'resubmissions' => $resubmissions->where('status', 'pending')->count(),
             'reviewed' => $reviewedByMe->count(),
         ];
@@ -190,6 +226,7 @@ class TransactionReviewerController extends Controller
 
         // Get next reviewer if this is not the last step
         $nextReviewer = null;
+        $nextReviewerRecord = null;
         $transaction = $reviewer->transaction;
         $steps = $transaction->workflow_snapshot['steps'] ?? $transaction->workflow->getWorkflowSteps();
         $currentStep = $transaction->current_workflow_step;
@@ -203,9 +240,17 @@ class TransactionReviewerController extends Controller
                     $q->where('type', 'Head')->orWhere('type', 'Staff');
                 })
                 ->first();
+            
+            // Also try to find the existing TransactionReviewer record for the next step (if it exists)
+            if ($nextReviewer) {
+                $nextReviewerRecord = $transaction->reviewers()
+                    ->where('reviewer_id', $nextReviewer->id)
+                    ->where('status', 'pending')
+                    ->first();
+            }
         }
 
-        return view('transactions.reviews.review', compact('reviewer', 'workflowProgress', 'nextReviewer', 'isLastStep'));
+        return view('transactions.reviews.review', compact('reviewer', 'workflowProgress', 'nextReviewer', 'nextReviewerRecord', 'isLastStep'));
     }
 
     /**
@@ -259,8 +304,13 @@ class TransactionReviewerController extends Controller
             // Refresh transaction to get updated state from workflow engine
             $transaction->refresh();
 
+            // Recalculate step and check if this is the final step after state transition
+            $steps = $transaction->workflow_snapshot['steps'] ?? $transaction->workflow->getWorkflowSteps();
+            $currentStep = $transaction->current_workflow_step;
+            $isLastStep = $currentStep > count($steps);
+
             // Check if this is the final step (workflow completed)
-            if ($isLastStep) {
+            if ($isLastStep || $transaction->current_state === 'completed') {
                 // Workflow is completed - set receiving status to pending for origin department
                 $transaction->update([
                     'receiving_status' => 'pending',
@@ -268,12 +318,6 @@ class TransactionReviewerController extends Controller
                 ]);
                 $transaction->refresh();
             } else {
-                // Move to the next workflow step
-                $transaction->increment('current_workflow_step');
-                
-                // Refresh the transaction to get the updated current_workflow_step
-                $transaction->refresh();
-                
                 // Assign the next reviewer based on workflow configuration
                 $this->assignNextReviewer($transaction, $reviewer, $reviewer->iteration_number);
             }
@@ -328,16 +372,13 @@ class TransactionReviewerController extends Controller
 
         if ($nextReviewerUser) {
             // Create a new reviewer entry for the next department
-            // Set received_status to 'received' since it's automatically forwarded from the previous step
-            // Set previous_reviewer_id to track who approved it before
+            // Keep received_status pending; timer starts when the next reviewer clicks receive
             TransactionReviewer::create([
                 'transaction_id' => $transaction->id,
                 'reviewer_id' => $nextReviewerUser->id,
                 'department_id' => $nextDepartmentId,
                 'status' => 'pending',
-                'received_status' => 'received',
-                'received_by' => $nextReviewerUser->id,
-                'received_at' => now(),
+                'received_status' => 'pending',
                 'due_date' => $dueDate,
                 'iteration_number' => $iterationNumber,
                 'previous_reviewer_id' => $currentReviewer->reviewer_id,
@@ -353,12 +394,14 @@ class TransactionReviewerController extends Controller
     /**
      * Calculate due date based on process time configuration
      */
-    protected function calculateDueDate(int $value, string $unit): \Carbon\Carbon
+    protected function calculateDueDate(int $value, string $unit, ?\Carbon\Carbon $startAt = null): \Carbon\Carbon
     {
+        $start = $startAt ?: now();
+
         return match ($unit) {
-            'hours' => now()->addHours($value),
-            'weeks' => now()->addWeeks($value),
-            default => now()->addDays($value),
+            'hours' => $start->copy()->addHours($value),
+            'weeks' => $start->copy()->addWeeks($value),
+            default => $start->copy()->addDays($value),
         };
     }
 
@@ -602,11 +645,27 @@ class TransactionReviewerController extends Controller
             'received_status' => 'required|in:received,not_received',
         ]);
 
-        $reviewer->update([
+        $transaction = $reviewer->transaction;
+        $steps = $transaction->workflow_snapshot['steps'] ?? $transaction->workflow->getWorkflowSteps();
+        $currentStepIndex = max(0, ($transaction->current_workflow_step ?? 1) - 1);
+        $currentStep = $steps[$currentStepIndex] ?? null;
+
+        $updates = [
             'received_status' => $validated['received_status'],
             'received_by' => $user->id,
             'received_at' => now(),
-        ]);
+        ];
+
+        if ($validated['received_status'] === 'received' && $currentStep) {
+            $updates['due_date'] = $this->calculateDueDate(
+                $currentStep['process_time_value'] ?? 3,
+                $currentStep['process_time_unit'] ?? 'days',
+                $updates['received_at']
+            );
+            $updates['is_overdue'] = false;
+        }
+
+        $reviewer->update($updates);
 
         $message = $validated['received_status'] === 'received' 
             ? 'Transaction marked as received successfully. Timer started.' 
@@ -665,11 +724,23 @@ class TransactionReviewerController extends Controller
                 ->first();
 
             if ($nextReviewer) {
-                $nextReviewer->update([
+                $nextStepConfig = $steps[$currentStep] ?? null;
+                $updates = [
                     'received_status' => $validated['received_status'],
                     'received_by' => $request->user()->id,
                     'received_at' => now(),
-                ]);
+                ];
+
+                if ($validated['received_status'] === 'received' && $nextStepConfig) {
+                    $updates['due_date'] = $this->calculateDueDate(
+                        $nextStepConfig['process_time_value'] ?? 3,
+                        $nextStepConfig['process_time_unit'] ?? 'days',
+                        $updates['received_at']
+                    );
+                    $updates['is_overdue'] = false;
+                }
+
+                $nextReviewer->update($updates);
             }
         }
 
@@ -703,11 +774,27 @@ class TransactionReviewerController extends Controller
         }
 
         // Mark as received and ready for review
-        $reviewer->update([
+        $transaction = $reviewer->transaction;
+        $steps = $transaction->workflow_snapshot['steps'] ?? $transaction->workflow->getWorkflowSteps();
+        $currentStepIndex = max(0, ($transaction->current_workflow_step ?? 1) - 1);
+        $currentStep = $steps[$currentStepIndex] ?? null;
+
+        $updates = [
             'received_status' => 'received',
             'received_by' => $user->id,
             'received_at' => now(),
-        ]);
+        ];
+
+        if ($currentStep) {
+            $updates['due_date'] = $this->calculateDueDate(
+                $currentStep['process_time_value'] ?? 3,
+                $currentStep['process_time_unit'] ?? 'days',
+                $updates['received_at']
+            );
+            $updates['is_overdue'] = false;
+        }
+
+        $reviewer->update($updates);
 
         return back()->with('success', 'Transaction resubmitted successfully. Review timer started.');
     }

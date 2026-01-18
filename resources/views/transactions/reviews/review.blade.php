@@ -378,6 +378,50 @@
                                 </div>
                             </div>
 
+                            {{-- Receiving Status for Next Reviewer --}}
+                            @if ($nextReviewerRecord)
+                                <div class="p-3 rounded-lg" 
+                                    :class="{
+                                        'bg-green-50 border border-green-200': $nextReviewerRecord->received_status === 'received',
+                                        'bg-red-50 border border-red-200': $nextReviewerRecord->received_status === 'not_received',
+                                        'bg-yellow-50 border border-yellow-200': $nextReviewerRecord->received_status === null || $nextReviewerRecord->received_status === ''
+                                    }">
+                                    <p class="text-xs text-gray-600 mb-2">Current Receiving Status</p>
+                                    @if ($nextReviewerRecord->received_status === 'received')
+                                        <span class="badge badge-success gap-1">
+                                            <i data-lucide="package-check" class="w-3 h-3"></i>
+                                            Received
+                                        </span>
+                                        @if($nextReviewerRecord->received_at)
+                                            <div class="text-xs text-gray-600 mt-1">
+                                                Received at {{ $nextReviewerRecord->received_at->format('M d, Y h:i A') }}
+                                                @if($nextReviewerRecord->receivedBy)
+                                                    by {{ $nextReviewerRecord->receivedBy->name }}
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @elseif ($nextReviewerRecord->received_status === 'not_received')
+                                        <span class="badge badge-error gap-1">
+                                            <i data-lucide="package-x" class="w-3 h-3"></i>
+                                            Not Received
+                                        </span>
+                                    @else
+                                        <span class="badge badge-warning gap-1">
+                                            <i data-lucide="package" class="w-3 h-3"></i>
+                                            Pending Receipt
+                                        </span>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <p class="text-xs text-gray-600 mb-2">Receiving Status</p>
+                                    <span class="badge badge-ghost gap-1">
+                                        <i data-lucide="info" class="w-3 h-3"></i>
+                                        Awaiting Record Creation
+                                    </span>
+                                </div>
+                            @endif
+
                             <div class="space-y-2">
                                 <p class="text-xs text-gray-600">
                                     <i data-lucide="info" class="w-3 h-3 inline"></i>

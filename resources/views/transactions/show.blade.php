@@ -84,7 +84,18 @@
                         </div>
                         <div>
                             <dt class="text-sm text-gray-500">Current Step</dt>
-                            <dd class="font-medium">{{ $transaction->current_workflow_step }} / {{ $transaction->total_workflow_steps }}</dd>
+                            @php
+                                $effectiveCurrentStep = $transaction->current_workflow_step;
+                                if (isset($workflowProgress['steps']) && is_array($workflowProgress['steps'])) {
+                                    foreach ($workflowProgress['steps'] as $s) {
+                                        if (($s['status'] ?? null) === 'current' || ($s['status'] ?? null) === 'returned') {
+                                            $effectiveCurrentStep = (int) ($s['order'] ?? $effectiveCurrentStep);
+                                            break;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            <dd class="font-medium">{{ $effectiveCurrentStep }} / {{ $transaction->total_workflow_steps }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm text-gray-500">Current State</dt>
@@ -118,7 +129,7 @@
                             </div>
                         @endif
                         <div class="md:col-span-2">
-                            <dt class="text-sm text-gray-500 mb-2">Custom Document Attachment</dt>
+                            <dt class="text-sm text-gray-500 mb-2">Additional Document Attachment</dt>
                             <dd class="flex flex-wrap gap-2">
                                 @php
                                     $tags = $transaction->custom_document_tags;
@@ -138,8 +149,9 @@
                                         </span>
                                     @endforeach
                                 @else
-                                    <span class="text-gray-400 text-xs">No custom tags</span>
+                                    <span class="text-gray-400 text-xs">No Additional Attachment</span>
                                 @endif
+
                             </dd>
                         </div>
                         <div>
@@ -272,7 +284,7 @@
                                             @elseif($isReturned)
                                                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                                             @else
-                                                {{ $index + 1 }}
+                                                {{ $step['order'] ?? ($index + 1) }}
                                             @endif
                                         </div>
                                         

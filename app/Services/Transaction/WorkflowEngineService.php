@@ -108,6 +108,22 @@ class WorkflowEngineService
             // Update transaction state
             $updateData = ['current_state' => $nextState];
 
+            // Align current_workflow_step with next pending review state
+            if (preg_match('/pending_(.+)_review/', $nextState, $matches)) {
+                $targetDept = str_replace('_', ' ', $matches[1]);
+                $steps = $transaction->getWorkflowSteps();
+
+                // Prefer explicit order and stable matching by department name
+                foreach ($steps as $idx => $step) {
+                    $name = $step['department_name'] ?? null;
+                    $order = $step['order'] ?? ($idx + 1);
+                    if ($name && strcasecmp($name, $targetDept) === 0) {
+                        $updateData['current_workflow_step'] = (int) $order;
+                        break;
+                    }
+                }
+            }
+
             if ($nextState === 'completed') {
                 $updateData['transaction_status'] = 'completed';
                 $updateData['completed_at'] = now();
@@ -247,9 +263,32 @@ class WorkflowEngineService
         if (empty($steps)) {
             $steps = $transaction->workflow?->getWorkflowSteps() ?? [];
         }
-        
+        // Normalize step ordering by 'order' if present
+        usort($steps, function ($a, $b) {
+            $oa = $a['order'] ?? null;
+            $ob = $b['order'] ?? null;
+            if ($oa === null && $ob === null) return 0;
+            if ($oa === null) return 1;
+            if ($ob === null) return -1;
+            return $oa <=> $ob;
+        });
+
         $currentStep = $transaction->current_workflow_step;
         $currentState = $transaction->current_state;
+
+        // Derive current step order from state when available to ensure alignment
+        $currentOrderFromState = null;
+        $currentDeptFromState = $transaction->getCurrentDepartmentFromState();
+        if ($currentDeptFromState) {
+            foreach ($steps as $idx => $s) {
+                $name = $s['department_name'] ?? null;
+                $order = $s['order'] ?? ($idx + 1);
+                if ($name && strcasecmp($name, $currentDeptFromState) === 0) {
+                    $currentOrderFromState = (int) $order;
+                    break;
+                }
+            }
+        }
 
         // Get all reviewers for this transaction with their details
         $reviewers = $transaction->reviewers()
@@ -266,12 +305,13 @@ class WorkflowEngineService
         $progress = [];
 
         foreach ($steps as $index => $step) {
-            $stepNumber = $index + 1;
+            $stepNumber = $step['order'] ?? ($index + 1);
             $status = 'pending';
             
-            if ($stepNumber < $currentStep) {
+            $effectiveCurrent = $currentOrderFromState ?? $currentStep;
+            if ($stepNumber < $effectiveCurrent) {
                 $status = 'completed';
-            } elseif ($stepNumber === $currentStep) {
+            } elseif ($stepNumber === $effectiveCurrent) {
                 $status = str_starts_with($currentState, 'returned_to_') ? 'returned' : 'current';
             }
 
@@ -281,7 +321,7 @@ class WorkflowEngineService
             });
 
             $stepData = [
-                'order' => $step['order'] ?? $stepNumber,
+                'order' => $stepNumber,
                 'department_id' => $step['department_id'],
                 'department_name' => $step['department_name'],
                 'process_time_value' => $step['process_time_value'] ?? 3,

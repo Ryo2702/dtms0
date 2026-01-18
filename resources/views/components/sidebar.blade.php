@@ -61,6 +61,14 @@
                         </a>
                     </li>
 
+                    <li class="mb-1">
+                        <a href="{{ route('admin.transaction-logs.index') }}"
+                            class="flex items-center gap-3 p-3 rounded-lg text-white hover:bg-white/10 {{ Str::startsWith(request()->route()->getName(), 'admin.transaction-logs') ? 'bg-white/20' : '' }}">
+                            <i data-lucide="activity" class="w-5 h-5"></i>
+                            <span>Transaction Logs</span>
+                        </a>
+                    </li>
+
                     <li class="px-3 pt-4 pb-2">
                         <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Configuration</span>
                     </li>

@@ -161,6 +161,20 @@ class Transaction extends Model
     public function isHighlyUrgent() {
         return $this->level_of_urgency === 'highly_urgent';
     }
+
+    /**
+     * Get due date from current reviewer
+     */
+    public function getDueDateAttribute()
+    {
+        $currentReviewer = $this->reviewers()
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        return $currentReviewer?->due_date;
+    }
+
     /**
      * Get current department from state
      */

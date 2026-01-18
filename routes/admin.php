@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLog\AuditLogController;
 use App\Http\Controllers\Admin\Departments\DepartmentController;
 use App\Http\Controllers\DocumentTagController;
 use App\Http\Controllers\Admin\Users\UserController;
+use App\Http\Controllers\Admin\TransactionLogController;
 use App\Http\Controllers\Transaction\WorkflowConfigController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,10 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/test', [AuditLogController::class, 'test'])->name('test');
             Route::match(['POST', 'PUT', 'DELETE'], '/test/action', [AuditLogController::class, 'testAction'])->name('test.action');
             Route::get('/{auditLog}', [AuditLogController::class, 'show'])->name('show');
+        });
+
+        Route::prefix('transaction-logs')->name('transaction-logs.')->group(function () {
+            Route::get('/', [TransactionLogController::class, 'index'])->name('index');
         });
 
         Route::prefix('workflows')->name('workflows.')->group(function () {
