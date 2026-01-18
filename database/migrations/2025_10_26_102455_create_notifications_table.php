@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->unsignedBigInteger('document_id')->nullable();
+            $table->string('transaction_status')->nullable();
             $table->string('type');
             $table->string('title');
             $table->text('message');
@@ -25,6 +26,7 @@ return new class extends Migration
 
             $table->index(['user_id', 'is_read']);
             $table->index(['user_id', 'created_at']);
+            $table->index(['user_id', 'transaction_status']);
         });
     }
 

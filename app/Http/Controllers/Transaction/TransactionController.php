@@ -10,6 +10,7 @@ use App\Models\Workflow;
 use App\Models\Department;
 use App\Models\AssignStaff;
 use App\Services\Transaction\TrasactionService;
+use App\Services\Transaction\TransactionPrintService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -18,7 +19,8 @@ class TransactionController extends Controller
     use AuthorizesRequests;
 
     public function __construct(
-        protected TrasactionService $transactionService
+        protected TrasactionService $transactionService,
+        protected TransactionPrintService $printService
     ) {}
 
     /**
@@ -285,6 +287,9 @@ class TransactionController extends Controller
                 $validated,
                 $user
             );
+
+            // Print receipt
+            $this->printService->printReceipt($transaction);
 
             return redirect()
                 ->route('transactions.show', $transaction)

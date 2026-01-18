@@ -56,7 +56,15 @@ class NotificationController extends Controller
         }
 
         try {
-            $notifications = Notification::where('user_id', $user->id)
+            $query = Notification::where('user_id', $user->id);
+            
+            // Filter by transaction status if provided
+            $status = $request->query('status');
+            if ($status) {
+                $query->where('transaction_status', $status);
+            }
+            
+            $notifications = $query
                 ->with('document')
                 ->orderBy('created_at', 'desc')
                 ->take(50)
@@ -65,6 +73,7 @@ class NotificationController extends Controller
                     return [
                         'id' => $notification->id,
                         'document_id' => $notification->document_id,
+                        'transaction_status' => $notification->transaction_status,
                         'type' => $notification->type,
                         'title' => $notification->title,
                         'message' => $notification->message,
@@ -78,19 +87,28 @@ class NotificationController extends Controller
                 ->where('is_read', false)
                 ->count();
 
-            //unread counts
+            //unread counts by status
             $unreadCounts = Notification::where('user_id', $user->id)
                 ->where('is_read', false)
                 ->selectRaw('type, count(*) as count')
                 ->groupBy('type')
                 ->pluck('count', 'type')
-                ->toArray(); 
+                ->toArray();
+            
+            // Unread counts by transaction status
+            $unreadByStatus = Notification::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->selectRaw('transaction_status, count(*) as count')
+                ->groupBy('transaction_status')
+                ->pluck('count', 'transaction_status')
+                ->toArray();
 
             return response()->json([
                 'success' => true,
                 'notifications' => $notifications,
                 'unread_count' => $unreadCount,
-                'unread_counts' => $unreadCounts
+                'unread_counts' => $unreadCounts,
+                'unread_by_status' => $unreadByStatus
             ]);
 
         } catch (\Exception $e) {

@@ -87,7 +87,9 @@ class DocumentWorkflowService
             'pending',
             'New Document for Review',
             "You have received a new {$docInfo['title']} document from {$user->name} that requires your review.",
-            $review->id
+            $review->id,
+            null,
+            'pending'
         );
 
         return $review;
@@ -120,7 +122,9 @@ class DocumentWorkflowService
             'received',
             'Document Forwarded to You',
             "{$currentUser->name} has forwarded a {$review->document_type} document to you for review.",
-            $review->id
+            $review->id,
+            null,
+            'in_progress'
         );
     }
 
@@ -166,7 +170,9 @@ class DocumentWorkflowService
             'approved',
             'Document Approved',
             "Your {$review->document_type} document has been approved by {$currentUser->name} and is ready for download.",
-            $review->id
+            $review->id,
+            null,
+            'approved'
         );
     }
 
@@ -200,7 +206,9 @@ class DocumentWorkflowService
             'rejected',
             'Document Rejected',
             "Your {$review->document_type} document has been rejected by {$currentUser->name}. Please review the notes and resubmit.",
-            $review->id
+            $review->id,
+            null,
+            'rejected'
         );
     }
 
@@ -234,7 +242,9 @@ class DocumentWorkflowService
             'canceled',
             'Document Canceled',
             "Your {$review->document_type} document has been canceled by {$currentUser->name}.",
-            $review->id
+            $review->id,
+            null,
+            'cancelled'
         );
     }
 }

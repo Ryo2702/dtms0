@@ -74,30 +74,30 @@
                     <div class="navbar-end gap-3">
                         <!-- Notification bell -->
                         <div class="relative z-100">
-                            <button id="notification-bell" class="btn btn-ghost btn-circle text-white">
-                                <div class="indicator">
-                                    <i data-lucide="bell" fill="none" class="h-6 w-6 text-white"></i>
+                            <button id="notification-bell" class="relative inline-flex items-center justify-center p-2 text-white hover:bg-blue-700 rounded-full transition-colors">
+                                <div class="relative">
+                                    <svg data-lucide="bell" fill="none" class="h-6 w-6 text-white"></svg>
                                     <span id="notification-badge"
-                                        class="badge badge-xs badge-error indicator-item hidden"></span>
+                                        class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"></span>
                                 </div>
                             </button>
 
                             <!-- Notification Dropdown -->
                             <div id="notification-dropdown"
-                                class="hidden absolute right-0 mt-3 w-80 max-h-96 overflow-y-auto bg-white text-black rounded-box shadow-xl border border-base-300 z-100">
-                                <div class="p-4 border-b border-base-300 bg-base-200">
-                                    <h3 class="font-bold text-lg">Notifications</h3>
-                                    <p class="text-sm opacity-70">Recent updates</p>
+                                class="hidden absolute right-0 mt-3 w-80 max-h-96 overflow-y-auto bg-white text-gray-900 rounded-lg shadow-xl border border-gray-200 z-100">
+                                <div class="p-4 border-b border-gray-200 bg-gray-50">
+                                    <h3 class="font-bold text-lg text-gray-900">Notifications</h3>
+                                    <p class="text-sm text-gray-600">Recent updates</p>
                                 </div>
 
-                                <div id="notification-list" class="divide-y divide-base-300">
-                                    <div class="p-4 text-center text-sm opacity-50">
+                                <div id="notification-list" class="divide-y divide-gray-200">
+                                    <div class="p-4 text-center text-sm text-gray-500">
                                         Loading notifications...
                                     </div>
                                 </div>
 
-                                <div class="p-3 border-t border-base-300 bg-base-200 text-center">
-                                    <button id="mark-all-read" class="btn btn-sm btn-ghost">
+                                <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
+                                    <button id="mark-all-read" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
                                         Mark all as read
                                     </button>
                                 </div>
@@ -338,7 +338,7 @@
         function renderNotifications(notifications) {
             if (!notifications || notifications.length === 0) {
                 notificationList.innerHTML = `
-                <div class="p-4 text-center text-sm opacity-50">
+                <div class="p-4 text-center text-sm text-gray-500">
                     No notifications
                 </div>
             `;
@@ -346,28 +346,28 @@
             }
 
             notificationList.innerHTML = notifications.map(notification => {
-                const unreadClass = !notification.is_read ? 'bg-primary/10' : '';
+                const unreadClass = !notification.is_read ? 'bg-blue-50' : 'bg-white';
                 const iconColor = getNotificationIconColor(notification.type);
                 const icon = getNotificationIcon(notification.type);
                 const timeAgo = formatTimeAgo(notification.created_at);
 
                 return `
-                <div class="notification-item p-4 hover:bg-base-200 cursor-pointer transition ${unreadClass}" 
+                <div class="notification-item p-4 hover:bg-gray-100 cursor-pointer transition ${unreadClass}" 
                      data-id="${notification.id}" 
                      data-document-id="${notification.document_id}"
                      data-type="${notification.type}">
                     <div class="flex gap-3">
                         <div class="flex-shrink-0">
                             <div class="w-10 h-10 rounded-full ${iconColor} flex items-center justify-center">
-                                <i data-lucide="${icon}" class="h-5 w-5"></i>
+                                <svg data-lucide="${icon}" class="h-5 w-5"></svg>
                             </div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="font-medium text-sm">${notification.title}</p>
-                            <p class="text-xs opacity-70 truncate">${notification.message}</p>
+                            <p class="font-medium text-sm text-gray-900">${notification.title}</p>
+                            <p class="text-xs text-gray-600 truncate">${notification.message}</p>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="text-xs opacity-50">${timeAgo}</span>
-                                ${!notification.is_read ? '<span class="badge badge-xs badge-primary">New</span>' : ''}
+                                <span class="text-xs text-gray-500">${timeAgo}</span>
+                                ${!notification.is_read ? '<span class="inline-block px-2 py-0.5 text-xs font-semibold text-white bg-blue-500 rounded">New</span>' : ''}
                             </div>
                         </div>
                     </div>
@@ -471,15 +471,15 @@
 
         function getNotificationIconColor(type) {
             const colors = {
-                'approved': 'bg-success text-success-content',
-                'rejected': 'bg-error text-error-content',
-                'canceled': 'bg-warning text-warning-content',
-                'pending': 'bg-info text-info-content',
-                'received': 'bg-primary text-primary-content',
-                'completed': 'bg-success text-success-content',
-                'overdue': 'bg-warning text-warning-content'
+                'approved': 'bg-green-100 text-green-600',
+                'rejected': 'bg-red-100 text-red-600',
+                'canceled': 'bg-yellow-100 text-yellow-600',
+                'pending': 'bg-blue-100 text-blue-600',
+                'received': 'bg-indigo-100 text-indigo-600',
+                'completed': 'bg-green-100 text-green-600',
+                'overdue': 'bg-orange-100 text-orange-600'
             };
-            return colors[type] || 'bg-base-300';
+            return colors[type] || 'bg-gray-100 text-gray-600';
         }
 
         function formatTimeAgo(dateString) {
