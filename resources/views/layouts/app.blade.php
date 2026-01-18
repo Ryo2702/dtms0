@@ -29,8 +29,8 @@
                 $isAdmin = $user->type === 'Admin';
                 $logo =
                     !$isAdmin && $user->department && $user->department->logo
-                    ? Storage::url($user->department->logo)
-                    : null;
+                        ? Storage::url($user->department->logo)
+                        : null;
                 $currentRoute = request()->route()->getName();
             @endphp
 
@@ -40,7 +40,8 @@
                     <h1 class="text-3xl flex font-bold ml-2">
                         <div class="mr-3">
                             @if ($logo)
-                                <img src="{{ $logo }}" alt="Department Logo" class="w-15 h-15 rounded-full lg:ml-0">
+                                <img src="{{ $logo }}" alt="Department Logo"
+                                    class="w-15 h-15 rounded-full lg:ml-0 border-2 border-white">
                             @endif
                         </div>
 
@@ -49,8 +50,10 @@
                                 <span class="hidden sm:inline">System Administrator</span>
                                 <span class="sm:hidden">Admin</span>
                             @else
-                                <span class="hidden md:inline">{{ $user->department->name ?? 'System Administrator' }}</span>
-                                <span class="md:hidden">{{ Str::limit($user->department->name ?? 'System Administrator', 8) }}</span>
+                                <span
+                                    class="hidden md:inline">{{ $user->department->name ?? 'System Administrator' }}</span>
+                                <span
+                                    class="md:hidden">{{ Str::limit($user->department->name ?? 'System Administrator', 8) }}</span>
                             @endif
                         </div>
 
@@ -59,22 +62,11 @@
 
 
                 @if ($user->type !== 'Admin')
-
-                    <div class="navbar-center hidden md:flex">
-                        <form id="document-search-form" class="join">
-                            <input id="document-search" name="document_id" type="text" placeholder="Search Document"
-                                class="input input-bordered join-item text-sm" />
-                            <button type="submit" class="btn btn-square join-item" aria-label="Search">
-                                <i data-lucide="search" class="h-4 w-4"></i>
-                            </button>
-                        </form>
-                    </div>
-
-
                     <div class="navbar-end gap-3">
                         <!-- Notification bell -->
                         <div class="relative z-100">
-                            <button id="notification-bell" class="relative inline-flex items-center justify-center p-2 text-white hover:bg-blue-700 rounded-full transition-colors">
+                            <button id="notification-bell"
+                                class="relative inline-flex items-center justify-center p-2 text-white hover:bg-blue-700 rounded-full transition-colors">
                                 <div class="relative">
                                     <svg data-lucide="bell" fill="none" class="h-6 w-6 text-white"></svg>
                                     <span id="notification-badge"
@@ -97,7 +89,8 @@
                                 </div>
 
                                 <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
-                                    <button id="mark-all-read" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
+                                    <button id="mark-all-read"
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
                                         Mark all as read
                                     </button>
                                 </div>
@@ -118,12 +111,11 @@
     {{-- Flash Messages --}}
     <x-toast :message="session('success')" type="success" title="Success" :timeout="5000" position="bottom-right" />
     <x-toast :message="session('error')" type="error" title="Error" :timeout="6000" position="bottom-right" />
-    <x-toast :messages="$errors->all()" type="warning" title="Validation Failed" :timeout="8000"
-        position="bottom-right" />
+    <x-toast :messages="$errors->all()" type="warning" title="Validation Failed" :timeout="8000" position="bottom-right" />
     @stack('scripts')
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             // Mobile sidebar functionality
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeBtn = document.getElementById('close-btn');
@@ -194,7 +186,7 @@
             const searchForm = document.getElementById('document-search-form');
             const searchInput = document.getElementById('document-search');
 
-            searchForm?.addEventListener('submit', function (e) {
+            searchForm?.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const inputValue = searchInput.value.trim();
 
@@ -210,7 +202,8 @@
                             const parts = inputValue.split('/');
                             const lastPart = parts[parts.length - 1];
 
-                            if (lastPart && (lastPart.match(/^[A-Z]{2,}-\d{8}-[A-Z0-9]+$/i) || lastPart.length > 5)) {
+                            if (lastPart && (lastPart.match(/^[A-Z]{2,}-\d{8}-[A-Z0-9]+$/i) || lastPart
+                                    .length > 5)) {
                                 documentId = lastPart;
                             } else {
                                 alert('Could not extract document ID from URL. Please check the format.');
@@ -235,20 +228,22 @@
             const notificationBell = document.getElementById('notification-bell');
             const notificationBadge = document.getElementById('notification-badge');
 
-            @if(in_array($user->type, ['Head']))
+            @if (in_array($user->type, ['Head']))
                 // Update notification count for heads
                 function updateNotificationBadge() {
-                    fetch('{{ route("notifications.counts") }}', {
-                        method: 'GET',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                        }
-                    })
+                    fetch('{{ route('notifications.counts') }}', {
+                            method: 'GET',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute(
+                                    'content')
+                            }
+                        })
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                const totalCount = data.counts.pending + data.counts.received + data.counts.rejected + data.counts.canceled;
+                                const totalCount = data.counts.pending + data.counts.received + data.counts
+                                    .rejected + data.counts.canceled;
                                 if (totalCount > 0) {
                                     notificationBadge.textContent = totalCount > 99 ? '99+' : totalCount;
                                     notificationBadge.classList.remove('hidden');
@@ -265,7 +260,7 @@
                 updateNotificationBadge();
                 setInterval(updateNotificationBadge, 30000);
 
-                document.addEventListener('visibilitychange', function () {
+                document.addEventListener('visibilitychange', function() {
                     if (!document.hidden) {
                         updateNotificationBadge();
                     }
@@ -302,7 +297,7 @@
         }
 
         // Click outside to close
-        document.addEventListener('click', function (event) {
+        document.addEventListener('click', function(event) {
             if (notificationBell && notificationDropdown) {
                 const isClickInsideBell = notificationBell.contains(event.target);
                 const isClickInsideDropdown = notificationDropdown.contains(event.target);
@@ -315,13 +310,13 @@
 
         // Fetch and display notifications
         function fetchNotifications() {
-            fetch('{{ route("notifications.list") }}', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            })
+            fetch('{{ route('notifications.list') }}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -382,7 +377,7 @@
 
             // Add click handlers
             document.querySelectorAll('.notification-item').forEach(item => {
-                item.addEventListener('click', function () {
+                item.addEventListener('click', function() {
                     const notificationId = this.dataset.id;
                     const documentId = this.dataset.documentId;
                     const type = this.dataset.type;
@@ -412,15 +407,17 @@
 
         // Mark notification as read
         function markAsRead(notificationId) {
-            fetch('{{ route("notifications.mark-read") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ notification_id: notificationId })
-            })
+            fetch('{{ route('notifications.mark-read') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        notification_id: notificationId
+                    })
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -433,15 +430,16 @@
         }
 
         // Mark all as read
-        markAllReadBtn?.addEventListener('click', function () {
-            fetch('{{ route("notifications.mark-all-read") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            })
+        markAllReadBtn?.addEventListener('click', function() {
+            fetch('{{ route('notifications.mark-all-read') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute(
+                            'content')
+                    }
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -496,13 +494,13 @@
 
         // Fetch only unread count on load (without showing dropdown)
         function fetchUnreadCount() {
-            fetch('{{ route("notifications.list") }}', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            })
+            fetch('{{ route('notifications.list') }}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -515,7 +513,7 @@
         }
 
         // Toggle dropdown on bell click
-        notificationBell?.addEventListener('click', function (e) {
+        notificationBell?.addEventListener('click', function(e) {
             e.stopPropagation(); // Prevent document click handler
             toggleNotificationDropdown();
         });
@@ -523,13 +521,11 @@
         fetchUnreadCount();
         setInterval(fetchUnreadCount, 30000);
 
-        document.addEventListener('visibilitychange', function () {
+        document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
                 fetchUnreadCount();
             }
         });
-
-
     </script>
 </body>
 
