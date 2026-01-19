@@ -86,19 +86,22 @@
                         </div>
                         @if ($reviewer->due_date)
                             <div>
-                                <dt class="text-sm text-gray-500">Time Remaining</dt>
-                                <dd>
-                                    @if ($reviewer->isOverdue())
-                                        <span class="badge badge-error gap-1">
-                                            <i data-lucide="alert-circle" class="w-3 h-3"></i>
-                                            Overdue by {{ $reviewer->due_date->diffForHumans(null, true) }}
-                                        </span>
-                                    @else
-                                        <span class="badge badge-info gap-1">
-                                            <i data-lucide="clock" class="w-3 h-3"></i>
-                                            <span id="countdown">{{ $reviewer->due_date->diffForHumans() }}</span>
-                                        </span>
-                                    @endif
+                                <dt class="text-sm text-gray-500">Due Date & Time</dt>
+                                <dd class="space-y-1">
+                                    <div class="font-medium text-sm">{{ $reviewer->due_date->format('M d, Y h:i A') }}</div>
+                                    <div>
+                                        @if ($reviewer->isOverdue())
+                                            <span class="badge badge-error gap-1">
+                                                <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                                                <span class="font-semibold">Overdue by {{ $reviewer->due_date->diffForHumans(null, true) }}</span>
+                                            </span>
+                                        @else
+                                            <span class="badge badge-info gap-1">
+                                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                                <span class="font-semibold" id="countdown">{{ $reviewer->due_date->diffForHumans() }}</span>
+                                            </span>
+                                        @endif
+                                    </div>
                                 </dd>
                             </div>
                         @endif
@@ -361,90 +364,6 @@
                     </dl>
                 </x-card>
 
-                {{-- Next Reviewer Section --}}
-                @if ($nextReviewer && !$isLastStep)
-                    <x-card title="Next Reviewer">
-                        <div class="space-y-4">
-                            <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                <div class="avatar">
-                                    <div class="w-10 rounded-full">
-                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($nextReviewer->name ?? 'Unknown') }}&background=random"
-                                            alt="" />
-                                    </div>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="font-medium text-sm">{{ $nextReviewer->name }}</p>
-                                    <p class="text-xs text-gray-600">{{ $nextReviewer->department->name ?? 'N/A' }}</p>
-                                </div>
-                            </div>
-
-                            {{-- Receiving Status for Next Reviewer --}}
-                            @if ($nextReviewerRecord)
-                                <div class="p-3 rounded-lg" 
-                                    :class="{
-                                        'bg-green-50 border border-green-200': $nextReviewerRecord->received_status === 'received',
-                                        'bg-red-50 border border-red-200': $nextReviewerRecord->received_status === 'not_received',
-                                        'bg-yellow-50 border border-yellow-200': $nextReviewerRecord->received_status === null || $nextReviewerRecord->received_status === ''
-                                    }">
-                                    <p class="text-xs text-gray-600 mb-2">Current Receiving Status</p>
-                                    @if ($nextReviewerRecord->received_status === 'received')
-                                        <span class="badge badge-success gap-1">
-                                            <i data-lucide="package-check" class="w-3 h-3"></i>
-                                            Received
-                                        </span>
-                                        @if($nextReviewerRecord->received_at)
-                                            <div class="text-xs text-gray-600 mt-1">
-                                                Received at {{ $nextReviewerRecord->received_at->format('M d, Y h:i A') }}
-                                                @if($nextReviewerRecord->receivedBy)
-                                                    by {{ $nextReviewerRecord->receivedBy->name }}
-                                                @endif
-                                            </div>
-                                        @endif
-                                    @elseif ($nextReviewerRecord->received_status === 'not_received')
-                                        <span class="badge badge-error gap-1">
-                                            <i data-lucide="package-x" class="w-3 h-3"></i>
-                                            Not Received
-                                        </span>
-                                    @else
-                                        <span class="badge badge-warning gap-1">
-                                            <i data-lucide="package" class="w-3 h-3"></i>
-                                            Pending Receipt
-                                        </span>
-                                    @endif
-                                </div>
-                            @else
-                                <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                    <p class="text-xs text-gray-600 mb-2">Receiving Status</p>
-                                    <span class="badge badge-ghost gap-1">
-                                        <i data-lucide="info" class="w-3 h-3"></i>
-                                        Awaiting Record Creation
-                                    </span>
-                                </div>
-                            @endif
-
-                            <div class="space-y-2">
-                                <p class="text-xs text-gray-600">
-                                    <i data-lucide="info" class="w-3 h-3 inline"></i>
-                                    Confirm receipt status for the next reviewer
-                                </p>
-
-                                <div class="flex gap-2">
-                                    <button type="button" onclick="showNextReviewerReceiveModal('{{ $reviewer->id }}', '{{ $reviewer->transaction->transaction_code }}')"
-                                        class="btn btn-sm btn-success flex-1 gap-1">
-                                        <i data-lucide="package-check" class="w-4 h-4"></i>
-                                        Received
-                                    </button>
-                                    <button type="button" onclick="showNextReviewerNotReceivedModal('{{ $reviewer->id }}', '{{ $reviewer->transaction->transaction_code }}')"
-                                        class="btn btn-sm btn-error flex-1 gap-1">
-                                        <i data-lucide="package-x" class="w-4 h-4"></i>
-                                        Not Received
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </x-card>
-                @endif
-
                 {{-- Workflow Progress (Vertical) --}}
                 <x-card title="Workflow Progress">
                     @if (isset($workflowProgress['steps']) && count($workflowProgress['steps']) > 0)
@@ -541,58 +460,79 @@
                 {{-- Previous Rejection (if resubmission) --}}
                 @if ($reviewer->iteration_number > 1 && $reviewer->previousReviewer)
                     <x-card title="Previous Review">
-                        <div class="p-3 bg-red-50 rounded-lg border border-red-200">
-                            <div class="flex items-center gap-2 text-error mb-3">
-                                <i data-lucide="x-circle" class="w-4 h-4"></i>
-                                <span class="font-medium">Previously Rejected</span>
+                        <div class="p-4 bg-red-50 rounded-lg border border-red-200 space-y-4">
+                            <div class="flex items-center gap-2 text-error">
+                                <i data-lucide="x-circle" class="w-5 h-5"></i>
+                                <span class="font-semibold">Previously Rejected - Iteration #{{ $reviewer->iteration_number - 1 }}</span>
                             </div>
 
                             {{-- Rejected By --}}
                             @if ($reviewer->previousReviewer->reviewer)
-                                <div class="mb-3 pb-3 border-b border-red-200">
-                                    <div class="text-xs text-gray-500 mb-1">Rejected By:</div>
-                                    <div class="flex items-center gap-2">
+                                <div class="space-y-2">
+                                    <div class="text-xs text-gray-500 font-semibold">REJECTED BY</div>
+                                    <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-red-100">
                                         <div class="avatar">
-                                            <div class="w-6 rounded-full">
+                                            <div class="w-10 rounded-full">
                                                 <img src="https://ui-avatars.com/api/?name={{ urlencode($reviewer->previousReviewer->reviewer->name ?? 'Unknown') }}&background=random"
                                                     alt="" />
                                             </div>
                                         </div>
-                                        <div>
-                                            <div class="text-sm font-medium text-gray-900">
+                                        <div class="flex-1">
+                                            <div class="text-sm font-semibold text-gray-900">
                                                 {{ $reviewer->previousReviewer->reviewer->name ?? 'Unknown' }}</div>
                                             @if ($reviewer->previousReviewer->reviewer->department)
-                                                <div class="text-xs text-gray-500">
+                                                <div class="text-xs text-gray-600">
                                                     {{ $reviewer->previousReviewer->reviewer->department->name }}</div>
                                             @endif
                                         </div>
                                     </div>
-                                    @if ($reviewer->previousReviewer->reviewed_at)
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            <i data-lucide="calendar" class="w-3 h-3 inline"></i>
-                                            {{ $reviewer->previousReviewer->reviewed_at->format('M d, Y h:i A') }}
-                                        </div>
-                                    @endif
+                                </div>
+                            @endif
+
+                            {{-- Rejection Timestamp --}}
+                            @if ($reviewer->previousReviewer->reviewed_at)
+                                <div class="space-y-2">
+                                    <div class="text-xs text-gray-500 font-semibold">REJECTION DATE & TIME</div>
+                                    <div class="p-3 bg-white rounded-lg border border-red-100 flex items-center gap-2">
+                                        <i data-lucide="calendar" class="w-4 h-4 text-error"></i>
+                                        <span class="text-sm text-gray-900">{{ $reviewer->previousReviewer->reviewed_at->format('M d, Y \\a\\t h:i A') }}</span>
+                                    </div>
                                 </div>
                             @endif
 
                             {{-- Action Type --}}
                             @if ($reviewer->previousReviewer->action_type)
-                                <div class="mb-3">
-                                    <div class="text-xs text-gray-500 mb-1">Action Type:</div>
-                                    <span class="badge badge-error badge-sm">
-                                        {{ ucwords(str_replace('_', ' ', $reviewer->previousReviewer->action_type)) }}
-                                    </span>
+                                <div class="space-y-2">
+                                    <div class="text-xs text-gray-500 font-semibold">ACTION TYPE</div>
+                                    <div class="p-3 bg-white rounded-lg border border-red-100">
+                                        <span class="badge badge-error badge-lg gap-2">
+                                            <i data-lucide="x" class="w-4 h-4"></i>
+                                            {{ ucwords(str_replace('_', ' ', $reviewer->previousReviewer->action_type)) }}
+                                        </span>
+                                    </div>
                                 </div>
                             @endif
 
                             {{-- Rejection Reason --}}
                             @if ($reviewer->previousReviewer->rejection_reason)
-                                <div>
-                                    <div class="text-xs text-gray-500 mb-1">Reason for Rejection:</div>
-                                    <p class="text-sm text-gray-900 bg-white p-2 rounded border border-red-100">
-                                        {{ $reviewer->previousReviewer->rejection_reason }}
-                                    </p>
+                                <div class="space-y-2">
+                                    <div class="text-xs text-gray-500 font-semibold">REASON FOR REJECTION</div>
+                                    <div class="p-3 bg-white rounded-lg border border-red-100">
+                                        <p class="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">
+                                            {{ $reviewer->previousReviewer->rejection_reason }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Resubmission Deadline (if set) --}}
+                            @if ($reviewer->previousReviewer->resubmission_deadline)
+                                <div class="space-y-2">
+                                    <div class="text-xs text-gray-500 font-semibold">RESUBMISSION DEADLINE</div>
+                                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200 flex items-center gap-2">
+                                        <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-600"></i>
+                                        <span class="text-sm text-yellow-900">{{ \Carbon\Carbon::parse($reviewer->previousReviewer->resubmission_deadline)->format('M d, Y') }}</span>
+                                    </div>
                                 </div>
                             @endif
                         </div>
@@ -698,12 +638,8 @@
         const actionDescriptions = {
             'review': 'Checks correctness without assuming liability',
             'validate': 'Confirms compliance with rules, plans, or law',
-            'endorse': 'Passes responsibility upward with recommendation',
             'approve': 'Exercises legal authority. This is a binding signature',
             'certify': 'Attests to a specific fact (funds, delivery, inspection)',
-            'lock': 'Freezes content automatically after approval/certification',
-            'release': 'Makes the document actionable by the next office',
-            'complete': 'Marks the transaction finished for that stage'
         };
 
         // Next Reviewer Modal Functions

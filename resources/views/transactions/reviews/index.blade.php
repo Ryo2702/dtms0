@@ -137,8 +137,7 @@
                                 @foreach ($pendingReviews as $review)
                                     <tr class="hover:bg-gray-50 {{ $review->isOverdue() ? 'bg-red-50' : '' }}">
                                         <td class="px-4 py-3">
-                                            <a href="{{ route('transactions.show', $review->transaction) }}"
-                                                class="font-mono font-bold text-primary hover:underline">
+                                            <a class="font-mono font-bold text-primary hover:underline">
                                                 {{ $review->transaction->transaction_code }}
                                             </a>
                                             @if ($review->iteration_number > 1)

@@ -40,7 +40,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <dt class="text-sm text-gray-500">Transaction Code</dt>
-                            <dd class="font-mono font-bold text-primary">{{ $transaction->transaction_code }}</dd>
+                            <dd class="font-mono font-bold text-primary">
+                                {{ is_array($transaction->transaction_code) ? implode(', ', $transaction->transaction_code) : $transaction->transaction_code }}
+                            </dd>
                         </div>
                         <div>
                             <dt class="text-sm text-gray-500">Status</dt>
